@@ -1,0 +1,7 @@
+test/
+node_modules/
+.travis.yml
+testem.json
+*.log*
+test-out.js
+*.tgz

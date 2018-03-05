@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "declaration": true,
+    "removeComments": false,
+    "noUnusedLocals": true,
+    "lib": [
+      "dom",
+      "es5",
+      "es2015.core"
+    ]
+  },
+  "files": [
+    "src/index.ts",
+    "src/types.ts",
+    "src/vdom.ts",
+    "src/page.ts",
+    "src/keys.ts",
+    "src/debug.ts",
+    "src/client.ts",
+    "src/server.ts",
+    "src/render-html-plugin.ts"
+  ]
+}

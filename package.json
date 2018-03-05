@@ -1,0 +1,54 @@
+{
+  "name": "literium",
+  "version": "0.0.1",
+  "description": "Reactive Web-application framework.",
+  "main": "index.js",
+  "module": "es/index.js",
+  "typings": "index.d.ts",
+  "scripts": {
+    "compile": "npm run compile-es && npm run compile-js",
+    "clean": "npm run clean-es && npm run clean-js",
+    "compile-es": "tsc --outDir es --module es6 --moduleResolution node",
+    "clean-es": "rm -rf es",
+    "compile-js": "tsc --outDir ./",
+    "clean-js": "rm -rf request *.d.ts *.js *.js.map",
+    "prepublish": "npm run compile",
+    "compile-test": "browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
+    "clean-test": "rm -f test-out.js",
+    "test": "testem ci",
+    "test-node": "mocha -r ts-node/register test/index.ts -R spec",
+    "test-dev": "testem"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/katyo/literium"
+  },
+  "keywords": [
+    "virtual-dom",
+    "client",
+    "server",
+    "reactive",
+    "stream",
+    "framework"
+  ],
+  "author": "K. <kayo@illumium.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/katyo/literium/issues"
+  },
+  "devDependencies": {
+    "@types/node": "^8.0.53",
+    "@types/webpack": "^3.8.3",
+    "browserify": "^14.5.0",
+    "mocha": "^5.0.0",
+    "testem": "^2.0.0",
+    "tsify": "^3.0.3",
+    "webpack": "^3.10.0"
+  },
+  "dependencies": {
+    "setimmediate": "^1.0.5",
+    "snabbdom-ng": "^0.7.1-ng.1",
+    "ts-node": "^4.1.0",
+    "typescript": "^2.6.2"
+  }
+}
