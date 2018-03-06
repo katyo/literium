@@ -1,4 +1,4 @@
-import { VNode as VNode_, VBaseData, VHooksData, Key as VKey } from 'snabbdom-ng/vnode';
+import { VNode as VNode_, VBaseData, VHooksData, VKey } from 'snabbdom-ng/vnode';
 import { VAttrsData } from 'snabbdom-ng/modules/attributes';
 import { VPropsData } from 'snabbdom-ng/modules/props';
 import { VStyleData } from 'snabbdom-ng/modules/style';

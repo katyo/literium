@@ -1,5 +1,5 @@
-import { VNode, VNodes, h, VKey } from './vdom';
-export { VNode, VNodes, h, VKey };
+import { VNode, VNodes, h, VKey, VData } from './vdom';
+export { VNode, VNodes, h, VKey, VData };
 
 export interface Send<Event> {
     (event: Event): void;
@@ -48,3 +48,5 @@ export function with_key(key: VKey, vnode: VNode): VNode {
     vnode.key = key;
     return vnode;
 }
+
+export const empty: VData = {};
