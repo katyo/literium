@@ -1,6 +1,6 @@
 {
   "name": "literium-example-todomvc",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "The TodoMVC example using literium Web-framework.",
   "main": "index.js",
   "scripts": {
@@ -47,9 +47,10 @@
     "webpack-bundle-analyzer": "2.9.2"
   },
   "dependencies": {
+    "literium": "file:../../",
+    "raf-polyfill": "^1.0.0",
     "todomvc-app-css": "^2.1.0",
-    "todomvc-common": "^1.0.4",
-    "literium": "file:../../"
+    "todomvc-common": "^1.0.4"
   },
   "config": {
     "style_extraction": true,

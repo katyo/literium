@@ -27,7 +27,7 @@ export function init<State, Event>(doctype: string = 'html', timeout: number = 1
             console.log('send: ', event);
             state = update(state, event, fork);
         };
-        const fork = fork_pool(send, () => {
+        const [fork, run] = fork_pool(send, () => {
             console.log('done');
             const doc = htmlDomApi.createElement('html');
             const vnode = render(state, send);
@@ -35,5 +35,6 @@ export function init<State, Event>(doctype: string = 'html', timeout: number = 1
             end(`<!DOCTYPE ${doctype}>${toHtml(doc)}`);
         });
         let state = create(fork);
+        run();
     };
 }

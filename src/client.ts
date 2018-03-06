@@ -29,9 +29,9 @@ export function init<State, Event>(doc: Document = document): Run<State, Event> 
     ], htmlDomApi(doc));
 
     return ({ create, update, render }, elm = doc.documentElement) => {
-        let view_id: any;
+        let frame: any;
         const view = () => {
-            view_id = undefined;
+            frame = undefined;
             const vnode_ = vnode;
             vnode = render(state, send);
             patch(vnode_, vnode);
@@ -40,16 +40,15 @@ export function init<State, Event>(doc: Document = document): Run<State, Event> 
             //console.log('send:', event);
             state = update(state, event, fork);
             //console.log('state:', state);
-            if (view_id) {
-                clearImmediate(view_id);
-            }
-            view_id = setImmediate(view);
+            if (frame) cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(view);
         };
-        const fork = fork_pool(send, () => {
+        const [fork, run] = fork_pool(send, () => {
             //console.log('done');
         });
-        let state = create(fork);
         let vnode = read(elm);
+        let state = create(fork);
         view();
+        run();
     };
 }

@@ -1,6 +1,6 @@
 {
   "name": "literium",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Reactive Web-application framework.",
   "main": "index.js",
   "module": "es/index.js",
@@ -46,7 +46,6 @@
     "webpack": "^3.10.0"
   },
   "dependencies": {
-    "setimmediate": "^1.0.5",
     "snabbdom-ng": "^0.7.1-ng.1",
     "ts-node": "^4.1.0",
     "typescript": "^2.6.2"
