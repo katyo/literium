@@ -6,6 +6,11 @@ Currently this is an __experimental__ Web-framework built on top of _[snabbdom-n
 
 The _snabbdom-ng_ is the modified _[snabbdom](https://github.com/snabbdom/snabbdom)_ __Virtual DOM__ library.
 
+## Overview
+
+Literium is a client-side framework for modern Web-application.
+Its core principles are explicit state, controllable behavior, declarative code, effeciency, simplicity and flexibility.
+
 ## Features
 
 * Browser interaction (Client-side)
