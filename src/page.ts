@@ -1,4 +1,4 @@
-import { h, VNode, VNodes } from './types';
+import { h, VNode, VNodes, VData, empty } from './types';
 
 export interface ResourceLink {
     link: string;
@@ -20,6 +20,7 @@ export interface Props {
     description: string;
     author: string;
     keywords: string[];
+    body?: VData;
 };
 
 const defaults: Props = {
@@ -41,7 +42,7 @@ const defaults: Props = {
 
 export function page(props: Partial<Props>, nodes: VNodes): VNode {
     const { scripts, styles, charset, compat, settings,
-        title, description, author, keywords }: Props = { ...defaults, ...props };
+        title, description, author, keywords, body }: Props = { ...defaults, ...props };
 
     const style_nodes = styles.map(res => 'link' in res ?
         h('link', { attrs: { href: (res as ResourceLink).link, rel: 'stylesheet' } }) :
@@ -62,7 +63,7 @@ export function page(props: Partial<Props>, nodes: VNodes): VNode {
             ...(author ? [h('meta', { attrs: { name: 'author', content: author as string } })] : []),
             ...(title ? [h('title', title as string)] : []),
         ]),
-        h('body', Array.isArray(nodes) ? [
+        h('body', body || empty, Array.isArray(nodes) ? [
             ...nodes,
             ...script_nodes,
         ] : [
