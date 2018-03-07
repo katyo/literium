@@ -22,7 +22,7 @@ export const context = __dirname;
 export const entry = "client";
 
 export const output = {
-    path: join(__dirname, process.env.npm_package_config_output_directory),
+    path: join(__dirname, process.env.npm_package_config_output_directory || 'dist'),
     filename: client_js
 };
 
