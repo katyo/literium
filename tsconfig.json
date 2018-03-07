@@ -19,6 +19,7 @@
     "src/vdom.ts",
     "src/page.ts",
     "src/keys.ts",
+    "src/store.ts",
     "src/debug.ts",
     "src/client.ts",
     "src/server.ts",

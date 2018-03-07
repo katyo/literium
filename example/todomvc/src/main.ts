@@ -1,6 +1,7 @@
 import { VNode, Send, Fork, Component, h, fork_map, send_map } from 'literium/types';
 import { page } from 'literium/page';
 import { todo as todoComponent, State as TodoState, Event as TodoEvent } from './todo';
+import { load, save } from 'literium/store';
 
 const styles = [{ link: `client_${process.env.npm_package_version}.min.css` }];
 const scripts = [{ link: `client_${process.env.npm_package_version}.min.js` }];
@@ -21,18 +22,16 @@ export interface State {
 }
 
 function create(fork: Fork<Event>) {
-    return {
-        todo: todoComponent.create(fork_map(fork, wrapTodo))
-    };
+    const todo = load<TodoState>('todo') || todoComponent.create(fork_map(fork, wrapTodo));
+    return { todo };
 }
 
 function update(state: State, event: Event, fork: Fork<Event>) {
     switch (event.type) {
         case 'todo':
-            return {
-                ...state,
-                todo: todoComponent.update(state.todo, event.event, fork_map(fork, wrapTodo))
-            };
+            const todo = todoComponent.update(state.todo, event.event, fork_map(fork, wrapTodo));
+            save('todo', todo);
+            return { ...state, todo };
     }
     return state;
 }
