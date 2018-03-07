@@ -33,7 +33,7 @@ export function init<State, Event>(doc: Document = document): Run<State, Event> 
         const view = () => {
             frame = undefined;
             const vnode_ = vnode;
-            vnode = render(state, send);
+            vnode = render(state, send) as VNode;
             patch(vnode_, vnode);
         };
         const send = (event: Event) => {

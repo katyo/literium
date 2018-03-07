@@ -1,4 +1,4 @@
-import { h, VNode, VNodes, VData, empty } from './types';
+import { h, VNodeChild, VNodeChildren, VData, empty } from './types';
 
 export interface ResourceLink {
     link: string;
@@ -40,7 +40,7 @@ const defaults: Props = {
     keywords: [],
 };
 
-export function page(props: Partial<Props>, nodes: VNodes): VNode {
+export function page(props: Partial<Props>, nodes: VNodeChildren): VNodeChild {
     const { scripts, styles, charset, compat, settings,
         title, description, author, keywords, body }: Props = { ...defaults, ...props };
 

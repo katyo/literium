@@ -24,13 +24,13 @@ export function init<State, Event>(doctype: string = 'html', timeout: number = 1
 
     return ({ create, update, render }, end: (html: string) => void) => {
         const send = (event: Event) => {
-            console.log('send: ', event);
+            //console.log('send: ', event);
             state = update(state, event, fork);
         };
         const [fork, run] = fork_pool(send, () => {
-            console.log('done');
+            //console.log('done');
             const doc = htmlDomApi.createElement('html');
-            const vnode = render(state, send);
+            const vnode = render(state, send) as VNode;
             patch(read(doc), vnode);
             end(`<!DOCTYPE ${doctype}>${toHtml(doc)}`);
         });

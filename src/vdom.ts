@@ -1,4 +1,4 @@
-import { VNode as VNode_, VBaseData, VHooksData, VKey } from 'snabbdom-ng/vnode';
+import { VNode as VNode_, VNodeChild as VNodeChild_, VBaseData, VHooksData, VKey } from 'snabbdom-ng/vnode';
 import { VAttrsData } from 'snabbdom-ng/modules/attributes';
 import { VPropsData } from 'snabbdom-ng/modules/props';
 import { VStyleData } from 'snabbdom-ng/modules/style';
@@ -10,5 +10,6 @@ export interface VData extends VBaseData, VHooksData<VData>, VAttrsData, VPropsD
 
 export const h: H<VData> = h_;
 export type VNode = VNode_<VData>;
-export type VNodes = VNodeChildren_<VData>;
+export type VNodeChild = VNodeChild_<VData>;
+export type VNodeChildren = VNodeChildren_<VData>;
 export { VKey };

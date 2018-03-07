@@ -1,5 +1,5 @@
-import { VNode, VNodes, h, VKey, VData } from './vdom';
-export { VNode, VNodes, h, VKey, VData };
+import { VNode, VNodeChild, VNodeChildren, h, VKey, VData } from './vdom';
+export { VNode, VNodeChild, VNodeChildren, h, VKey, VData };
 
 export interface Send<Event> {
     (event: Event): void;
@@ -22,7 +22,7 @@ export interface Update<State, Event> {
 }
 
 export interface Render<State, Event> {
-    (state: Readonly<State>, send: Send<Event>): VNode;
+    (state: Readonly<State>, send: Send<Event>): VNodeChild;
 }
 
 export interface Component<State, Event> {
@@ -44,10 +44,12 @@ export function fork_map<Event, OtherEvent>(fork: Fork<Event>, fn: (event: Other
     };
 }
 
-export function with_key(key: VKey, vnode: VNode): VNode {
-    vnode.key = key;
+export function with_key(key: VKey, vnode: VNodeChild): VNodeChild {
+    if (vnode != null && typeof vnode == 'object' && vnode.sel) {
+        vnode.key = key;
+    }
     return vnode;
 }
 
 export const empty: VData = {};
-export function dummy() {}
+export function dummy() { }
