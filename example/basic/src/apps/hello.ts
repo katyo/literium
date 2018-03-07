@@ -1,10 +1,7 @@
-import { Component, h } from 'literium/types';
+import { Component, h, dummy } from 'literium/types';
 
 export type State = void;
 export type Event = void;
-
-function create() { return undefined; }
-function update() { return undefined; }
 
 function render() {
     return h('div.wrapper-small', [
@@ -12,6 +9,6 @@ function render() {
     ]);
 }
 
-const app: Component<State, Event> = { create, update, render };
+const app: Component<State, Event> = { create: dummy, update: dummy, render };
 
 export default app;

@@ -50,3 +50,4 @@ export function with_key(key: VKey, vnode: VNode): VNode {
 }
 
 export const empty: VData = {};
+export function dummy() {}
