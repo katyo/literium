@@ -16,4 +16,12 @@ function save_<Type>(name: string, data: Type) {
     localStorage.setItem(name, JSON.stringify(data));
 }
 
-export const [load, save] = typeof localStorage != 'undefined' ? [load_, save_] : [dummy, dummy];
+function check(): boolean {
+    try {
+        return typeof localStorage != 'undefined'
+    } catch (e) {
+        return false;
+    }
+}
+
+export const [load, save] = check() ? [load_, save_] : [dummy, dummy];
