@@ -1,36 +1,37 @@
-import { VNode, Send, Fork, Component, h, fork_map, send_map } from 'literium/types';
+import { VNode, Send, Component, h, send_map } from 'literium/types';
 import { page } from 'literium/page';
-import { todo as todoComponent, State as TodoState, Event as TodoEvent } from './todo';
-import { load, save } from 'literium/store';
+import * as Todo from './todo';
+import * as Store from 'literium/store';
 
 const styles = [{ link: `client_${process.env.npm_package_version}.min.css` }];
 const scripts = [{ link: `client_${process.env.npm_package_version}.min.js` }];
 
 export interface FromTodo {
     type: 'todo';
-    event: TodoEvent;
+    event: Todo.Event;
 }
 
-function wrapTodo(event: TodoEvent): Event {
+function wrapTodo(event: Todo.Event): Event {
     return { type: 'todo', event };
 }
 
 export type Event = FromTodo;
 
 export interface State {
-    todo: TodoState;
+    todo: Todo.State;
 }
 
-function create(fork: Fork<Event>) {
-    const todo = load<TodoState>('todo') || todoComponent.create(fork_map(fork, wrapTodo));
+function create() {
+    const data = Store.load<Todo.Data>('todo');
+    const todo = data ? Todo.load(data) : Todo.create();
     return { todo };
 }
 
-function update(state: State, event: Event, fork: Fork<Event>) {
+function update(state: State, event: Event) {
     switch (event.type) {
         case 'todo':
-            const todo = todoComponent.update(state.todo, event.event, fork_map(fork, wrapTodo));
-            save('todo', todo);
+            const todo = Todo.update(state.todo, event.event);
+            Store.save('todo', Todo.save(todo));
             return { ...state, todo };
     }
     return state;
@@ -44,7 +45,7 @@ function render(state: State, send: Send<Event>) {
         body: { class: { 'learn-bar': true } },
     }, [
             learn(),
-            todoComponent.render(state.todo, send_map(send, wrapTodo)),
+            Todo.render(state.todo, send_map(send, wrapTodo)),
             footer(),
         ]);
 }

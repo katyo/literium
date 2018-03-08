@@ -1,9 +1,12 @@
-import { Send, Component, h } from 'literium/types';
+import { VNode, Send, h } from 'literium/types';
 import { KeyCode } from 'literium/keys';
 
-export interface State {
+export interface Data {
     content: string;
     completed: boolean;
+}
+
+export interface State extends Data {
     editing: boolean;
 }
 
@@ -28,7 +31,7 @@ export interface Remove {
 
 export type Event = SetEditing | EditContent | SetCompleted | Remove;
 
-function create() {
+export function create() {
     return {
         content: '',
         completed: false,
@@ -36,7 +39,15 @@ function create() {
     };
 }
 
-function update(state: State, event: Event) {
+export function load({ content, completed }: Data): State {
+    return { content, completed, editing: false };
+}
+
+export function save({ content, completed }: State): Data {
+    return { content, completed };
+}
+
+export function update(state: State, event: Event) {
     switch (event.type) {
         case 'edit':
             return {
@@ -58,7 +69,7 @@ function update(state: State, event: Event) {
     }
 }
 
-function render(state: State, send: Send<Event>) {
+export function render(state: State, send: Send<Event>): VNode {
     const { content, completed, editing } = state;
     return h('li', {
         class: {
@@ -107,5 +118,3 @@ function render(state: State, send: Send<Event>) {
             })
         ]);
 }
-
-export const task: Component<State, Event> = { create, update, render };

@@ -1,6 +1,6 @@
-import { Component, Send, Fork, Keyed, h, fork_map, send_map, with_key } from 'literium/types';
+import { VNode, Send, Keyed, h, send_map, with_key } from 'literium/types';
 import { KeyCode } from 'literium/keys';
-import { State as TaskState, Event as TaskEvent, task as taskComponent } from './task';
+import * as Task from './task';
 
 export const enum Filter {
     All,
@@ -8,19 +8,24 @@ export const enum Filter {
     Completed,
 }
 
+export interface Data {
+    tasks: Task.Data[];
+    filter: Filter;
+}
+
 export interface State {
-    tasks: Keyed<number, TaskState>[];
+    tasks: Keyed<number, Task.State>[];
     lastKey: number;
     filter: Filter;
 }
 
 export interface WithTask {
     type: 'task';
-    event: Keyed<number, TaskEvent>;
+    event: Keyed<number, Task.Event>;
 }
 
-function withTask($: number): (value: TaskEvent) => Event {
-    return (_: TaskEvent) => ({
+function withTask($: number): (value: Task.Event) => Event {
+    return (_: Task.Event) => ({
         type: 'task',
         event: { $, _ }
     });
@@ -46,7 +51,7 @@ export interface RemoveCompleted {
 
 export type Event = WithTask | AddTask | CompleteAll | SetFilter | RemoveCompleted;
 
-function create() {
+export function create() {
     return {
         tasks: [],
         lastKey: 0,
@@ -54,7 +59,17 @@ function create() {
     };
 }
 
-function update(state: State, event: Event, fork: Fork<Event>) {
+export function load({ tasks: tasks_, filter }: Data): State {
+    let lastKey = 0;
+    const tasks = tasks_.map(task => ({ $: lastKey++, _: Task.load(task) }));
+    return { tasks, lastKey, filter };
+}
+
+export function save({ tasks, filter }: State): Data {
+    return { tasks: tasks.map(task => Task.save(task._)), filter };
+}
+
+export function update(state: State, event: Event) {
     let { lastKey, tasks } = state;
     switch (event.type) {
         case 'task':
@@ -69,18 +84,16 @@ function update(state: State, event: Event, fork: Fork<Event>) {
                     tasks: tasks.map(task => task.$ == event.event.$ ?
                         {
                             $: task.$,
-                            _: taskComponent.update(task._, event.event._,
-                                fork_map(fork, withTask(task.$)))
+                            _: Task.update(task._, event.event._)
                         } : task)
                 };
             }
         case 'add':
             ++lastKey;
-            const task_fork = fork_map(fork, withTask(lastKey));
             const task = {
                 $: lastKey,
-                _: taskComponent.update(taskComponent.create(task_fork),
-                    { type: 'change', content: event.content }, task_fork)
+                _: Task.update(Task.create(),
+                    { type: 'change', content: event.content })
             };
             return { ...state, tasks: [task, ...tasks], lastKey };
         case 'complete':
@@ -88,8 +101,7 @@ function update(state: State, event: Event, fork: Fork<Event>) {
             return {
                 ...state,
                 tasks: tasks.map(task => ({
-                    $: task.$, _: taskComponent.update(task._, { type: 'complete', state: !!incomplete.length },
-                        fork_map(fork, withTask(task.$)))
+                    $: task.$, _: Task.update(task._, { type: 'complete', state: !!incomplete.length })
                 }))
             };
         case 'filter':
@@ -100,7 +112,7 @@ function update(state: State, event: Event, fork: Fork<Event>) {
     return state;
 }
 
-function render(state: State, send: Send<Event>) {
+export function render(state: State, send: Send<Event>): VNode {
     const { filter, tasks } = state;
     const incomplete = tasks.filter(task => !task._.completed);
 
@@ -138,7 +150,7 @@ function render(state: State, send: Send<Event>) {
                     ...tasks
                         .filter(task => filter == Filter.Active ? !task._.completed :
                             filter == Filter.Completed ? task._.completed : true)
-                        .map(task => with_key(task.$, taskComponent.render(task._,
+                        .map(task => with_key(task.$, Task.render(task._,
                             send_map(send, withTask(task.$)))))
                 ]),
             ]),
@@ -176,5 +188,3 @@ function render(state: State, send: Send<Event>) {
         ] : [])
     ]);
 }
-
-export const todo: Component<State, Event> = { create, update, render };
