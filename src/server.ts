@@ -7,7 +7,7 @@ import attrsApi from 'snabbdom-ng/server/attributes';
 import classApi from 'snabbdom-ng/server/class';
 import styleApi from 'snabbdom-ng/server/style';
 
-import { VData } from './vdom';
+import { VNode, VData } from './vdom';
 import { Component } from './types';
 import { fork_pool } from './sched';
 

@@ -11,7 +11,7 @@ import attrsApi from 'snabbdom-ng/client/attributes';
 import propsApi from 'snabbdom-ng/client/props';
 import eventApi from 'snabbdom-ng/client/eventlisteners';
 
-import { VData } from './vdom';
+import { VNode, VData } from './vdom';
 import { Component } from './types';
 import { fork_pool } from './sched';
 
