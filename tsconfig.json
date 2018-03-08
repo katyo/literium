@@ -23,6 +23,12 @@
     "src/debug.ts",
     "src/client.ts",
     "src/server.ts",
+    "src/locale.ts",
+    "src/client/locale.ts",
+    "src/server/locale.ts",
+    "src/location.ts",
+    "src/client/location.ts",
+    "src/server/location.ts",
     "src/render-html-plugin.ts"
   ]
 }
