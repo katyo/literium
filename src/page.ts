@@ -1,4 +1,4 @@
-import { h, VNode, VNodeChildren, VData, empty } from './types';
+import { h, VNode, VNodeChildren, VData, empty, flat_all } from './types';
 
 export interface ResourceLink {
     link: string;
@@ -53,22 +53,16 @@ export function page(props: Partial<Props>, nodes: VNodeChildren): VNode {
         h('script', (res as ResourceData).data));
 
     return h('html', [
-        h('head', [
+        h('head', flat_all(
             h('meta', { attrs: { charset } }),
             h('meta', { attrs: { 'http-equip': 'X-UA-Compatible', content: compat } }),
-            ...Object.keys(settings).map(name => h('meta', { attrs: { name, content: settings[name] } })),
-            ...style_nodes,
-            ...(keywords && keywords.length > 0 ? [h('meta', { attrs: { name: 'keywords', content: keywords.join(' ') } })] : []),
-            ...(description ? [h('meta', { attrs: { name: 'description', content: description as string } })] : []),
-            ...(author ? [h('meta', { attrs: { name: 'author', content: author as string } })] : []),
-            ...(title ? [h('title', title as string)] : []),
-        ]),
-        h('body', body || empty, Array.isArray(nodes) ? [
-            ...nodes,
-            ...script_nodes,
-        ] : [
-                nodes,
-                ...script_nodes,
-            ])
+            Object.keys(settings).map(name => h('meta', { attrs: { name, content: settings[name] } })),
+            style_nodes,
+            (keywords && keywords.length > 0 ? [h('meta', { attrs: { name: 'keywords', content: keywords.join(' ') } })] : []),
+            (description ? [h('meta', { attrs: { name: 'description', content: description as string } })] : []),
+            (author ? [h('meta', { attrs: { name: 'author', content: author as string } })] : []),
+            (title ? [h('title', title as string)] : []),
+        )),
+        h('body', body || empty, flat_all(nodes, script_nodes))
     ]);
 }
