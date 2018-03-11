@@ -31,6 +31,10 @@ export interface Component<State, Event> {
     render: Render<State, Event>;
 }
 
+export interface Tagged { $: string; }
+export interface HasId { id: number; }
+export interface HasName { name: string; }
+
 export type Keyed<Key, Value> = { $: Key; _: Value };
 
 export function send_map<Event, OtherEvent>(send: Send<Event>, fn: (event: OtherEvent) => Event): Send<OtherEvent> {
