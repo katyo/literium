@@ -2,7 +2,7 @@ import { Nav, SetPath } from '../location';
 import { IncomingMessage, ServerResponse } from 'http';
 
 export function getBase({ headers: { host } }: IncomingMessage): string {
-    return `http//${host}`;
+    return `http://${host}`;
 }
 
 export function initNav<Event extends SetPath>(req: IncomingMessage, res: ServerResponse): Nav<Event> {
