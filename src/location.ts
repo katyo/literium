@@ -1,5 +1,9 @@
 import { Fork } from './types';
 
+export interface HasBase {
+    base: string;
+}
+
 export interface HasPath {
     path: string;
 }
