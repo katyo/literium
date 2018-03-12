@@ -1,4 +1,4 @@
-import { VNode, Send, Keyed, h, send_map, with_key } from 'literium/types';
+import { VNode, Send, Keyed, h, with_key } from 'literium/types';
 import { KeyCode } from 'literium/keys';
 import * as Task from './task';
 
@@ -19,34 +19,24 @@ export interface State {
     filter: Filter;
 }
 
-export interface WithTask {
-    type: 'task';
-    event: Keyed<number, Task.Event>;
-}
-
-function withTask($: number): (value: Task.Event) => Event {
-    return (_: Task.Event) => ({
-        type: 'task',
-        event: { $, _ }
-    });
-}
+export type WithTask = Keyed<'task', Keyed<number, Task.Event>>;
 
 export interface AddTask {
-    type: 'add';
+    $: 'add';
     content: string;
 }
 
 export interface CompleteAll {
-    type: 'complete';
+    $: 'complete';
 }
 
 export interface SetFilter {
-    type: 'filter';
+    $: 'filter';
     filter: Filter;
 }
 
 export interface RemoveCompleted {
-    type: 'remove';
+    $: 'remove';
 }
 
 export type Event = WithTask | AddTask | CompleteAll | SetFilter | RemoveCompleted;
@@ -71,20 +61,20 @@ export function save({ tasks, filter }: State): Data {
 
 export function update(state: State, event: Event) {
     let { lastKey, tasks } = state;
-    switch (event.type) {
+    switch (event.$) {
         case 'task':
-            if (event.event._.type == 'remove') {
+            if (event._._.$ == 'remove') {
                 return {
                     ...state,
-                    tasks: tasks.filter(task => task.$ != event.event.$)
+                    tasks: tasks.filter(task => task.$ != event._.$)
                 };
             } else {
                 return {
                     ...state,
-                    tasks: tasks.map(task => task.$ == event.event.$ ?
+                    tasks: tasks.map(task => task.$ == event._.$ ?
                         {
                             $: task.$,
-                            _: Task.update(task._, event.event._)
+                            _: Task.update(task._, event._._)
                         } : task)
                 };
             }
@@ -93,7 +83,7 @@ export function update(state: State, event: Event) {
             const task = {
                 $: lastKey,
                 _: Task.update(Task.create(),
-                    { type: 'change', content: event.content })
+                    { $: 'change', content: event.content })
             };
             return { ...state, tasks: [task, ...tasks], lastKey };
         case 'complete':
@@ -101,7 +91,7 @@ export function update(state: State, event: Event) {
             return {
                 ...state,
                 tasks: tasks.map(task => ({
-                    $: task.$, _: Task.update(task._, { type: 'complete', state: !!incomplete.length })
+                    $: task.$, _: Task.update(task._, { $: 'complete', state: !!incomplete.length })
                 }))
             };
         case 'filter':
@@ -115,6 +105,7 @@ export function update(state: State, event: Event) {
 export function render(state: State, send: Send<Event>): VNode {
     const { filter, tasks } = state;
     const incomplete = tasks.filter(task => !task._.completed);
+    const task_send = Send.wrap(send as Send<WithTask>, 'task');
 
     return h('section.todoapp', [
         h('header.header', [
@@ -126,7 +117,7 @@ export function render(state: State, send: Send<Event>): VNode {
                         const input = e.target as HTMLInputElement;
                         if (input.value != '' && e.keyCode == KeyCode.Enter) {
                             send({
-                                type: 'add',
+                                $: 'add',
                                 content: input.value
                             });
                             input.value = '';
@@ -140,7 +131,7 @@ export function render(state: State, send: Send<Event>): VNode {
             h('section.main', [
                 h('input#toggle-all.toggle-all', {
                     attrs: { type: "checkbox", checked: !incomplete.length }, props: { checked: !incomplete.length }, on: {
-                        click: () => { send({ type: 'complete' }); }
+                        click: () => { send({ $: 'complete' }); }
                     }
                 }),
                 h('label', { attrs: { for: "toggle-all" } }, "Mark all as complete"),
@@ -151,7 +142,7 @@ export function render(state: State, send: Send<Event>): VNode {
                         .filter(task => filter == Filter.Active ? !task._.completed :
                             filter == Filter.Completed ? task._.completed : true)
                         .map(task => with_key(task.$, Task.render(task._,
-                            send_map(send, withTask(task.$)))))
+                            Send.wrap(task_send, task.$))))
                 ]),
             ]),
             h('!', "This footer should hidden by default and shown when there are todos"),
@@ -162,17 +153,17 @@ export function render(state: State, send: Send<Event>): VNode {
                 h('ul.filters', [
                     h('li', h('a', {
                         class: { selected: filter == Filter.All }, attrs: { href: "#/" }, on: {
-                            click: () => { send({ type: 'filter', filter: Filter.All }); }
+                            click: () => { send({ $: 'filter', filter: Filter.All }); }
                         }
                     }, "All")),
                     h('li', h('a', {
                         class: { selected: filter == Filter.Active }, attrs: { href: "#/active" }, on: {
-                            click: () => { send({ type: 'filter', filter: Filter.Active }); }
+                            click: () => { send({ $: 'filter', filter: Filter.Active }); }
                         }
                     }, "Active")),
                     h('li', h('a', {
                         class: { selected: filter == Filter.Completed }, attrs: { href: "#/completed" }, on: {
-                            click: () => { send({ type: 'filter', filter: Filter.Completed }); }
+                            click: () => { send({ $: 'filter', filter: Filter.Completed }); }
                         }
                     }, "Completed")),
                 ]),
@@ -180,7 +171,7 @@ export function render(state: State, send: Send<Event>): VNode {
                 ...(tasks.length > incomplete.length ? [
                     h('button.clear-completed', {
                         on: {
-                            click: () => { send({ type: 'remove' }); }
+                            click: () => { send({ $: 'remove' }); }
                         }
                     }, `Clear completed (${tasks.length - incomplete.length})`)
                 ] : []),

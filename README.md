@@ -39,10 +39,10 @@ export interface Send<Event> {
 }
 ```
 
-To deal with sub-components you can change the type of `Event` using `send_map` function, like so:
+To deal with sub-components you can change the type of `Event` using `Send.map` function, like so:
 
 ```typescript
-import { Send, send_map } from 'literium';
+import { Send } from 'literium';
 
 interface SubEvent { }
 
@@ -50,7 +50,21 @@ interface Event { _: SubEvent; }
 
 const send: Send<Event>;
 
-const sub_send: Send<SubEvent> = send_map(send, (sub_event: SubEvent) => ({ _: sub_event }));
+const sub_send: Send<SubEvent> = Send.map(send, (sub_event: SubEvent) => ({ _: sub_event }));
+```
+
+When the `Keyed` container is used to wrap events you can do it much simpler:
+
+```typescript
+import { Keyed, Send } from 'literium';
+
+interface SubEvent { }
+
+type Event = Keyed<'sub-event', SubEvent>;
+
+const send: Send<Event>;
+
+const sub_send: Send<SubEvent> = Send.wrap(send, 'sub-event');
 ```
 
 ### Done
@@ -88,10 +102,10 @@ done();
 
 This way simplifies asynchronous code handling both on client and server.
 
-To deal with sub-components you can change the type of `Event` using `fork_map` function, like so:
+To deal with sub-components you can change the type of `Event` using `Fork.map` function, like so:
 
 ```typescript
-import { Fork, fork_map } from 'literium';
+import { Fork } from 'literium';
 
 interface SubEvent { }
 
@@ -103,7 +117,21 @@ function wrapSubEvent(sub_event: SubEvent): Event {
 
 const fork: Fork<Event>;
 
-const sub_send: Fork<SubEvent> = fork_map(fork, wrapSubEvent);
+const sub_fork: Fork<SubEvent> = Fork.map(fork, wrapSubEvent);
+```
+
+When the `Keyed` container is used to wrap events you can do it much simpler:
+
+```typescript
+import { Keyed, Fork } from 'literium';
+
+interface SubEvent { }
+
+type Event = Keyed<'sub-event', SubEvent>;
+
+const send: Fork<Event>;
+
+const sub_fork: Fork<SubEvent> = Fork.wrap(fork, 'sub-event');
 ```
 
 ### Create\<State, Event>

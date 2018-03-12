@@ -11,22 +11,22 @@ export interface State extends Data {
 }
 
 export interface SetEditing {
-    type: 'edit';
+    $: 'edit';
     state: boolean;
 }
 
 export interface EditContent {
-    type: 'change';
+    $: 'change';
     content: string;
 }
 
 export interface SetCompleted {
-    type: 'complete';
+    $: 'complete';
     state: boolean;
 }
 
 export interface Remove {
-    type: 'remove';
+    $: 'remove';
 }
 
 export type Event = SetEditing | EditContent | SetCompleted | Remove;
@@ -48,7 +48,7 @@ export function save({ content, completed }: State): Data {
 }
 
 export function update(state: State, event: Event) {
-    switch (event.type) {
+    switch (event.$) {
         case 'edit':
             return {
                 ...state,
@@ -87,11 +87,11 @@ export function render(state: State, send: Send<Event>): VNode {
                         checked: completed,
                     },
                     on: {
-                        change: () => { send({ type: 'complete', state: !completed }); },
+                        change: () => { send({ $: 'complete', state: !completed }); },
                     },
                 }),
-                h('label', { on: { dblclick: () => { send({ type: 'edit', state: true }); } } }, content),
-                h('button.destroy', { on: { click: () => { send({ type: 'remove' }); } } }),
+                h('label', { on: { dblclick: () => { send({ $: 'edit', state: true }); } } }, content),
+                h('button.destroy', { on: { click: () => { send({ $: 'remove' }); } } }),
             ]),
             h('input.edit', {
                 attrs: { value: content },
@@ -105,13 +105,13 @@ export function render(state: State, send: Send<Event>): VNode {
                     }
                 },
                 on: {
-                    blur: () => { send({ type: 'edit', state: false }); },
-                    change: e => { send({ type: 'change', content: (e.target as HTMLInputElement).value }); },
+                    blur: () => { send({ $: 'edit', state: false }); },
+                    change: e => { send({ $: 'change', content: (e.target as HTMLInputElement).value }); },
                     keydown: e => {
                         if (e.keyCode == KeyCode.Enter || e.keyCode == KeyCode.Escape) {
-                            send({ type: 'edit', state: false });
+                            send({ $: 'edit', state: false });
                         } else {
-                            send({ type: 'change', content: (e.target as HTMLInputElement).value });
+                            send({ $: 'change', content: (e.target as HTMLInputElement).value });
                         }
                     },
                 }

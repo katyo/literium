@@ -1,4 +1,4 @@
-import { Component, Fork, Send, h, fork_map, send_map } from 'literium/types';
+import { Component, Fork, Send, Keyed, h } from 'literium/types';
 import { page } from 'literium/page';
 
 import hello from './apps/hello';
@@ -26,21 +26,12 @@ export interface SelectApp {
     appId: number;
 }
 
-export interface AppEvent {
-    $: 'app';
-    event: any;
-}
-
-function appEvent(event: any): Event {
-    return { $: 'app', event };
-}
-
-export type Event = SelectApp | AppEvent;
+export type Event = SelectApp | Keyed<'app', any>;
 
 function create(fork: Fork<Event>) {
     return {
         appId: 0,
-        appState: apps[0][1].create(fork_map(fork, appEvent))
+        appState: apps[0][1].create(Fork.wrap(fork, 'app'))
     };
 }
 
@@ -48,11 +39,11 @@ function update(state: State, event: Event, fork: Fork<Event>) {
     switch (event.$) {
         case 'app': return {
             ...state,
-            appState: apps[state.appId][1].update(state.appState, event.event, fork_map(fork, appEvent))
+            appState: apps[state.appId][1].update(state.appState, event._, Fork.wrap(fork, 'app'))
         };
         case 'select': return {
             appId: event.appId,
-            appState: apps[event.appId][1].create(fork_map(fork, appEvent))
+            appState: apps[event.appId][1].create(Fork.wrap(fork, 'app'))
         };
     }
 }
@@ -70,7 +61,7 @@ function render({ appId, appState }: State, send: Send<Event>) {
                 }, title))),
                 h('h2', apps[appId][0]),
             ]),
-            apps[appId][1].render(appState, send_map(send, appEvent))
+            apps[appId][1].render(appState, Send.wrap(send, 'app'))
         ]);
 }
 

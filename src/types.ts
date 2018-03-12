@@ -41,9 +41,6 @@ export const Keyed = {
     wrap: <Key, Type>($: Key) => (_: Type) => ({ $, _ }) as Keyed<Key, Type>,
 };
 
-export function send_map<Event, OtherEvent>(send: Send<Event>, fn: (event: OtherEvent) => Event): Send<OtherEvent> {
-    return (event: OtherEvent) => { send(fn(event)); };
-}
 export type Option<Value> = { $: 1, _: Value; } | { $: 0 };
 
 const none = { $: 0 };
@@ -53,8 +50,6 @@ export const Option = {
     none: <Value>(): Option<Value> => none as Option<Value>,
 };
 
-export function fork_map<Event, OtherEvent>(fork: Fork<Event>, fn: (event: OtherEvent) => Event): Fork<OtherEvent> {
-    return () => {
 export type Result<Value, Error> = { $: 1, _: Value; } | { $: 0, _: Error };
 
 export const Result = {
@@ -62,10 +57,22 @@ export const Result = {
     err: <Value, Error>(err: Error): Result<Value, Error> => ({ $: 0, _: err }),
 };
 
-        const [send, done] = fork();
-        return [send_map(send, fn), done];
-    };
-}
+export const Send = {
+    map: <Event, OtherEvent>(send: Send<Event>, fn: (event: OtherEvent) => Event): Send<OtherEvent> =>
+        (event: OtherEvent) => { send(fn(event)); },
+    wrap: <Key, OtherEvent>(send: Send<Keyed<Key, OtherEvent>>, key: Key): Send<OtherEvent> =>
+        Send.map(send, Keyed.wrap<Key, OtherEvent>(key)),
+};
+
+export const Fork = {
+    map: <Event, OtherEvent>(fork: Fork<Event>, fn: (event: OtherEvent) => Event): Fork<OtherEvent> =>
+        (() => {
+            const [send, done] = fork();
+            return [Send.map(send, fn), done];
+        }),
+    wrap: <Key, OtherEvent>(fork: Fork<Keyed<Key, OtherEvent>>, key: Key): Fork<OtherEvent> =>
+        Fork.map(fork, Keyed.wrap<Key, OtherEvent>(key)),
+};
 
 export function with_key(key: VKey, vnode: VNodeChild): VNodeChild {
     if (vnode != null && typeof vnode == 'object' && vnode.sel) {

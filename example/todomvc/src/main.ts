@@ -1,4 +1,4 @@
-import { VNode, Send, Component, h, send_map } from 'literium/types';
+import { VNode, Send, Component, Keyed, h } from 'literium/types';
 import { page } from 'literium/page';
 import * as Todo from './todo';
 import * as Store from 'literium/store';
@@ -6,16 +6,7 @@ import * as Store from 'literium/store';
 const styles = [{ link: `client_${process.env.npm_package_version}.min.css` }];
 const scripts = [{ link: `client_${process.env.npm_package_version}.min.js` }];
 
-export interface FromTodo {
-    type: 'todo';
-    event: Todo.Event;
-}
-
-function wrapTodo(event: Todo.Event): Event {
-    return { type: 'todo', event };
-}
-
-export type Event = FromTodo;
+export type Event = Keyed<'todo', Todo.Event>;
 
 export interface State {
     todo: Todo.State;
@@ -28,9 +19,9 @@ function create() {
 }
 
 function update(state: State, event: Event) {
-    switch (event.type) {
+    switch (event.$) {
         case 'todo':
-            const todo = Todo.update(state.todo, event.event);
+            const todo = Todo.update(state.todo, event._);
             Store.save('todo', Todo.save(todo));
             return { ...state, todo };
     }
@@ -45,7 +36,7 @@ function render(state: State, send: Send<Event>) {
         body: { class: { 'learn-bar': true } },
     }, [
             learn(),
-            Todo.render(state.todo, send_map(send, wrapTodo)),
+            Todo.render(state.todo, Send.wrap(send, 'todo')),
             footer(),
         ]);
 }
@@ -94,7 +85,7 @@ function learn() {
         ]),
         h('hr'),
         h('blockquote.quote.speech-bubble', [
-            h('p', 'Literium is a client-side framework for modern Web-application. Its core principles are explicit state, controllable behavior, declarative code, effeciency, simplicity and flexibility.'),
+            h('p', 'Literium is an ultra-light client-side framework for modern Web-application. Its core principles are explicit state, controllable behavior, declarative code, efficiency, simplicity and flexibility.'),
         ]),
         h('footer', [
             h('hr'),
