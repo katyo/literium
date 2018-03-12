@@ -23,6 +23,9 @@ export function fork_pool<Event>(send: Send<Event>, done: Done): [Fork<Event>, D
         },
         () => { /* done */
             forks--;
+            if (state) {
+                deque();
+            }
         }
     ];
     return [
