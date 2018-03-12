@@ -35,7 +35,11 @@ export interface Tagged { $: string; }
 export interface HasId { id: number; }
 export interface HasName { name: string; }
 
-export type Keyed<Key, Value> = { $: Key; _: Value };
+export interface Keyed<Key, Value> { $: Key; _: Value; }
+
+export const Keyed = {
+    wrap: <Key, Type>($: Key) => (_: Type) => ({ $, _ }) as Keyed<Key, Type>,
+};
 
 export function send_map<Event, OtherEvent>(send: Send<Event>, fn: (event: OtherEvent) => Event): Send<OtherEvent> {
     return (event: OtherEvent) => { send(fn(event)); };
