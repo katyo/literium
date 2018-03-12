@@ -29,6 +29,9 @@
     "src/location.ts",
     "src/client/location.ts",
     "src/server/location.ts",
+    "src/request.ts",
+    "src/client/request.ts",
+    "src/server/request.ts",
     "src/render-html-plugin.ts"
   ]
 }
