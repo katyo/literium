@@ -1,7 +1,7 @@
-import { Fork } from './types';
+import { Fork, Result } from './types';
 import { request as browser_request } from './client/request';
 
-const request_backend: ReqFn = typeof window != 'undefined' ? browser_request : require('./request/node').request;
+const request_backend: ReqFn = typeof window != 'undefined' ? browser_request : require('./server/request').request;
 
 export const enum Method {
     Get = 'GET',
@@ -121,7 +121,7 @@ export const enum Status {
     InvalidSSLCertificate = 526,
 }
 
-export type Event = Response | Error;
+export type Event = Result<Response, Error>;
 
 export function request(fork: Fork<Event>, req: Request) {
     const [send, done] = fork();
@@ -132,10 +132,10 @@ export function request(fork: Fork<Event>, req: Request) {
             res.body = body;
         }
         clearTimeout(timer);
-        send(res);
+        send(Result.ok(res));
         done();
     }, (err: Error) => {
-        send(err);
+        send(Result.err(err));
     });
     if (req.timeout) {
         timer = setTimeout(abort, req.timeout);
