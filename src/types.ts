@@ -40,9 +40,24 @@ export type Keyed<Key, Value> = { $: Key; _: Value };
 export function send_map<Event, OtherEvent>(send: Send<Event>, fn: (event: OtherEvent) => Event): Send<OtherEvent> {
     return (event: OtherEvent) => { send(fn(event)); };
 }
+export type Option<Value> = { $: 1, _: Value; } | { $: 0 };
+
+const none = { $: 0 };
+
+export const Option = {
+    some: <Value>(val: Value): Option<Value> => ({ $: 1, _: val }),
+    none: <Value>(): Option<Value> => none as Option<Value>,
+};
 
 export function fork_map<Event, OtherEvent>(fork: Fork<Event>, fn: (event: OtherEvent) => Event): Fork<OtherEvent> {
     return () => {
+export type Result<Value, Error> = { $: 1, _: Value; } | { $: 0, _: Error };
+
+export const Result = {
+    ok: <Value, Error>(val: Value): Result<Value, Error> => ({ $: 1, _: val }),
+    err: <Value, Error>(err: Error): Result<Value, Error> => ({ $: 0, _: err }),
+};
+
         const [send, done] = fork();
         return [send_map(send, fn), done];
     };
