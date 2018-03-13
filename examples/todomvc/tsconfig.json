@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "declaration": false,
+    "removeComments": false,
+    "noUnusedLocals": true,
+    "lib": [
+      "dom",
+      "es5",
+      "es2015.core"
+    ]
+  },
+  "exclude": [
+    "webpack.config.ts"
+  ]
+}
