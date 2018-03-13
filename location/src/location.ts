@@ -1,4 +1,4 @@
-import { Fork } from 'literium/core';
+import { Fork } from 'literium';
 
 export interface HasBase {
     base: string;
