@@ -1,7 +1,5 @@
 import { Fork, Result } from 'literium';
-import { request as browser_request } from './client';
-
-const request_backend: ReqFn = typeof window != 'undefined' ? browser_request : require('./server').request;
+import { request as request_backend } from './server';
 
 export const enum Method {
     Get = 'GET',

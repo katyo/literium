@@ -3,8 +3,10 @@
   "version": "0.0.3",
   "description": "Request module for Literium web-framework.",
   "main": "request.js",
-  "module": "es/request.js",
   "typings": "request.d.ts",
+  "browser": {
+    "./server.js": "./client.js"
+  },
   "scripts": {
     "compile": "npm run compile-es && npm run compile-js",
     "clean": "npm run clean-es && npm run clean-js",
