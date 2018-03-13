@@ -1,6 +1,6 @@
 {
   "name": "literium",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Reactive Web-application framework.",
   "main": "index.js",
   "module": "es/index.js",

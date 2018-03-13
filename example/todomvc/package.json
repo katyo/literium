@@ -1,6 +1,6 @@
 {
   "name": "literium-example-todomvc",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "The TodoMVC example using literium Web-framework.",
   "main": "index.js",
   "scripts": {

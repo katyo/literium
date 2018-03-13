@@ -1,6 +1,6 @@
 {
   "name": "literium-example-basic",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "The simple usage example of the literium Web-framework.",
   "main": "index.js",
   "scripts": {
