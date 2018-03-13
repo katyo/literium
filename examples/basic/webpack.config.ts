@@ -1,12 +1,12 @@
 import { join } from 'path';
-import { optimize, DefinePlugin, LoaderOptionsPlugin } from 'webpack';
+import { Configuration, optimize, DefinePlugin } from 'webpack';
 import * as ExtractTextPlugin from 'extract-text-webpack-plugin';
 import * as CompressionPlugin from 'compression-webpack-plugin';
 import { RenderHtmlPlugin } from 'literium-runner/render-html-plugin';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 import { main } from './src/main';
 
-const { UglifyJsPlugin } = optimize;
+const { UglifyJsPlugin, ModuleConcatenationPlugin } = optimize;
 const { stringify } = JSON;
 
 const client_css = `client_${process.env.npm_package_version}.min.css`;
@@ -16,22 +16,6 @@ const css_extractor = new ExtractTextPlugin({
     filename: client_css,
     disable: process.env.npm_package_config_style_extraction == 'false'
 });
-
-export const context = __dirname;
-
-export const entry = "client";
-
-export const output = {
-    path: join(__dirname, process.env.npm_package_config_output_directory || 'dist'),
-    filename: client_js
-};
-
-export const resolve = {
-    modules: ["node_modules", join(".", "src")],
-    extensions: [".ts", ".js", ".json", ".css"]
-};
-
-export const devtool = "source-map";
 
 const define_options = {
     "process.env.NODE_ENV": stringify("production"),
@@ -61,14 +45,9 @@ const url_loader_options = {
     limit: 60 * 1 << 10
 };
 
-const loader_options = {
-    minimize: true,
-    debug: false
-};
-
 const ts_loader_options = {
     compilerOptions: {
-        //module: 'es6'
+        module: 'es6'
     }
 };
 
@@ -105,64 +84,83 @@ const compression_options = {
 
 const bundle_analyzer_options: BundleAnalyzerPlugin.Options = {
     analyzerMode: "static",
-    openAnalyzer: false
+    openAnalyzer: false,
+    generateStatsFile: true
 };
 
-export const module = {
-    rules: [
-        {
-            test: /\.ts$/,
-            use: [
-                {
-                    loader: "ts-loader",
-                    options: ts_loader_options,
-                }
-            ]
-        },
-        {
-            test: /\.scss$/,
-            use: css_extractor.extract({
-                fallback: "style-loader",
+const config: Configuration = {
+    entry: "client",
+
+    output: {
+        path: join(__dirname, process.env.npm_package_config_output_directory || 'dist'),
+        filename: client_js
+    },
+
+    resolve: {
+        modules: ["node_modules", join(".", "src")],
+        extensions: [".ts", ".js", ".json", ".css"]
+    },
+
+    devtool: "source-map",
+
+    module: {
+        rules: [
+            {
+                test: /\.ts$/,
                 use: [
                     {
-                        loader: "css-loader",
-                        options: css_loader_options
-                    },
-                    {
-                        loader: "sass-loader",
-                        options: sass_loader_options
+                        loader: "ts-loader",
+                        options: ts_loader_options,
                     }
                 ]
-            })
-        },
-        {
-            test: /\.(?:je?pg|png|svg|eot|otf|ttf|woff2?)/,
-            use: [
-                {
-                    loader: "url-loader",
-                    options: url_loader_options
-                }
-            ]
-        }
-    ]
+            },
+            {
+                test: /\.scss$/,
+                use: css_extractor.extract({
+                    fallback: "style-loader",
+                    use: [
+                        {
+                            loader: "css-loader",
+                            options: css_loader_options
+                        },
+                        {
+                            loader: "sass-loader",
+                            options: sass_loader_options
+                        }
+                    ]
+                })
+            },
+            {
+                test: /\.(?:je?pg|png|svg|eot|otf|ttf|woff2?)/,
+                use: [
+                    {
+                        loader: "url-loader",
+                        options: url_loader_options
+                    }
+                ]
+            }
+        ]
+    },
+
+    plugins: [
+        new DefinePlugin(define_options),
+        css_extractor,
+        new RenderHtmlPlugin(render_html_options),
+        new ModuleConcatenationPlugin(),
+        new UglifyJsPlugin(uglify_js_options),
+        new CompressionPlugin(compression_options),
+        new BundleAnalyzerPlugin(bundle_analyzer_options)
+    ],
+
+    watchOptions: {
+        aggregateTimeout: 500,
+        poll: 2000,
+        ignored: [
+            "node_modules",
+            "**/*.js",
+            "**/*.html"
+        ]
+    },
 };
 
-export const plugins = [
-    new DefinePlugin(define_options),
-    new LoaderOptionsPlugin(loader_options),
-    css_extractor,
-    new RenderHtmlPlugin(render_html_options),
-    new UglifyJsPlugin(uglify_js_options),
-    new CompressionPlugin(compression_options),
-    new BundleAnalyzerPlugin(bundle_analyzer_options)
-];
-
-export const watchOptions = {
-    aggregateTimeout: 500,
-    poll: 2000,
-    ignored: [
-        /node_modules/,
-        "**/*.js",
-        "**/*.html"
-    ]
-};
+export default config;
