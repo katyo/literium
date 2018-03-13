@@ -38,7 +38,8 @@ export interface HasName { name: string; }
 export interface Keyed<Key, Value> { $: Key; _: Value; }
 
 export const Keyed = {
-    wrap: <Key, Type>($: Key) => (_: Type) => ({ $, _ }) as Keyed<Key, Type>,
+    new: <Key, Type>($: Key, _: Type): Keyed<Key, Type> => ({ $, _ }),
+    wrap: <Key, Type>($: Key) => (_: Type): Keyed<Key, Type> => ({ $, _ }),
 };
 
 export type Option<Value> = { $: 1, _: Value; } | { $: 0 };
