@@ -1,4 +1,5 @@
-import { BaseTypes, NumTypes, PathArg, baseTypes, numTypes, TypeApi, Route } from '../src/router';
+import { baseTypes, numTypes, TypeApi, Route, route_str, route_arg, route_or, route_and } from '../src/router';
+export { Route };
 
 export const enum Order { Asc, Desc }
 export interface OrderType {
@@ -7,7 +8,7 @@ export interface OrderType {
 
 export const orderType: TypeApi<OrderType> = {
     ord: {
-        match: path => {
+        parse: path => {
             const m = path.match(/^(asc|desc)(.*)$/);
             if (m) return [m[1] == 'asc' ? Order.Asc : Order.Desc, m[2]];
         },
@@ -15,11 +16,25 @@ export const orderType: TypeApi<OrderType> = {
     },
 };
 
-export const root: Route<BaseTypes & NumTypes, PathArg<BaseTypes & NumTypes>> = Route.new(baseTypes).extra(numTypes).route('/');
-export const blog = root.route('blog');
+const root = route_str('/');
+const blog = route_and(root, route_str('blog'));
 
-export const post_by_id = blog.route('/').route({ id: 'nat' });
-export const blog_by_tag = blog.route('/tag-').route({ tag: 'str' });
+const post_by_id = route_and(blog, route_str('/'), route_arg({ id: 'nat' }, numTypes));
+const blog_by_tag = route_and(blog, route_str('/tag-'), route_arg({ tag: 'str' }, baseTypes));
 
-export const blog_sort_by_date = blog.route('/date-').extra(orderType).route({ sort: 'ord' });
-export const blog_by_tag_and_sort_by_date = blog_by_tag.route('/date-').extra(orderType).route({ sort: 'ord' });
+const blog_sort_by_date = route_and(blog, route_str('/date-'), route_arg({ sort: 'ord' }, orderType));
+const blog_by_tag_and_sort_by_date = route_and(blog_by_tag, route_str('/date-'), route_arg({ sort: 'ord' }, orderType));
+
+const blog_by_tag_or_sort_by_date = route_or(blog_by_tag, blog_sort_by_date);
+
+const blog_by_tag_and_opt_sort_by_date = route_or(blog_by_tag_and_sort_by_date, blog_by_tag);
+
+export const routes = {
+    root,
+    post_by_id,
+    blog_by_tag,
+    blog_sort_by_date,
+    blog_by_tag_and_sort_by_date,
+    blog_by_tag_or_sort_by_date,
+    blog_by_tag_and_opt_sort_by_date,
+};

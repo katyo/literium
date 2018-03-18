@@ -14,7 +14,7 @@
     "prepublish": "npm run compile",
     "compile-test": "browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
     "clean-test": "rm -f test-out.js",
-    "test": "npm run test-typing && testem ci",
+    "test": "testem ci",
     "test-node": "mocha -r ts-node/register test/index.ts -R spec",
     "test-dev": "testem",
     "test-typing": "ts-node test/typing"

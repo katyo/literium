@@ -1,3 +1,4 @@
-import { post_by_id } from '../routes';
+import { route_build } from '../../src/router';
+import { routes } from '../routes';
 
-post_by_id.build({ id: 12, tag: "abc" });
+route_build(routes.post_by_id, { id: 12, tag: "abc" });

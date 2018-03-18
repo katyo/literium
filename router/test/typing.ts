@@ -20,11 +20,14 @@ function lastMessage({ messageText }: Diagnostic): string {
 }
 
 function test(file: string, errors: string[] = []) {
+    console.log(`Test case ${file}`);
     const program = createProgram([`${__dirname}/typing/${file}.ts`], opts);
     const { diagnostics } = program.emit();
     if (errors.length > 0) {
-        if (errors.length != diagnostics.length)
+        if (errors.length != diagnostics.length) {
+            console.log(diagnostics);
             fail("The expected errors doesn't match.");
+        }
         for (let i = 0; i < diagnostics.length; i++) {
             equal(lastMessage(diagnostics[i]), errors[i]);
         }
@@ -38,4 +41,4 @@ function test(file: string, errors: string[] = []) {
 }
 
 test("missing_prop", ["Property 'id' is missing in type '{}'."]);
-test("extra_prop");
+test("extra_prop", []);
