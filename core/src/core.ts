@@ -1,5 +1,4 @@
-import { VNode, VNodeChild, VNodeChildren, h, VKey, VData } from './vdom';
-export { VNode, VNodeChild, VNodeChildren, h, VKey, VData };
+import { VNodeChild, VKey, VData } from './vdom';
 
 export interface Send<Event> {
     (event: Event): void;

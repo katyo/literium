@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
     "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "noImplicitAny": true,
     "sourceMap": true,
     "strictNullChecks": true,
     "declaration": true,
     "removeComments": false,
     "noUnusedLocals": true,
+    "importHelpers": true,
     "lib": [
       "dom",
       "es5",
@@ -18,6 +21,6 @@
     "src/store.ts",
     "src/client.ts",
     "src/server.ts",
-    "src/render-html-plugin.ts"
+    "src/index.ts"
   ]
 }

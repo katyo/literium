@@ -1,5 +1,4 @@
-import { VNode, Send, h } from 'literium';
-import { KeyCode } from 'literium/keys';
+import { VNode, Send, h, KeyCode } from 'literium';
 
 export interface Data {
     content: string;

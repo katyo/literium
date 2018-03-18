@@ -2,14 +2,20 @@
   "name": "literium-runner",
   "version": "0.0.3",
   "description": "Runner module for Literium web-framework.",
-  "main": "sched.js",
-  "typings": "sched.d.ts",
+  "main": "index.js",
+  "typings": "index.d.ts",
+  "module": "es/index.js",
+  "browser": {
+    "./server.js": "./client.js",
+    "./es/server.js": "./es/client.js",
+    "./es/server.d.ts": "./es/client.d.ts"
+  },
   "scripts": {
     "compile": "npm run compile-es && npm run compile-js",
     "clean": "npm run clean-es && npm run clean-js",
-    "compile-es": "tsc --outDir es --module es6 --moduleResolution node",
+    "compile-es": "tsc --outDir es --module es6",
     "clean-es": "rm -rf es",
-    "compile-js": "tsc --outDir ./",
+    "compile-js": "tsc --outDir .",
     "clean-js": "rm -rf *.d.ts *.js *.js.map",
     "prepublish": "npm run compile",
     "compile-test": "browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
@@ -42,7 +48,7 @@
     "testem": "^2.0.0",
     "ts-node": "^5.0.1",
     "tsify": "^3.0.3",
-    "typescript": "^2.7.2"
+    "typescript": "^2.6.2"
   },
   "dependencies": {
     "literium": "0.0.3"

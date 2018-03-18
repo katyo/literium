@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
-    "outDir": "./bin",
     "target": "es5",
     "module": "commonjs",
     "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
     "noImplicitAny": true,
     "sourceMap": true,
     "strictNullChecks": true,
     "declaration": false,
     "removeComments": false,
     "noUnusedLocals": true,
+    "importHelpers": true,
+    "preserveConstEnums": true,
     "lib": [
       "dom",
       "es5",

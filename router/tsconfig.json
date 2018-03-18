@@ -7,12 +7,13 @@
     "declaration": true,
     "removeComments": false,
     "noUnusedLocals": true,
+    "importHelpers": true,
     "lib": [
       "es5",
       "es2015.core"
     ]
   },
   "files": [
-    "src/router.ts",
+    "src/router.ts"
   ]
 }

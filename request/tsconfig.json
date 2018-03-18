@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
     "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "noImplicitAny": true,
     "sourceMap": true,
     "strictNullChecks": true,
     "declaration": true,
     "removeComments": false,
     "noUnusedLocals": true,
+    "importHelpers": true,
     "lib": [
       "dom",
       "es5",

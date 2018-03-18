@@ -1,11 +1,11 @@
-import { init as init_ } from 'snabbdom-ng/snabbdom';
-import attrsModule from 'snabbdom-ng/modules/attributes';
-import classModule from 'snabbdom-ng/modules/class';
-import styleModule from 'snabbdom-ng/modules/style';
-import { htmlDomApi, render as toHtml } from 'snabbdom-ng/server/domapi';
-import attrsApi from 'snabbdom-ng/server/attributes';
-import classApi from 'snabbdom-ng/server/class';
-import styleApi from 'snabbdom-ng/server/style';
+import {
+    init as init_,
+    attributesModule as attrsModule, classModule, styleModule
+} from 'snabbdom-ng';
+import {
+    htmlDomApi, render as toHtml,
+    attributesApi as attrsApi, classApi, styleApi
+} from 'snabbdom-ng/server';
 
 import { VNode, VData, Component } from 'literium';
 import { fork_pool } from './sched';

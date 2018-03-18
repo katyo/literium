@@ -1,6 +1,9 @@
 bin/
+dist/
 node_modules/
 es/
 *.js
 *.js.map
 *.d.ts
+.rpt2*/
+cache/

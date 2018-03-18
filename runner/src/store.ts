@@ -1,5 +1,10 @@
 import { dummy } from 'literium';
 
+export interface Store<Type> {
+    load(): Type | void;
+    save(data: Type): void;
+}
+
 function load_<Type>(name: string): Type | void {
     let raw = localStorage.getItem(name);
     if (!raw) {
@@ -24,4 +29,14 @@ function check(): boolean {
     }
 }
 
-export const [load, save] = check() ? [load_, save_] : [dummy, dummy];
+const [load, save]: [
+    <Type>(name: string) => Type | void,
+    <Type>(name: string, data: Type) => void
+] = check() ? [load_, save_] : [dummy, dummy];
+
+export function createStore<Type>(name: string): Store<Type> {
+    return {
+        load: () => load(name),
+        save: data => save(name, data)
+    };
+}

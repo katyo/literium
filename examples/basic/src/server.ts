@@ -81,7 +81,7 @@ function handler(req: IncomingMessage, res: ServerResponse) {
                     return;
                 }
             } else {
-                render(main, (html) => {
+                render(main, html => {
                     res.writeHead(200, "OK", { "Content-Type": "text/html" });
                     res.end(html);
                 });

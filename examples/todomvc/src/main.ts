@@ -1,10 +1,9 @@
-import { VNode, Send, Component, Keyed, h } from 'literium';
-import { page } from 'literium/page';
+import { VNode, Send, Component, Keyed, h, page } from 'literium';
 import * as Todo from './todo';
-import * as Store from 'literium-runner/store';
+import { createStore } from 'literium-runner';
 
-const styles = [{ link: `client_${process.env.npm_package_version}.min.css` }];
-const scripts = [{ link: `client_${process.env.npm_package_version}.min.js` }];
+const styles = [{ link: `/client_${process.env.npm_package_version}.min.css` }];
+const scripts = [{ link: `/client_${process.env.npm_package_version}.min.js` }];
 
 export type Event = Keyed<'todo', Todo.Event>;
 
@@ -12,8 +11,10 @@ export interface State {
     todo: Todo.State;
 }
 
+const store = createStore<Todo.Data>('todo');
+
 function create() {
-    const data = Store.load<Todo.Data>('todo');
+    const data = store.load();
     const todo = data ? Todo.load(data) : Todo.create();
     return { todo };
 }
@@ -22,7 +23,7 @@ function update(state: State, event: Event) {
     switch (event.$) {
         case 'todo':
             const todo = Todo.update(state.todo, event._);
-            Store.save('todo', Todo.save(todo));
+            store.save(Todo.save(todo));
             return { ...state, todo };
     }
     return state;

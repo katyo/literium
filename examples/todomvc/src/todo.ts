@@ -1,5 +1,4 @@
-import { VNode, Send, Keyed, h, with_key } from 'literium';
-import { KeyCode } from 'literium/keys';
+import { VNode, Send, Keyed, h, with_key, KeyCode } from 'literium';
 import * as Task from './task';
 
 export const enum Filter {
