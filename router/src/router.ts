@@ -156,8 +156,8 @@ export function router_match<State>(routes: Routes<State>, path: string): Partia
 export function router_build<State>(routes: Routes<State>, state: Partial<State>): string | void {
     for (const id in state) {
         const args = state[id];
-        if (args) {
-            return route_build(routes[id], args);
+        if (args !== undefined) {
+            return route_build(routes[id], args as State[keyof State]);
         }
     }
 }
