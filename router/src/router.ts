@@ -49,6 +49,18 @@ export function route_str(path: string): Route<{}> {
     };
 }
 
+export function route_def<Arg>(arg: Arg): Route<Arg> {
+    return {
+        parse: path => [arg, path],
+        build: args => {
+            for (const key in arg) {
+                if (!(key in args) || args[key] !== arg[key]) return;
+            }
+            return '';
+        }
+    };
+}
+
 export function route_arg<TypeMap, Arg extends PathArg<TypeMap>>(arg: Arg, type_api: TypeApi<TypeMap>): Route<ArgMap<TypeMap, Arg>> {
     let key: keyof Arg | void;
     let tag: keyof TypeMap;
