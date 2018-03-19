@@ -12,7 +12,8 @@ export const orderType: TypeApi<OrderType> = {
             const m = path.match(/^(asc|desc)(.*)$/);
             if (m) return [m[1] == 'asc' ? Order.Asc : Order.Desc, m[2]];
         },
-        build: arg => `${arg == Order.Asc ? 'asc' : 'desc'}`
+        build: arg => arg == Order.Asc || arg == Order.Desc ?
+            `${arg == Order.Asc ? 'asc' : 'desc'}` : undefined
     },
 };
 
