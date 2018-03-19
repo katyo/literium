@@ -10,7 +10,6 @@
     "removeComments": false,
     "noUnusedLocals": true,
     "importHelpers": true,
-    "preserveConstEnums": true,
     "lib": [
       "dom",
       "es5",
