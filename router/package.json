@@ -4,6 +4,7 @@
   "description": "Type-safe router module for Literium web-framework.",
   "main": "router.js",
   "typings": "router.d.ts",
+  "module": "es/router.js",
   "scripts": {
     "compile": "npm run compile-es && npm run compile-js",
     "clean": "npm run clean-es && npm run clean-js",
