@@ -4,6 +4,9 @@ import { createStore } from 'literium-runner';
 
 const styles = [{ link: `client_${process.env.npm_package_version}.min.css` }];
 const scripts = [{ link: `client_${process.env.npm_package_version}.min.js` }];
+const settings = {
+    viewport: "width=device-width, initial-scale=1"
+};
 
 export type Event = Keyed<'todo', Todo.Event>;
 
@@ -33,6 +36,7 @@ function render(state: State, send: Send<Event>) {
     return page({
         styles,
         scripts,
+        settings,
         title: "TodoMVC",
         body: { class: { 'learn-bar': true } },
     }, [

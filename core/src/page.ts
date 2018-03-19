@@ -33,9 +33,9 @@ const defaults: Props = {
     compat: 'IE=edge,chrome=1',
     settings: {
         //viewport: 'width=device-width initial-scale=1 user-scalable=no',
-        viewport: 'width=device-width,initial-scale=1,user-scalable=no,maximum-scale=1',
-        'apple-mobile-web-app-capable': 'yes',
-        'apple-touch-fullscreen': 'yes',
+        //viewport: 'width=device-width,initial-scale=1,user-scalable=no,maximum-scale=1',
+        //'apple-mobile-web-app-capable': 'yes',
+        //'apple-touch-fullscreen': 'yes',
     },
     title: '',
     description: '',

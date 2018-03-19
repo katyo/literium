@@ -7,6 +7,11 @@ import chats from './apps/chats';
 
 const styles = [{ link: `client_${process.env.npm_package_version}.min.css` }];
 const scripts = [{ link: `client_${process.env.npm_package_version}.min.js` }];
+const settings = {
+    'viewport': 'width=device-width,initial-scale=1,user-scalable=no,maximum-scale=1',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-touch-fullscreen': 'yes',
+};
 
 const apps: [string, Component<any, any>][] = [
     ["Hello world", hello],
@@ -51,6 +56,7 @@ function render({ appId, appState }: State, send: Send<Event>) {
     return page({
         styles,
         scripts,
+        settings,
     }, [
             h('div.wrapper-small', [
                 h('p', apps.map(([title,], appId_) => h('button', {
