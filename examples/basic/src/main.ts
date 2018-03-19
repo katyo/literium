@@ -5,8 +5,8 @@ import counter from './apps/counter';
 import greeting from './apps/greeting';
 import chats from './apps/chats';
 
-const styles = [{ link: `/client_${process.env.npm_package_version}.min.css` }];
-const scripts = [{ link: `/client_${process.env.npm_package_version}.min.js` }];
+const styles = [{ link: `client_${process.env.npm_package_version}.min.css` }];
+const scripts = [{ link: `client_${process.env.npm_package_version}.min.js` }];
 
 const apps: [string, Component<any, any>][] = [
     ["Hello world", hello],

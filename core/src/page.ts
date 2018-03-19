@@ -21,6 +21,8 @@ export interface Props {
     description: string;
     author: string;
     keywords: string[];
+    baseHref: string;
+    baseTarget: string;
     body?: VData;
 };
 
@@ -39,11 +41,13 @@ const defaults: Props = {
     description: '',
     author: '',
     keywords: [],
+    baseHref: '',
+    baseTarget: '',
 };
 
 export function page(props: Partial<Props>, nodes: VNodeChildren): VNode {
     const { scripts, styles, charset, compat, settings,
-        title, description, author, keywords, body }: Props = { ...defaults, ...props };
+        title, description, author, keywords, baseHref, baseTarget, body }: Props = { ...defaults, ...props };
 
     const style_nodes = styles.map(res => 'link' in res ?
         h('link', { attrs: { href: (res as ResourceLink).link, rel: 'stylesheet' } }) :
@@ -60,6 +64,7 @@ export function page(props: Partial<Props>, nodes: VNodeChildren): VNode {
             Object.keys(settings).map(name => h('meta', { attrs: { name, content: settings[name] } })),
             style_nodes,
             (keywords && keywords.length > 0 ? [h('meta', { attrs: { name: 'keywords', content: keywords.join(' ') } })] : []),
+            (baseHref || baseTarget ? [h('base', { attrs: { href: baseHref, target: baseTarget } })] : []),
             (description ? [h('meta', { attrs: { name: 'description', content: description as string } })] : []),
             (author ? [h('meta', { attrs: { name: 'author', content: author as string } })] : []),
             (title ? [h('title', title as string)] : []),

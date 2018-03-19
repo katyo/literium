@@ -2,8 +2,8 @@ import { VNode, Send, Component, Keyed, h, page } from 'literium';
 import * as Todo from './todo';
 import { createStore } from 'literium-runner';
 
-const styles = [{ link: `/client_${process.env.npm_package_version}.min.css` }];
-const scripts = [{ link: `/client_${process.env.npm_package_version}.min.js` }];
+const styles = [{ link: `client_${process.env.npm_package_version}.min.css` }];
+const scripts = [{ link: `client_${process.env.npm_package_version}.min.js` }];
 
 export type Event = Keyed<'todo', Todo.Event>;
 
