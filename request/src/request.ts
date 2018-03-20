@@ -1,5 +1,5 @@
 import { Fork, Result } from 'literium';
-import { request as request_backend } from './server';
+import { request as backend } from './server';
 
 export const enum Method {
     Get = 'GET',
@@ -13,33 +13,41 @@ export const enum Method {
 
 export type Headers = Record<string, string>;
 
-export type ResFn = (status: number, message: string, headers: Headers, body?: Buffer) => void;
+export type GenericBody = string | ArrayBuffer | void;
+
+export type ResFn = (status: number, message: string, headers: Headers, body: GenericBody) => void;
 export type ErrFn = (error: Error) => void;
 export type AbrFn = () => void;
-export type ReqFn = (method: Method, url: string, headers: Headers, body: Buffer | undefined, need_body: boolean, res: ResFn, err: ErrFn) => AbrFn;
+export type ReqFn = (method: Method, url: string, headers: Headers, body: GenericBody, res_type: DataType, res: ResFn, err: ErrFn) => AbrFn;
 
-function uploadable(method: Method): boolean {
-    return method == Method.Post || method == Method.Put || method == Method.Patch;
+export const enum DataType {
+    None,
+    String,
+    Binary,
 }
 
-function downloadable(method: Method): boolean {
-    return method != Method.Head && method != Method.Delete && method != Method.Options;
-}
-
-export interface Request {
-    method: Method;
+export interface Request<ReqMethod extends Method, ReqType extends DataType, ResType extends DataType, ReqBody extends GenericBody> {
+    method: ReqMethod;
     url: string;
     headers?: Headers;
-    body?: Buffer;
-    stream?: boolean;
+    reqType: ReqType;
+    resType: ResType;
+    body: ReqBody;
     timeout?: number;
 }
 
-export interface Response {
+export type RequestWithoutBody<ReqMethod extends Method, ResType extends DataType> =
+    Request<ReqMethod, DataType.None, ResType, void>;
+
+export type RequestWithBody<ReqMethod extends Method, ResType extends DataType> =
+    Request<ReqMethod, DataType.String, ResType, string> |
+    Request<ReqMethod, DataType.Binary, ResType, ArrayBuffer>;
+
+export interface Response<Body> {
     status: Status;
     message: string;
     headers: Headers;
-    body?: Buffer;
+    body: Body;
 }
 
 export const enum Status {
@@ -119,16 +127,29 @@ export const enum Status {
     InvalidSSLCertificate = 526,
 }
 
-export type Event = Result<Response, Error>;
+export type Event<Body> = Response<Body>;
 
-export function request(fork: Fork<Event>, req: Request) {
+function uploadable(method: Method): boolean {
+    return method == Method.Post || method == Method.Put || method == Method.Patch;
+}
+
+function downloadable(method: Method): boolean {
+    return method != Method.Head && method != Method.Delete && method != Method.Options;
+}
+
+//export interface RequestRun<> fork: Fork<Result<Event<GenericBody>, Error>>, 
+
+export function request(fork: Fork<Result<Event<void>, Error>>, req: RequestWithoutBody<Method.Head | Method.Delete | Method.Options, DataType.None>): void;
+export function request(fork: Fork<Result<Event<string>, Error>>, req: RequestWithoutBody<Method.Get, DataType.String>): void;
+export function request(fork: Fork<Result<Event<ArrayBuffer>, Error>>, req: RequestWithoutBody<Method.Get, DataType.Binary>): void;
+export function request(fork: Fork<Result<Event<string>, Error>>, req: RequestWithBody<Method.Post | Method.Put | Method.Patch, DataType.String>): void;
+export function request(fork: Fork<Result<Event<ArrayBuffer>, Error>>, req: RequestWithBody<Method.Post | Method.Put | Method.Patch, DataType.Binary>): void;
+
+export function request(fork: Fork<Result<Event<GenericBody>, Error>>, req: Request<Method, DataType, DataType, GenericBody>): void {
     const [send, done] = fork();
     let timer: any;
-    const abort = request_backend(req.method, req.url, req.headers || {}, uploadable(req.method) ? req.body : undefined, downloadable(req.method), (status: number, message: string, headers: Headers, body?: Buffer) => {
-        const res: Response = { status, message, headers };
-        if (body) {
-            res.body = body;
-        }
+    const abort = backend(req.method, req.url, req.headers || {}, uploadable(req.method) ? req.body : undefined, downloadable(req.method) ? req.resType : DataType.None, (status: number, message: string, headers: Headers, body?: string | ArrayBuffer) => {
+        const res: Response<ArrayBuffer | string | void> = { status, message, headers, body };
         clearTimeout(timer);
         send(Result.ok(res));
         done();

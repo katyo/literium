@@ -1,6 +1,6 @@
 import { parse } from 'url';
 import { request as node_request, IncomingHttpHeaders } from 'http';
-import { Method, Headers, ResFn, ErrFn, AbrFn } from './request';
+import { Method, Headers, GenericBody, DataType, ResFn, ErrFn, AbrFn } from './request';
 
 function parseHeaders(h: IncomingHttpHeaders | undefined): Headers {
     const hs: Headers = {};
@@ -17,24 +17,28 @@ function parseHeaders(h: IncomingHttpHeaders | undefined): Headers {
     return hs;
 }
 
-export function request(method: Method, url: string, headers: Headers, body: Buffer | undefined, need_body: boolean, res_fn: ResFn, err_fn: ErrFn): AbrFn {
+export function request(method: Method, url: string, headers: Headers, body: GenericBody, res_type: DataType, res_fn: ResFn, err_fn: ErrFn): AbrFn {
     const { protocol, hostname, port, path } = parse(url);
     const req = node_request({ method, protocol, hostname, port, path, headers }, (res) => {
-        if (need_body) {
+        if (res_type != DataType.None) {
             const bufs: Buffer[] = [];
             res.on('data', (buf) => {
                 bufs.push(buf as Buffer);
             });
             res.on('end', () => {
+                const body = Buffer.concat(bufs);
                 res_fn(res.statusCode as number,
-                       res.statusMessage as string,
-                       parseHeaders(res.headers),
-                       Buffer.concat(bufs));
+                    res.statusMessage as string,
+                    parseHeaders(res.headers),
+                    res_type == DataType.String ?
+                        body.toString('utf8') :
+                        body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength));
             });
         } else {
             res_fn(res.statusCode as number,
-                   res.statusMessage as string,
-                   parseHeaders(res.headers));
+                res.statusMessage as string,
+                parseHeaders(res.headers),
+                undefined);
         }
     });
     req.on('error', err_fn);
