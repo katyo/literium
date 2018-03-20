@@ -1,4 +1,4 @@
-import { Component, Send, h } from 'literium';
+import { Component, Send, h, send_map } from 'literium';
 import * as Chat from './chat';
 
 export interface State {
@@ -39,7 +39,7 @@ function update(state: State, event: Event): State {
 }
 
 function render({ chats }: State, send: Send<Event>) {
-    const chat_send = ($: number) => Send.map(send, event => ({ $: 'chat', chat: $, event }));
+    const chat_send = ($: number) => send_map(event => ({ $: 'chat', chat: $, event }))(send);
     return h('div.wrapper-small.grid', chats.map((chat, $) => Chat.render(chat, chat_send($))));
 }
 

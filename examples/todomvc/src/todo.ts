@@ -1,4 +1,4 @@
-import { VNode, Send, Keyed, h, with_key, KeyCode } from 'literium';
+import { VNode, Send, Keyed, h, with_key, KeyCode, send_wrap } from 'literium';
 import * as Task from './task';
 
 export const enum Filter {
@@ -101,10 +101,12 @@ export function update(state: State, event: Event) {
     return state;
 }
 
+const task_send_wrap = send_wrap('task');
+
 export function render(state: State, send: Send<Event>): VNode {
     const { filter, tasks } = state;
     const incomplete = tasks.filter(task => !task._.completed);
-    const task_send = Send.wrap(send as Send<WithTask>, 'task');
+    const task_send = task_send_wrap(send as Send<WithTask>);
 
     return h('section.todoapp', [
         h('header.header', [
@@ -141,7 +143,7 @@ export function render(state: State, send: Send<Event>): VNode {
                         .filter(task => filter == Filter.Active ? !task._.completed :
                             filter == Filter.Completed ? task._.completed : true)
                         .map(task => with_key(task.$, Task.render(task._,
-                            Send.wrap(task_send, task.$))))
+                            send_wrap(task.$)(task_send))))
                 ]),
             ]),
             h('!', "This footer should hidden by default and shown when there are todos"),

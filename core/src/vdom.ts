@@ -11,3 +11,12 @@ export type VNode = VNode_<VData>;
 export type VNodeChild = VNodeChild_<VData>;
 export type VNodeChildren = VNodeChildren_<VData>;
 export { VKey };
+
+export const empty: VData = {};
+
+export function with_key(key: VKey, vnode: VNodeChild): VNodeChild {
+    if (vnode != null && typeof vnode == 'object' && vnode.sel) {
+        vnode.key = key;
+    }
+    return vnode;
+}

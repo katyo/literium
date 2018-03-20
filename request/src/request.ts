@@ -1,4 +1,4 @@
-import { Fork, Result } from 'literium';
+import { Fork, Result, result_ok, result_err } from 'literium';
 import { request as backend } from './server';
 
 export const enum Method {
@@ -151,10 +151,10 @@ export function request(fork: Fork<Result<Event<GenericBody>, Error>>, req: Requ
     const abort = backend(req.method, req.url, req.headers || {}, uploadable(req.method) ? req.body : undefined, downloadable(req.method) ? req.resType : DataType.None, (status: number, message: string, headers: Headers, body?: string | ArrayBuffer) => {
         const res: Response<ArrayBuffer | string | void> = { status, message, headers, body };
         clearTimeout(timer);
-        send(Result.ok(res));
+        send(result_ok(res));
         done();
     }, (err: Error) => {
-        send(Result.err(err));
+        send(result_err(err));
     });
     if (req.timeout) {
         timer = setTimeout(abort, req.timeout);

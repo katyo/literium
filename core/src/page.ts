@@ -1,5 +1,5 @@
-import { h, VNode, VNodeChildren, VData } from './vdom';
-import { empty, flat_all } from './core';
+import { h, VNode, VNodeChildren, VData, empty } from './vdom';
+import { flat_all } from './util';
 
 export interface ResourceLink {
     link: string;

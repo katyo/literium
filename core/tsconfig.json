@@ -17,8 +17,12 @@
     ]
   },
   "files": [
+    "src/option.ts",
+    "src/result.ts",
+    "src/either.ts",
     "src/core.ts",
     "src/vdom.ts",
+    "src/util.ts",
     "src/page.ts",
     "src/keys.ts",
     "src/debug.ts",
