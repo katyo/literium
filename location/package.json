@@ -1,6 +1,6 @@
 {
   "name": "literium-location",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Location module for Literium web-framework.",
   "main": "index.js",
   "typings": "index.d.ts",
@@ -49,7 +49,7 @@
     "tsify": "^3.0.3",
     "typescript": "^2.6.2"
   },
-  "dependencies": {
-    "literium": "0.0.3"
+  "peerDependencies": {
+    "literium": "^0.1.0"
   }
 }

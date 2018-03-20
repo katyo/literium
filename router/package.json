@@ -1,6 +1,6 @@
 {
   "name": "literium-router",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Type-safe router module for Literium web-framework.",
   "main": "router.js",
   "typings": "router.d.ts",
