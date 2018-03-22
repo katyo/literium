@@ -2,7 +2,7 @@ import { VNode } from './vdom';
 
 export function vnode_log(vnode: VNode): VNode {
     if (!vnode.data) vnode.data = {};
-    const name = (vnode.sel || '') + ('key' in vnode ? '$' + vnode.key : '');
+    const name = (vnode.sel || '') + (vnode.key ? '$' + vnode.key : '');
     const hook = vnode.data.hook || {};
     vnode.data.hook = {
         init: (vnode) => {
