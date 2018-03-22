@@ -43,8 +43,8 @@
     "rollup-plugin-uglify": "^3.0.0"
   },
   "dependencies": {
-    "literium": "0.0.3",
-    "literium-runner": "0.0.3",
+    "literium": "^0.1.0",
+    "literium-runner": "^0.1.0",
     "raf-polyfill": "^1.0.0",
     "ts-node": "^5.0.1",
     "typescript": "^2.6.2",
