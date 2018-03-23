@@ -70,9 +70,11 @@ export function inlineLex<Type>(lexer: InlineLexer<Type>, src: string, links: Li
         href = escape(href);
         title = title && escape(title);
 
+        lexer.inLink = true;
         out(cap.charAt(0) !== '!'
             ? { $: InlineTag.Link, l: href, t: title, _: inlineLex(lexer, text, links) }
             : { $: InlineTag.Image, l: href, t: title, _: escape(text) });
+        lexer.inLink = false;
     };
 
     let cap: RegExpMatchArray | null,
@@ -111,7 +113,7 @@ export function inlineLex<Type>(lexer: InlineLexer<Type>, src: string, links: Li
                 text = escape(cap[1]);
                 href = text;
             }
-            out({ $: InlineTag.Link, l: href, _: inlineLex(lexer, text, links) });
+            outLink('', text, href);
             continue;
         }
 
@@ -119,7 +121,7 @@ export function inlineLex<Type>(lexer: InlineLexer<Type>, src: string, links: Li
         if (!lexer.inLink && (cap = rules.url.exec(src))) {
             fwd();
             text = escape(cap[1]);
-            out({ $: InlineTag.Link, l: text, _: inlineLex(lexer, text, links) });
+            outLink('', text, text);
             continue;
         }
 
@@ -138,9 +140,7 @@ export function inlineLex<Type>(lexer: InlineLexer<Type>, src: string, links: Li
         // link
         if (cap = rules.link.exec(src)) {
             fwd();
-            lexer.inLink = true;
             outLink(cap[0], cap[1], cap[2], cap[3]);
-            lexer.inLink = false;
             continue;
         }
 
@@ -154,9 +154,7 @@ export function inlineLex<Type>(lexer: InlineLexer<Type>, src: string, links: Li
                 src = cap[0].substring(1) + src;
                 continue;
             }
-            lexer.inLink = true;
             outLink(cap[0], cap[1], link.href, link.title);
-            lexer.inLink = false;
             continue;
         }
 
