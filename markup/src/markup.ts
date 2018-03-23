@@ -1,6 +1,5 @@
 import { VNodeChild, VNodeChildren } from 'literium';
-import { RuleSet, Options, Links, Headings, Parser, init, parse } from './md/parser';
-import { vdomRender } from './md/render/vdom';
+import { RuleSet, Renderer, Options, Links, Headings, Parser, init, parse } from './md/parser';
 
 export interface State {
     parser: Parser<VNodeChild>;
@@ -16,9 +15,9 @@ export interface UpdateSource {
 
 export type Event = UpdateSource;
 
-export function create(rules: RuleSet, options: Options): State {
+export function create(rules: RuleSet, render: Renderer<VNodeChild>, options: Options): State {
     return {
-        parser: init(rules, vdomRender, options),
+        parser: init(rules, render, options),
         markup: [],
         links: {},
         headings: [],
