@@ -3,6 +3,7 @@ dist/
 node_modules/
 es/
 *.js
+!rollup.config.js
 *.js.map
 *.d.ts
 .rpt2*/
