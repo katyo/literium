@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "declaration": true,
+    "removeComments": false,
+    "noUnusedLocals": true,
+    "importHelpers": true,
+    "lib": [
+      "dom",
+      "es5",
+      "es2015.core"
+    ]
+  },
+  "files": [
+    "src/md/utils.ts",
+    "src/md/rules.ts",
+    "src/md/parser.ts",
+    "src/md/block/token.ts",
+    "src/md/block/rules.ts",
+    "src/md/block/lexer.ts",
+    "src/md/inline/token.ts",
+    "src/md/inline/rules.ts",
+    "src/md/inline/lexer.ts",
+    "src/md/render/utils.ts",
+    "src/md/render/vdom.ts",
+    "src/md/render/ast.ts",
+    "src/markup.ts",
+    "src/index.ts"
+  ]
+}
