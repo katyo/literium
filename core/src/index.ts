@@ -7,3 +7,4 @@ export * from './util';
 export * from './page';
 export * from './keys';
 export * from './debug';
+export * from './bench';
