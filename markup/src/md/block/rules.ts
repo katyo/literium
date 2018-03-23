@@ -104,8 +104,21 @@ export const gfm_paragraph = replace(paragraph, '',
         + list.source.replace('\\1', '\\3') + '|']);
 
 export const block_gfm: Rules = {
-    ...block_normal,
+    newline,
+    codeblock,
     fences,
+    hr,
+    heading,
+    nptable: noop,
+    def,
+    table: noop,
+    lheading,
+    textblock,
+    bullet,
+    item,
+    list,
+    quote,
+    html,
     paragraph: gfm_paragraph
 };
 
@@ -117,4 +130,21 @@ export const nptable = /^ *(\S.*\|.*)\n *([-:]+ *\|[-| :]*)\n((?:.*\|.*(?:\n|$))
 
 export const table = /^ *\|(.+)\n *\|( *[-:]+[-| :]*)\n((?: *\|.*(?:\n|$))*)\n*/;
 
-export const block_gfm_tables: Rules = { ...block_gfm, nptable, table };
+export const block_gfm_tables: Rules = {
+    newline,
+    codeblock,
+    fences,
+    hr,
+    heading,
+    nptable,
+    def,
+    table,
+    lheading,
+    textblock,
+    bullet,
+    item,
+    list,
+    quote,
+    html,
+    paragraph: gfm_paragraph
+};

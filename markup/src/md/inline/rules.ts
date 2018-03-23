@@ -77,9 +77,21 @@ export const inline_normal: Rules = {
  */
 
 export const inline_pedantic: Rules = {
-    ...inline_normal,
+    escape,
+    autolink,
+    url,
+    tag,
+    link,
+    reflink,
+    nolink,
     strong: /^__(?=\S)([\s\S]*?\S)__(?!_)|^\*\*(?=\S)([\s\S]*?\S)\*\*(?!\*)/,
-    em: /^_(?=\S)([\s\S]*?\S)_(?!_)|^\*(?=\S)([\s\S]*?\S)\*(?!\*)/
+    em: /^_(?=\S)([\s\S]*?\S)_(?!_)|^\*(?=\S)([\s\S]*?\S)\*(?!\*)/,
+    code,
+    br,
+    del,
+    text,
+    anchor,
+    math,
 };
 
 /**
@@ -87,13 +99,23 @@ export const inline_pedantic: Rules = {
  */
 
 export const inline_gfm: Rules = {
-    ...inline_normal,
     escape: replace(escape, '', ['])', '~|])']),
+    autolink,
     url: /^(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/,
+    tag,
+    link,
+    reflink,
+    nolink,
+    strong,
+    em,
+    code,
+    br,
     del: /^~~(?=\S)([\s\S]*?\S)~~/,
     text: replace(text, '',
         [']|', '~]|'],
-        ['|', '|https?://|'])
+        ['|', '|https?://|']),
+    anchor,
+    math,
 };
 
 /**
@@ -101,7 +123,22 @@ export const inline_gfm: Rules = {
  */
 
 export const inline_gfm_breaks: Rules = {
-    ...inline_gfm,
+    escape: replace(escape, '', ['])', '~|])']),
+    autolink,
+    url: /^(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/,
+    tag,
+    link,
+    reflink,
+    nolink,
+    strong,
+    em,
+    code,
     br: replace(br, '', ['{2,}', '*']),
-    text: replace(inline_gfm.text, '', ['{2,}', '*'])
+    del: /^~~(?=\S)([\s\S]*?\S)~~/,
+    text: replace(text, '',
+        [']|', '~]|'],
+        ['|', '|https?://|'],
+        ['{2,}', '*']),
+    anchor,
+    math,
 };
