@@ -1,1 +1,6 @@
+/* -*- mode: sass -*- */
 @import "cutestrap.scss";
+
+pre > code {
+  overflow: auto;
+}
