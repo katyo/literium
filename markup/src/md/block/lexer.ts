@@ -90,6 +90,29 @@ function token<Type>(lexer: BlockLexer<Type>, links: Links, headings: Headings |
 
     const inline = (src: string) => inlineLex(ilexer, src, links);
 
+    const outHeading = (level: number, anchor: string, text: string) => {
+        if (headings) headings.push({ level, anchor, text });
+        out({ $: BlockTag.Heading, n: level, a: anchor, _: inline(text) });
+    };
+
+    const outTable = (header: string, align: string, cells: string) => {
+        out({
+            $: BlockTag.Table,
+            h: header.replace(/^ *| *\| *$/g, '').split(/ *\| */).map(inline),
+            a: align.replace(/^ *|\| *$/g, '').split(/ *\| */)
+                .map(hint => /^ *-+: *$/.test(hint) ? Align.Right :
+                    /^ *:-+: *$/.test(hint) ? Align.Center :
+                        /^ *:-+ *$/.test(hint) ? Align.Left :
+                            Align.None),
+            //_: cells.replace(/\n$/, '').split('\n')
+            //    .map(row => row.split(/ *\| */)
+            //.map(inline))
+            _: cells.replace(/(?: *\| *)?\n$/, '').split('\n')
+                .map(row => row.replace(/^ *\| *| *\| *$/g, '').split(/ *\| */)
+                    .map(inline))
+        });
+    };
+
     src = src.replace(/^ +$/gm, '');
 
     let next: boolean,
@@ -133,47 +156,21 @@ function token<Type>(lexer: BlockLexer<Type>, links: Links, headings: Headings |
         // heading
         if (cap = rules.heading.exec(src)) {
             fwd();
-            out({ $: BlockTag.Heading, n: cap[1].length, a: cap[2], _: inline(cap[3]) });
+            outHeading(cap[1].length, cap[2], cap[3]);
             continue;
         }
 
         // table no leading pipe (gfm)
         if (top && (cap = rules.nptable.exec(src))) {
             fwd();
-
-            out({
-                $: BlockTag.Table,
-                h: cap[1].replace(/^ *| *\| *$/g, '').split(/ *\| */)
-                    .map(inline),
-                a: cap[2].replace(/^ *|\| *$/g, '').split(/ *\| */)
-                    .map(hint => /^ *-+: *$/.test(hint) ? Align.Right :
-                        /^ *:-+: *$/.test(hint) ? Align.Center :
-                            /^ *:-+ *$/.test(hint) ? Align.Left :
-                                Align.None),
-                _: cap[3].replace(/\n$/, '').split('\n')
-                    .map(row => row.split(/ *\| */)
-                        .map(inline))
-            });
-
+            outTable(cap[1], cap[2], cap[3]);
             continue;
         }
 
         // lheading
         if (cap = rules.lheading.exec(src)) {
             fwd();
-            if (headings) {
-                headings.push({
-                    level: cap[3] == '=' ? 1 : 2,
-                    anchor: cap[1],
-                    text: cap[2],
-                });
-            }
-            out({
-                $: BlockTag.Heading,
-                n: cap[3] == '=' ? 1 : 2,
-                a: cap[1],
-                _: inline(cap[2])
-            });
+            outHeading(cap[3] == '=' ? 1 : 2, cap[1], cap[2]);
             continue;
         }
 
@@ -253,7 +250,7 @@ function token<Type>(lexer: BlockLexer<Type>, links: Links, headings: Headings |
                 // Recurse.
                 items.push({ l: loose, _: token(lexer, links, headings, item, false, bq) });
             }
-            console.log(bull);
+
             out(bull.length > 1 ? {
                 $: BlockTag.OrdList,
                 m: marker(bull) || Marker.Numer,
@@ -299,20 +296,7 @@ function token<Type>(lexer: BlockLexer<Type>, links: Links, headings: Headings |
         if (top && (cap = rules.table.exec(src))) {
             fwd();
 
-            out({
-                $: BlockTag.Table,
-                h: cap[1].replace(/^ *| *\| *$/g, '').split(/ *\| */)
-                    .map(inline),
-                a: cap[2].replace(/^ *|\| *$/g, '').split(/ *\| */)
-                    .map(hint => /^ *-+: *$/.test(hint) ? Align.Right :
-                        /^ *:-+: *$/.test(hint) ? Align.Center :
-                            /^ *:-+ *$/.test(hint) ? Align.Left :
-                                Align.None),
-                _: cap[3].replace(/(?: *\| *)?\n$/, '').split('\n')
-                    .map(row => row.replace(/^ *\| *| *\| *$/g, '').split(/ *\| */)
-                        .map(inline))
-            });
-
+            outTable(cap[1], cap[2], cap[3]);
             continue;
         }
 
