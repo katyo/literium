@@ -11,7 +11,7 @@ export interface Options {
 }
 
 export interface Render<Token, Type> {
-    (token: Token): Type | Type[];
+    (token: Token): Type;
 }
 
 export interface Renderer<Type> {
@@ -54,6 +54,6 @@ export function init<Type>(rules: RuleSet, render: Renderer<Type>, options: Opti
     };
 }
 
-export function parse<Type>(parser: Parser<Type>, src: string, links: Links, headings?: Headings): Type[] {
+export function parse<Type>(parser: Parser<Type>, src: string, links: Links, headings?: Headings): Type {
     return blockLex(parser.blexer, src, links, headings);
 }

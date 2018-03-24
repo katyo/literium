@@ -1,4 +1,5 @@
 export const enum BlockTag {
+    Chunks,
     Heading,
     Paragraph,
     Quote,
@@ -19,19 +20,20 @@ export const enum Align {
     Right,
 }
 
-export type BlockChildren<Type> = Type[];
+export type BlockInlines<Type> = Type;
+export type BlockChildren<Type> = BlockToken<Type>[];
 
 export interface BlockHeading<Type> {
     $: BlockTag.Heading,
     n: number;
     a: string;
-    _: BlockChildren<Type>;
+    _: BlockInlines<Type>;
 }
 
 export interface BlockParagraph<Type> {
     $: BlockTag.Paragraph,
     p?: true; // preformatted
-    _: BlockChildren<Type>;
+    _: BlockInlines<Type>;
 }
 
 export interface BlockQuote<Type> {
@@ -72,9 +74,9 @@ export const enum Bullet {
 
 export interface BlockTable<Type> {
     $: BlockTag.Table;
-    h: BlockChildren<Type>[];
+    h: BlockInlines<Type>[];
     a: Align[];
-    _: BlockChildren<Type>[][];
+    _: BlockInlines<Type>[][];
 }
 
 export interface BlockSpace {
@@ -90,7 +92,7 @@ export interface BlockCode {
 
 export interface BlockText<Type> {
     $: BlockTag.Text;
-    _: BlockChildren<Type>;
+    _: BlockInlines<Type>;
 }
 
 export interface BlockHtml {
@@ -99,6 +101,11 @@ export interface BlockHtml {
     _: string;
 }
 
+export interface BlockChunks<Type> {
+    $: BlockTag.Chunks;
+    _: Type[];
+}
+
 export type PureBlockToken<Type> = BlockHeading<Type> | BlockParagraph<Type> | BlockQuote<Type> | BlockList<Type> | BlockOrdList<Type> | BlockTable<Type> | BlockCode | BlockSpace | BlockHtml;
 
-export type BlockToken<Type> = PureBlockToken<Type> | BlockText<Type>;
+export type BlockToken<Type> = PureBlockToken<Type> | BlockText<Type> | BlockChunks<Type>;

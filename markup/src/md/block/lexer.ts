@@ -8,6 +8,7 @@
 
 import { append } from '../utils';
 import { BlockTag, Align, BlockToken, PureBlockToken, BlockItem, Marker, Bullet } from './token';
+import * as Token from './token';
 import { InlineLexer, inlineLex } from '../inline/lexer';
 import { Options, Links, Headings, Rules, Render } from '../parser';
 
@@ -30,12 +31,47 @@ export function blockInit<Type>(rules: Rules, render: Render<BlockToken<Type>, T
  * Preprocessing
  */
 
-export function blockLex<Type>(lexer: BlockLexer<Type>, src: string, links: Links, headings?: Headings): Type[] {
-    return token(lexer, links, headings, src
-        .replace(/\r\n|\r/g, '\n')
-        .replace(/\t/g, '    ')
-        .replace(/\u00a0/g, ' ')
-        .replace(/\u2424/g, '\n'), true);
+export function blockLex<Type>(lexer: BlockLexer<Type>, src: string, links: Links, headings?: Headings): Type {
+    return lexer.render({
+        $: BlockTag.Chunks,
+        _: renderTokens(lexer, links,
+            token(lexer, links, headings, src
+                .replace(/\r\n|\r/g, '\n')
+                .replace(/\t/g, '    ')
+                .replace(/\u00a0/g, ' ')
+                .replace(/\u2424/g, '\n'), true))
+            .map(lexer.render)
+    });
+}
+
+function renderTokens<Type>(lexer: BlockLexer<Type>, links: Links, tokens: BlockToken<string>[]): BlockToken<Type>[] {
+    const inline = (src: string) => inlineLex(lexer.ilexer, src, links);
+
+    return tokens.map(token => {
+        switch (token.$) {
+            case BlockTag.Heading:
+            case BlockTag.Paragraph:
+            case BlockTag.Text:
+                (token as any as Token.BlockText<Type>)._ = inline(token._);
+                return token as any as Token.BlockText<Type>;
+            case BlockTag.Quote:
+                (token as any as Token.BlockQuote<Type>)._ = renderTokens(lexer, links, token._);
+                return token as any as Token.BlockQuote<Type>;
+            case BlockTag.List:
+            case BlockTag.OrdList:
+                (token as any as Token.BlockList<Type>)._ = token._.map(item => {
+                    (item as any as Token.BlockItem<Type>)._ = renderTokens(lexer, links, item._);
+                    return (item as any as Token.BlockItem<Type>);
+                });
+                return token as any as Token.BlockList<Type>;
+            case BlockTag.Table:
+                (token as any as Token.BlockTable<Type>).h = token.h.map(inline);
+                (token as any as Token.BlockTable<Type>)._ = token._.map(row => row.map(inline));
+                return token as any as Token.BlockTable<Type>;
+            default:
+                return token as BlockToken<Type>;
+        }
+    });
 }
 
 function marker(mark: string): Marker | void {
@@ -58,14 +94,14 @@ const bullet: Record<string, Bullet> = {
  * Lexing
  */
 
-function token<Type>(lexer: BlockLexer<Type>, links: Links, headings: Headings | void, src: string, top: boolean, bq?: true): Type[] {
-    const { rules, render, ilexer, options } = lexer;
+function token<Type>(lexer: BlockLexer<Type>, links: Links, headings: Headings | void, src: string, top: boolean, bq?: true): BlockToken<string>[] {
+    const { rules, options } = lexer;
 
-    const tokens: Type[] = [];
-    let text_tokens: Type[] | void;
+    const tokens: BlockToken<string>[] = [];
+    let text_tokens: string | void;
 
-    const outToken = (token: BlockToken<Type>) => {
-        append(tokens, render(token));
+    const outToken = (token: BlockToken<string>) => {
+        append(tokens, token);
     };
 
     const flushText = () => {
@@ -75,41 +111,37 @@ function token<Type>(lexer: BlockLexer<Type>, links: Links, headings: Headings |
         }
     };
 
-    const out = (token: PureBlockToken<Type>) => {
+    const out = (token: PureBlockToken<string>) => {
         flushText();
-        append(tokens, render(token));
+        outToken(token);
     };
 
-    const outText = (tokens: Type[]) => {
+    const outText = (text: string) => {
         if (text_tokens !== undefined) {
-            append(text_tokens, tokens);
+            text_tokens += `\n${text}`;
         } else {
-            text_tokens = tokens;
+            text_tokens = text;
         }
     };
 
-    const inline = (src: string) => inlineLex(ilexer, src, links);
-
     const outHeading = (level: number, anchor: string, text: string) => {
         if (headings) headings.push({ level, anchor, text });
-        out({ $: BlockTag.Heading, n: level, a: anchor, _: inline(text) });
+        out({ $: BlockTag.Heading, n: level, a: anchor, _: text });
     };
 
     const outTable = (header: string, align: string, cells: string) => {
         out({
             $: BlockTag.Table,
-            h: header.replace(/^ *| *\| *$/g, '').split(/ *\| */).map(inline),
+            h: header.replace(/^ *| *\| *$/g, '').split(/ *\| */),
             a: align.replace(/^ *|\| *$/g, '').split(/ *\| */)
                 .map(hint => /^ *-+: *$/.test(hint) ? Align.Right :
                     /^ *:-+: *$/.test(hint) ? Align.Center :
                         /^ *:-+ *$/.test(hint) ? Align.Left :
                             Align.None),
             //_: cells.replace(/\n$/, '').split('\n')
-            //    .map(row => row.split(/ *\| */)
-            //.map(inline))
+            //    .map(row => row.split(/ *\| */))
             _: cells.replace(/(?: *\| *)?\n$/, '').split('\n')
-                .map(row => row.replace(/^ *\| *| *\| *$/g, '').split(/ *\| */)
-                    .map(inline))
+                .map(row => row.replace(/^ *\| *| *\| *$/g, '').split(/ *\| */))
         });
     };
 
@@ -209,7 +241,7 @@ function token<Type>(lexer: BlockLexer<Type>, links: Links, headings: Headings |
             l = cap.length;
             i = 0;
 
-            const items: BlockItem<Type>[] = [];
+            const items: BlockItem<string>[] = [];
 
             for (; i < l; i++) {
                 item = cap[i];
@@ -272,7 +304,7 @@ function token<Type>(lexer: BlockLexer<Type>, links: Links, headings: Headings |
             out(options.sanitize ? {
                 $: BlockTag.Paragraph,
                 p: pre,
-                _: inline(cap[0])
+                _: cap[0]
             } : {
                     $: BlockTag.Html,
                     p: pre,
@@ -305,9 +337,9 @@ function token<Type>(lexer: BlockLexer<Type>, links: Links, headings: Headings |
             fwd();
             out({
                 $: BlockTag.Paragraph,
-                _: inline(cap[1].charAt(cap[1].length - 1) == '\n'
+                _: cap[1].charAt(cap[1].length - 1) == '\n'
                     ? cap[1].slice(0, -1)
-                    : cap[1])
+                    : cap[1]
             });
             continue;
         }
@@ -316,7 +348,7 @@ function token<Type>(lexer: BlockLexer<Type>, links: Links, headings: Headings |
         if (cap = rules.textblock.exec(src)) {
             // Top-level should never reach here.
             fwd();
-            outText(inline(cap[0]));
+            outText(cap[0]);
             continue;
         }
 

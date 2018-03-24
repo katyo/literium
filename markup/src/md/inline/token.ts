@@ -1,4 +1,5 @@
 export const enum InlineTag {
+    Chunks,
     Link,
     Image,
     Anchor,
@@ -11,7 +12,7 @@ export const enum InlineTag {
     Math,
 }
 
-export type Children<Type> = Type[];
+export type Children<Type> = Type;
 
 export interface InlineLink<Type> {
     $: InlineTag.Link;
@@ -50,6 +51,11 @@ export interface InlineMath {
     _: string;
 }
 
+export interface InlineChunks<Type> {
+    $: InlineTag.Chunks;
+    _: Type[];
+}
+
 export type TaggedInlineToken<Type> = InlineLink<Type> | InlineImage | InlinePhrase<Type> | InlineAnchor | InlineBreak | InlineMath;
 
-export type InlineToken<Type> = string | TaggedInlineToken<Type>;
+export type InlineToken<Type> = string | InlineChunks<Type> | TaggedInlineToken<Type>;

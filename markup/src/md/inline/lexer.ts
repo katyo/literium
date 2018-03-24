@@ -28,7 +28,7 @@ export function inlineInit<Type>(rules: Rules, render: Render<InlineToken<Type>,
 /**
  * Lexing/Compiling
  */
-export function inlineLex<Type>(lexer: InlineLexer<Type>, src: string, links: Links): Type[] {
+export function inlineLex<Type>(lexer: InlineLexer<Type>, src: string, links: Links): Type {
     const { rules, render, options } = lexer;
 
     const nodes: Type[] = [];
@@ -214,5 +214,5 @@ export function inlineLex<Type>(lexer: InlineLexer<Type>, src: string, links: Li
 
     flushText();
 
-    return nodes;
+    return render({ $: InlineTag.Chunks, _: nodes });
 }
