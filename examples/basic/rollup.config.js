@@ -42,7 +42,10 @@ export default {
             options: {
                 outputStyle: 'compressed',
                 sourceMap: true,
-                includePaths: ['node_modules/cutestrap/dist/scss']
+                includePaths: [
+                    'node_modules/cutestrap/dist/scss',
+                    'node_modules/literium-highlight/styles'
+                ]
             }
         }),
         replace({

@@ -1,5 +1,10 @@
 /* -*- mode: sass -*- */
-@import "cutestrap.scss";
+@import "cutestrap";
+@import "docco";
+
+.markup-preview {
+  overflow: auto;
+}
 
 pre > code {
   overflow: auto;
