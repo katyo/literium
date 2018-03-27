@@ -6,6 +6,11 @@
   overflow: auto;
 }
 
+.markup-editor {
+  white-space: pre-wrap;
+  overflow: auto;
+}
+
 pre > code {
   overflow: auto;
 }

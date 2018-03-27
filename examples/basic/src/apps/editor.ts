@@ -1,6 +1,9 @@
-import { VNode, VNodeChildren, Component, Send, h, Keyed, vnode_log, bench } from 'literium';
+import { VNode, VData, VNodeChildren, Component, Send, h, Keyed, keyed, send_wrap, vnode_log, bench } from 'literium';
 import { initMarkup, gfm_tables_breaks, vdomRender } from 'literium-markup';
-import { highlightVDomRender } from './highlight';
+import { highlightVDomRender } from './editor/highlight';
+import * as Editor from './editor/common';
+import * as SimpleEditor from './editor/simple';
+import * as AdvancedEditor from './editor/advanced';
 
 import example_md from './sample.md';
 
@@ -9,13 +12,14 @@ const benchmark = bench();
 const renderMarkup = initMarkup(gfm_tables_breaks, highlightVDomRender(vdomRender));
 
 export interface State {
-    source: string;
+    editor: Editor.State;
+    advanced: boolean;
     markup: VNodeChildren;
     gentime: number;
     scroll: number;
 };
 
-export type Event = Keyed<'input', string> | Keyed<'scroll', number>;
+export type Event = Keyed<'editor', Editor.Event> | Keyed<'scroll', number> | Keyed<'set-advanced', boolean>;
 
 function create(): State {
     const source = example_md;
@@ -23,7 +27,8 @@ function create(): State {
     const markup = renderMarkup(source);
 
     return {
-        source,
+        editor: Editor.update(Editor.create(), keyed('change' as 'change', source)),
+        advanced: false,
         markup,
         gentime: bench_markup(),
         scroll: 0,
@@ -33,17 +38,25 @@ function create(): State {
 function update(state: State, event: Event): State {
     console.log(event);
     switch (event.$) {
-        case 'input': {
-            const source = event._;
-            const bench_markup = benchmark.run();
-            const markup = renderMarkup(source);
+        case 'editor':
+            if (event._.$ == 'change') {
+                const source = event._._;
+                const bench_markup = benchmark.run();
+                const markup = renderMarkup(source);
+                return {
+                    ...state,
+                    editor: Editor.update(state.editor, event._),
+                    markup, gentime: bench_markup()
+                };
+            }
             return {
                 ...state,
-                source,
-                markup, gentime: bench_markup()
+                editor: Editor.update(state.editor, event._)
             };
-        }
-        case 'scroll': return { ...state, scroll: event._ };
+        case 'set-advanced':
+            return { ...state, advanced: event._ };
+        case 'scroll':
+            return { ...state, scroll: event._ };
     }
     return state;
 }
@@ -56,25 +69,46 @@ function setScrollHeight(elm: HTMLElement, scroll: number) {
     elm.scrollTop = Math.round(scroll * (elm.scrollHeight - elm.clientHeight));
 }
 
+function wrapEditor(state: State, send: Send<Event>, vnode: VNode): VNode {
+    const data = vnode.data as VData;
+    const on = data.on || (data.on = {});
+    const hook = data.hook || (data.hook = {});
+    const { postpatch } = hook;
+
+    hook.postpatch = (_, vnode) => {
+        if (postpatch) postpatch(_, vnode);
+        setScrollHeight(vnode.elm as HTMLElement, state.scroll);
+    };
+
+    on.scroll = (_, vnode) => {
+        send({ $: 'scroll', _: getScrollHeight(vnode.elm as HTMLElement) });
+    };
+
+    data.style = { height: '250px' };
+
+    return vnode;
+}
+
+const simple_editor_send_wrap = send_wrap('editor');
+
 function render(state: State, send: Send<Event>): VNode {
     return vnode_log(h('div.wrapper-small', [
-        h('div', h('label', { class: { textfield: true } }, [
-            h('textarea', {
-                attrs: { rows: 8 }, props: { value: state.source },
-                hook: { update: (_, vnode) => { setScrollHeight(vnode.elm as HTMLElement, state.scroll); } },
-                on: {
-                    input: e => { send({ $: 'input', _: (e.target as HTMLInputElement).value }); },
-                    scroll: e => { send({ $: 'scroll', _: getScrollHeight(e.target as HTMLElement) }); },
-                }
-            }),
-            //h('span', { class: { textfield__label: true } }, `Markdown source (${state.gentime.toPrecision(3)} mS, ${(1000 / state.gentime).toPrecision(3)} FPS)`)
-        ])),
+        h('div', [
+            h('label', { class: { checkbox: true } }, [
+                h('input', {
+                    attrs: { type: 'checkbox', checked: state.advanced },
+                    props: { checked: state.advanced },
+                    on: { click: (_, vnode) => { send(keyed('set-advanced' as 'set-advanced', (vnode.elm as HTMLInputElement).checked)); } }
+                }),
+                h('span', { class: { checkbox__label: true } }, 'Advanced editor')
+            ]),
+            h('label', { class: { textfield: true } }, [
+                //h('span', { class: { textfield__label: true } }, `Markdown source (${state.gentime.toPrecision(3)} mS, ${(1000 / state.gentime).toPrecision(3)} FPS)`)
+                wrapEditor(state, send, (state.advanced ? AdvancedEditor.render : SimpleEditor.render)(state.editor, simple_editor_send_wrap(send))),
+            ])
+        ]),
         h('span', `Preview (${state.gentime.toPrecision(3)} mS, ${(1000 / state.gentime).toPrecision(3)} FPS)`),
-        h('div.markup-preview', {
-            style: { height: '250px' },
-            hook: { update: (_, vnode) => { setScrollHeight(vnode.elm as HTMLElement, state.scroll); } },
-            on: { scroll: e => { send({ $: 'scroll', _: getScrollHeight(e.target as HTMLElement) }); } },
-        }, state.markup),
+        wrapEditor(state, send, h('div.markup-preview', state.markup)),
     ]));
 }
 
