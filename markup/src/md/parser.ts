@@ -10,6 +10,13 @@ export interface Options {
     sanitize: boolean;
 }
 
+export const defaults: Options = {
+    pedantic: true,
+    smartLists: true,
+    smartypants: true,
+    sanitize: true
+};
+
 export interface Render<Token, Type> {
     (token: Token): Type;
 }
@@ -47,7 +54,8 @@ export interface Parser<Type> {
     blexer: BlockLexer<Type>;
 }
 
-export function init<Type>(rules: RuleSet, render: Renderer<Type>, options: Options): Parser<Type> {
+export function init<Type>(rules: RuleSet, render: Renderer<Type>, custom_options: Partial<Options> = {}): Parser<Type> {
+    const options = { ...defaults, ...custom_options };
     const ilexer = inlineInit(rules.inline, render.inline, options);
     return {
         blexer: blockInit(rules.block, render.block, ilexer, options),

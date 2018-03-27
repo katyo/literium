@@ -1,39 +1,14 @@
 import { VNodeChildren } from 'literium';
-import { RuleSet, Renderer, Options, Links, Headings, Parser, init, parse } from './md/parser';
+import { RuleSet, Renderer, Options, Links, Headings, init, parse } from './md/parser';
 
-export interface State {
-    parser: Parser<VNodeChildren>;
-    markup: VNodeChildren;
-    links: Links;
-    headings: Headings;
+export interface Markup {
+    (src: string, headings?: Headings): VNodeChildren;
 }
 
-export interface UpdateSource {
-    $: 'update';
-    _: string;
-}
-
-export type Event = UpdateSource;
-
-export function create(rules: RuleSet, render: Renderer<VNodeChildren>, options: Options): State {
-    return {
-        parser: init(rules, render, options),
-        markup: [],
-        links: {},
-        headings: [],
+export function initMarkup(rules: RuleSet, render: Renderer<VNodeChildren>, options?: Options): Markup {
+    const parser = init(rules, render, options);
+    return (src: string, headings?: Headings) => {
+        const links: Links = {};
+        return parse(parser, src, links, headings);
     };
-}
-
-export function update(state: State, event: Event): State {
-    switch (event.$) {
-        case 'update':
-            const links: Links = {};
-            const headings: Headings = [];
-            const markup = parse(state.parser, event._, links, headings);
-            return { ...state, markup, links, headings };
-    }
-}
-
-export function render(state: State): VNodeChildren {
-    return state.markup;
 }
