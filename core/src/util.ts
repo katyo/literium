@@ -5,11 +5,12 @@ export interface HasId { id: number; }
 export interface HasName { name: string; }
 
 export function identity<Value>(_: Value): Value { return _; }
+
 export function dummy() { }
 
 export interface Keyed<Key, Value> { $: Key; _: Value; }
 
-export function keyed_new<Key, Type>($: Key, _: Type): Keyed<Key, Type> {
+export function keyed<Key, Type>($: Key, _: Type): Keyed<Key, Type> {
     return { $, _ };
 }
 
