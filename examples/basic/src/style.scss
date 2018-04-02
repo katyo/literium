@@ -1,6 +1,23 @@
-/* -*- mode: sass -*- */
+/* -*- mode: sass; mode: rainbow; -*- */
+
+$primary:       #3F51B5;
+$primary-dark:  darken($primary, 10%);
+$accent:        #FF4081;
+
+$link:          #4076D4;
+$link--visited: #455A64;
+$link--hover:   lighten($link, 10%);
+$link--active:  darken($link, 10%);
+
 @import "cutestrap/dist/scss/cutestrap";
+
 @import "literium-highlight/styles/docco";
+
+:focus + .textfield__label,
+:focus + .checkbox__label,
+:focus + .radio__label {
+  color: $primary;
+}
 
 .markup-preview {
   overflow: auto;
@@ -8,15 +25,42 @@
 
 .markup-editor {
   background: transparent;
+  border: 1px solid $gray3;
+  border-radius: 2px;
+  box-sizing: border-box;
+  padding: 1.8rem .5rem .6rem;
+  position: relative;
+  width: 100%;
+  z-index: $z-index-1;
   color: $gray1;
   white-space: pre-wrap;
   overflow: auto;
 }
 
 .hljs-code {
-  color: $primary;
+  color: darken($accent, 25%);
+  line-height: 0.5rem;
+}
+
+.hljs-section {
+  font-size: $font-size--large;
+}
+
+pre {
+  background: inherit;
 }
 
 pre > code {
   overflow: auto;
+}
+
+table {
+  th {
+    font-weight: 600;
+  }
+
+  th, td {
+    border-bottom: 1px solid $gray4;
+     padding: 0 1.2rem;
+  }
 }
