@@ -1,3 +1,4 @@
 export * from './sched';
 export * from './store';
-export * from './server';
+export * from './location';
+export * from './language';

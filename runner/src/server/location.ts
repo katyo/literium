@@ -1,4 +1,4 @@
-import { Nav, SetPath } from './location';
+import { Nav, SetPath } from '../location';
 import { IncomingMessage, ServerResponse } from 'http';
 
 export function getBase({ headers: { host } }: IncomingMessage): string {

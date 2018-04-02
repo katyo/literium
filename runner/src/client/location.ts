@@ -1,4 +1,4 @@
-import { Nav, SetPath } from './location';
+import { Nav, SetPath } from '../location';
 
 const urlRegExp = /^([^:]+:)?(\/\/)?(?:([^@:\/\?#]*)@)?(([^:\/\?#]+)(?:\:(\d+))?)?(([\/]?[^\?#]*)?(\?[^#]*)?)?(#.*)?$/;
 
