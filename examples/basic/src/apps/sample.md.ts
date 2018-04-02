@@ -40,6 +40,51 @@ Paragraphs must be separated by a blank line. Basic formatting of *italics* and 
 
 You can also make \`inline code\` to add code into other things.
 
+### GFM fences
+
+\`\`\`ts
+export interface Pair<K, V> {
+    key: K;
+    val: V;
+}
+
+export function pair<K, V>(key: K, val: V): Pair<K, V> {
+    return { key, val };
+}
+
+export function pair_ser<K, V>(pair: Pair<K, V>): Result<string> {
+    try {
+        return result_ok(JSON.stringify(pair));
+    } catch {
+        return result_err('Unable to convert Pair to JSON');
+    }
+}
+
+export function pair_de<K, V>(src: string): Result<Pair<K, V>> {
+    let obj;
+
+    try {
+        obj = JSON.parse(pair);
+    } catch {
+        return result_err('Unable to parse JSON');
+    }
+
+    if (typeof obj != 'object') {
+        return result_err('JSON value isnt an object');
+    }
+
+    if (!('key' in obj)) {
+        return result_err('Field key not found in object');
+    }
+
+    if (!('val' in obj)) {
+        return result_err('Field val not found in object');
+    }
+
+    return result_ok(obj as Pair<K, V>);
+}
+\`\`\`
+
 ### Quote
 
 > Here is a quote. What this is should be self explanatory. Quotes are automatically indented when they are used.
