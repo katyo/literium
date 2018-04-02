@@ -51,7 +51,7 @@ function resource_check(path: string): string | void {
     return resource_types[extname(path)];
 }
 
-import { init } from 'literium-runner/server';
+import { init, hasJs } from 'literium-runner/server';
 import { main } from './main';
 
 const render = init();
@@ -81,7 +81,7 @@ function handler(req: IncomingMessage, res: ServerResponse) {
                     return;
                 }
             } else {
-                render(main, html => {
+                render(main(hasJs(req)), html => {
                     res.writeHead(200, "OK", { "Content-Type": "text/html" });
                     res.end(html);
                 });
