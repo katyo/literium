@@ -1,5 +1,4 @@
-export default `
-# An exhibit of Markdown
+export default `# An exhibit of Markdown
 
 This note demonstrates some of what [Markdown][1] is capable of doing.
 
@@ -40,7 +39,7 @@ Paragraphs must be separated by a blank line. Basic formatting of *italics* and 
 
 You can also make \`inline code\` to add code into other things.
 
-### GFM fences
+### Fence block
 
 \`\`\`ts
 export interface Pair<K, V> {
@@ -120,6 +119,15 @@ It's sometimes handy for breaking things up.
 ## Images
 
 Markdown can also contain images. I'll need to add something here sometime.
+
+![Image of YaktoCat](https://octodex.github.com/images/yaktocat.png)
+
+## Tables
+
+First Header | Second Header
+------------ | -------------
+Content from cell 1 | Content from cell 2
+Content in the first column | Content in the second column
 
 ## Finally
 

@@ -69,15 +69,20 @@ function setScrollHeight(elm: HTMLElement, scroll: number) {
     elm.scrollTop = Math.round(scroll * (elm.scrollHeight - elm.clientHeight));
 }
 
-function wrapEditor(state: State, send: Send<Event>, vnode: VNode): VNode {
+function wrapContent(state: State, send: Send<Event>, vnode: VNode): VNode {
     const data = vnode.data as VData;
     const on = data.on || (data.on = {});
     const hook = data.hook || (data.hook = {});
-    const { postpatch } = hook;
+    const { insert, update } = hook;
     const { scroll } = on;
 
-    hook.postpatch = (_, vnode) => {
-        if (postpatch) postpatch(_, vnode);
+    hook.insert = (vnode) => {
+        if (insert) insert(vnode);
+        setScrollHeight(vnode.elm as HTMLElement, state.scroll);
+    };
+
+    hook.update = (_, vnode) => {
+        if (update) update(_, vnode);
         setScrollHeight(vnode.elm as HTMLElement, state.scroll);
     };
 
@@ -94,7 +99,7 @@ function wrapEditor(state: State, send: Send<Event>, vnode: VNode): VNode {
 const simple_editor_send_wrap = send_wrap('editor');
 
 function render(state: State, send: Send<Event>): VNode {
-    return vnode_log(h('div.wrapper-small', [
+    return h('div.wrapper-small', [
         h('div', [
             h('label', { class: { checkbox: true } }, [
                 h('input', {
@@ -106,12 +111,12 @@ function render(state: State, send: Send<Event>): VNode {
             ]),
             h('label', { class: { textfield: true } }, [
                 //h('span', { class: { textfield__label: true } }, `Markdown source (${state.gentime.toPrecision(3)} mS, ${(1000 / state.gentime).toPrecision(3)} FPS)`)
-                wrapEditor(state, send, (state.advanced ? AdvancedEditor.render : SimpleEditor.render)(state.editor, simple_editor_send_wrap(send))),
+                vnode_log(wrapContent(state, send, (state.advanced ? AdvancedEditor.render : SimpleEditor.render)(state.editor, simple_editor_send_wrap(send)))),
             ])
         ]),
         h('span', `Preview (${state.gentime.toPrecision(3)} mS, ${(1000 / state.gentime).toPrecision(3)} FPS)`),
-        wrapEditor(state, send, h('div.markup-preview', state.markup)),
-    ]));
+        wrapContent(state, send, h('div.markup-preview', state.markup)),
+    ]);
 }
 
 const app: Component<State, Event> = { create, update, render };

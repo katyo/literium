@@ -1,18 +1,26 @@
-import { VNode, Send, either_a, either_b, h } from 'literium';
+import { VNode, Send, either_a, either_b, h, keyed } from 'literium';
 import { State, Event, Selection } from './common';
 
 export function render(state: State, send: Send<Event>): VNode {
     return h('textarea', {
-        //attrs: { rows: 8 },
         props: {
             value: state.content,
             selectionStart: startSelection(state.selection),
             selectionEnd: endSelection(state.selection),
         },
         on: {
+            click: (event: MouseEvent, vnode: VNode) => {
+                sendSelection(state, vnode.elm as HTMLInputElement, send);
+            },
+            scroll: (event: MouseEvent, vnode: VNode) => {
+                sendSelection(state, vnode.elm as HTMLInputElement, send);
+            },
+            focus: (event, vnode: VNode) => {
+                setSelection(vnode.elm as HTMLInputElement, state.selection);
+            },
             input: (_, vnode) => {
                 send({ $: 'change', _: (vnode.elm as HTMLInputElement).value });
-                send({ $: 'select', _: getSelection(vnode.elm as HTMLInputElement) });
+                sendSelection(state, vnode.elm as HTMLInputElement, send);
             },
         }
     });
@@ -23,6 +31,15 @@ function getSelection(elm: HTMLInputElement): Selection {
     return selectionStart == selectionEnd ?
         either_a(selectionStart as number) :
         either_b([selectionStart, selectionEnd] as [number, number]);
+}
+
+function sendSelection(state: State, node: HTMLInputElement, send: Send<Event>) {
+    send(keyed('select' as 'select', getSelection(node)));
+}
+
+function setSelection(elm: HTMLInputElement, sel: Selection) {
+    elm.selectionStart = sel.$ ? sel._[0] : sel._;
+    elm.selectionEnd = sel.$ ? sel._[1] : sel._;
 }
 
 function startSelection(sel: Selection): number {

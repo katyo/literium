@@ -10,7 +10,8 @@ export function render(state: State, send: Send<Event>): VNode {
         style: { height: '250px' },
         attrs: { contenteditable: true },
         hook: {
-            postpatch: (_, vnode) => { setSelection(vnode.elm as HTMLElement, state.selection); }
+            insert: (vnode) => { setSelection(vnode.elm as HTMLElement, state.selection); },
+            update: (_, vnode) => { setSelection(vnode.elm as HTMLElement, state.selection); },
         },
         on: {
             click: (event: MouseEvent, vnode: VNode) => {

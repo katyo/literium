@@ -21,7 +21,11 @@ export function create(): State {
 export function update(state: State, event: Event): State {
     switch (event.$) {
         case 'change': return { ...state, content: event._ };
-        case 'select': return { ...state, selection: fixSelection(state, event._) };
+        case 'select': {
+            const selection = fixSelection(state, event._);
+            return equalSelection(state.selection, selection) ?
+                state : { ...state, selection };
+        }
     }
 }
 
