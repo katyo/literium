@@ -48,7 +48,7 @@
     "literium-runner": "^0.1.0",
     "raf-polyfill": "^1.0.0",
     "ts-node": "^5.0.1",
-    "typescript": "^2.6.2",
+    "typescript": "^2.8.1",
     "todomvc-app-css": "^2.1.0",
     "todomvc-common": "^1.0.4"
   }

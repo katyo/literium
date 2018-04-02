@@ -21,7 +21,7 @@ export function render(state: State, send: Send<Event>): VNode {
 function getSelection(elm: HTMLInputElement): Selection {
     const { selectionStart, selectionEnd } = elm;
     return selectionStart == selectionEnd ?
-        either_a(selectionStart) :
+        either_a(selectionStart as number) :
         either_b([selectionStart, selectionEnd] as [number, number]);
 }
 

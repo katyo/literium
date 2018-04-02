@@ -1,4 +1,4 @@
-export function getLangs({ navigator }: Window): string[] {
+export function getLangs({ navigator }: Window): ReadonlyArray<string> {
     const lang = navigator.language ||
         (navigator as any).browserLanguage ||
         (navigator as any).userLanguage ||

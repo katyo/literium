@@ -3,7 +3,7 @@ export interface Locale {
     title: string;
 }
 
-export function getLang(locales: Locale[], langs: string[]): string {
+export function getLang(locales: Locale[], langs: ReadonlyArray<string>): string {
     for (const lang of langs) {
         for (const { lang: code } of locales) {
             if (lang.slice(0, code.length) == code) {
