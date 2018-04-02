@@ -4,7 +4,7 @@ import nodeResolve from 'rollup-plugin-node-resolve';
 import make from 'rollup-plugin-make';
 import sourceMaps from 'rollup-plugin-sourcemaps';
 import typescript from 'rollup-plugin-typescript2';
-import sass from 'rollup-plugin-sass';
+import postcss from 'rollup-plugin-postcss';
 import uglify from 'rollup-plugin-uglify';
 import replace from 'rollup-plugin-replace';
 import gzip from 'rollup-plugin-gzip';
@@ -37,16 +37,15 @@ export default {
                 }
             }
         }),
-        sass({
-            output: true,
-            options: {
-                outputStyle: 'compressed',
-                sourceMap: true,
-                includePaths: [
-                    'node_modules/cutestrap/dist/scss',
-                    'node_modules/literium-highlight/styles'
-                ]
-            }
+        postcss({
+            extract: true,
+            sourceMap: true,
+            use: [['sass', {
+                includePaths: ['node_modules']
+            }]],
+            minimize: {
+                preset: ['advanced', { autoprefixer: { browsers: ['> 1%'] } }]
+            },
         }),
         replace({
             'process.env.npm_package_version': stringify(version),

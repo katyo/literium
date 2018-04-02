@@ -1,6 +1,6 @@
 /* -*- mode: sass -*- */
-@import "cutestrap";
-@import "docco";
+@import "cutestrap/dist/scss/cutestrap";
+@import "literium-highlight/styles/docco";
 
 .markup-preview {
   overflow: auto;
