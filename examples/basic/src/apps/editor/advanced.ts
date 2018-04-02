@@ -16,6 +16,9 @@ export function render(state: State, send: Send<Event>): VNode {
             click: (event: MouseEvent, vnode: VNode) => {
                 sendSelection(state, vnode.elm as HTMLElement, send);
             },
+            scroll: (event: MouseEvent, vnode: VNode) => {
+                sendSelection(state, vnode.elm as HTMLElement, send);
+            },
             keypress: (event: KeyboardEvent) => {
                 const char = getCharacter(event);
                 if (!hasSpecialKey(event) && char) {
@@ -111,7 +114,7 @@ function setSelection(root: HTMLElement, sel: Selection): void {
     const doc = root.ownerDocument;
     const csel = doc.getSelection();
 
-    let range = csel.getRangeAt(0);
+    let range = csel.rangeCount && csel.getRangeAt(0);
 
     if (!range) {
         range = doc.createRange();

@@ -7,8 +7,14 @@
 }
 
 .markup-editor {
+  background: transparent;
+  color: $gray1;
   white-space: pre-wrap;
   overflow: auto;
+}
+
+.hljs-code {
+  color: $primary;
 }
 
 pre > code {

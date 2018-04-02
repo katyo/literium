@@ -74,13 +74,15 @@ function wrapEditor(state: State, send: Send<Event>, vnode: VNode): VNode {
     const on = data.on || (data.on = {});
     const hook = data.hook || (data.hook = {});
     const { postpatch } = hook;
+    const { scroll } = on;
 
     hook.postpatch = (_, vnode) => {
         if (postpatch) postpatch(_, vnode);
         setScrollHeight(vnode.elm as HTMLElement, state.scroll);
     };
 
-    on.scroll = (_, vnode) => {
+    on.scroll = (e, vnode) => {
+        if (scroll) scroll(e, vnode);
         send({ $: 'scroll', _: getScrollHeight(vnode.elm as HTMLElement) });
     };
 
