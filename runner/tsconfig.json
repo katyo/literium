@@ -19,6 +19,7 @@
   "files": [
     "src/sched.ts",
     "src/store.ts",
+    "src/hasjs.ts",
     "src/index.ts",
     "src/client/runner.ts",
     "src/client/location.ts",
@@ -27,6 +28,7 @@
     "src/server/runner.ts",
     "src/server/location.ts",
     "src/server/language.ts",
+    "src/server/hasjs.ts",
     "src/server.ts"
   ]
 }
