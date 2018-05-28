@@ -2,14 +2,14 @@
 export interface PathArg<TypeMap> { [name: string]: keyof TypeMap }
 
 // map argument type
-export type ArgMap<TypeMap, Arg extends PathArg<TypeMap>> = {[Name in keyof Arg]: TypeMap[Arg[Name]]};
+export type ArgMap<TypeMap, Arg extends PathArg<TypeMap>> = { [Name in keyof Arg]: TypeMap[Arg[Name]] };
 
 export interface TypeImpl<Type> {
     parse(path: string): [Type, string] | void;
     build(arg: Type): string | void;
 }
 
-export type TypeApi<TypeMap> = {[Tag in keyof TypeMap]: TypeImpl<TypeMap[Tag]>};
+export type TypeApi<TypeMap> = { [Tag in keyof TypeMap]: TypeImpl<TypeMap[Tag]> };
 
 export interface Route<Args> {
     // match path to arguments
@@ -18,11 +18,7 @@ export interface Route<Args> {
     build(args: Args): string | void;
 }
 
-export type Routes<State> = {[Id in keyof State]: Route<State[Id]>};
-
-export function type_and<TypeMap1, TypeMap2>(api1: TypeApi<TypeMap1>, api2: TypeApi<TypeMap2>): TypeApi<TypeMap1 & TypeMap2> {
-    return { ...<any>api1, ...<any>api2 };
-}
+export type Routes<State> = { [Id in keyof State]: Route<State[Id]> };
 
 export function route_match<Args>(route: Route<Args>, path: string): Args | void {
     const res = route.parse(path);
@@ -63,12 +59,10 @@ export function route_def<Arg>(arg: Arg): Route<Arg> {
 
 export function route_arg<TypeMap, Arg extends PathArg<TypeMap>>(arg: Arg, type_api: TypeApi<TypeMap>): Route<ArgMap<TypeMap, Arg>> {
     let key: keyof Arg | void;
-    let tag: keyof TypeMap;
     let api: TypeImpl<TypeMap[keyof TypeMap]>;
     for (const fld in arg) {
         key = fld;
-        tag = arg[key];
-        api = type_api[tag];
+        api = type_api[arg[key]];
         break;
     }
     if (!key) throw "No arg";
@@ -172,6 +166,19 @@ export function router_build<State>(routes: Routes<State>, state: Partial<State>
             return route_build(routes[id], args as State[keyof State]);
         }
     }
+}
+
+export function type_mix<Api1, Api2>(api1: TypeApi<Api1>, api2: TypeApi<Api2>): TypeApi<Api1 & Api2>;
+export function type_mix<Api1, Api2, Api3>(api1: TypeApi<Api1>, api2: TypeApi<Api2>, api3: TypeApi<Api3>): TypeApi<Api1 & Api2 & Api3>;
+export function type_mix<Api1, Api2, Api3, Api4>(api1: TypeApi<Api1>, api2: TypeApi<Api2>, api3: TypeApi<Api3>, api4: TypeApi<Api4>): TypeApi<Api1 & Api2 & Api3 & Api4>;
+export function type_mix<Api1, Api2, Api3, Api4, Api5>(api1: TypeApi<Api1>, api2: TypeApi<Api2>, api3: TypeApi<Api3>, api4: TypeApi<Api4>, api5: TypeApi<Api5>): TypeApi<Api1 & Api2 & Api3 & Api4 & Api5>;
+export function type_mix<Api1, Api2, Api3, Api4, Api5, Api6>(api1: TypeApi<Api1>, api2: TypeApi<Api2>, api3: TypeApi<Api3>, api4: TypeApi<Api4>, api5: TypeApi<Api5>, api6: TypeApi<Api6>): TypeApi<Api1 & Api2 & Api3 & Api4 & Api5 & Api6>;
+export function type_mix<Api1, Api2, Api3, Api4, Api5, Api6, Api7>(api1: TypeApi<Api1>, api2: TypeApi<Api2>, api3: TypeApi<Api3>, api4: TypeApi<Api4>, api5: TypeApi<Api5>, api6: TypeApi<Api6>, api7: TypeApi<Api7>): TypeApi<Api1 & Api2 & Api3 & Api4 & Api5 & Api6 & Api7>;
+export function type_mix<Api1, Api2, Api3, Api4, Api5, Api6, Api7, Api8>(api1: TypeApi<Api1>, api2: TypeApi<Api2>, api3: TypeApi<Api3>, api4: TypeApi<Api4>, api5: TypeApi<Api5>, api6: TypeApi<Api6>, api7: TypeApi<Api7>, api8: TypeApi<Api8>): TypeApi<Api1 & Api2 & Api3 & Api4 & Api5 & Api6 & Api7 & Api8>;
+export function type_mix(...ts: TypeApi<object>[]): TypeApi<object> {
+    let r = {};
+    for (const t of ts) r = { ...r, ...t };
+    return r;
 }
 
 export interface BaseTypes {
