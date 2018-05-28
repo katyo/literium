@@ -45,7 +45,7 @@
     "typescript": "^2.8.3"
   },
   "dependencies": {
-    "snabbdom-ng": "^0.7.1-ng.9",
+    "snabbdom-ng": "^0.7.1-ng.10",
     "tslib": "^1.9.0"
   }
 }
