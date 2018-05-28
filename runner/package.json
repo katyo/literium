@@ -16,7 +16,7 @@
     "compile-es": "tsc --outDir es --module es6",
     "clean-es": "rm -rf es",
     "compile-js": "tsc --outDir .",
-    "clean-js": "rm -rf *.d.ts *.js *.js.map",
+    "clean-js": "rm -rf *.d.ts *.js *.js.map client server",
     "prepublish": "npm run compile",
     "compile-test": "browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
     "clean-test": "rm -f test-out.js",
