@@ -81,6 +81,63 @@ export function route_arg<TypeMap, Arg extends PathArg<TypeMap>>(arg: Arg, type_
     };
 }
 
+export type QueryArgs = Record<string, string | void>;
+
+export function query_parse(str: string): QueryArgs {
+    const args = {} as QueryArgs;
+    for (const arg of str.split(/&/)) {
+        const pair = arg.split(/=/);
+        args[decodeURIComponent(pair[0])] = pair.length > 1 ? pair[1] : undefined;
+    }
+    return args;
+}
+
+export function query_format(args: QueryArgs): string {
+    const strs: string[] = [];
+    for (const name in args) {
+        const value = args[name];
+        strs.push(`${encodeURIComponent(name)}${typeof value == 'string' ? `=${value}` : ''}`);
+    }
+    return strs.join('&');
+}
+
+export function route_query<TypeMap, Arg extends PathArg<TypeMap>>(arg: Arg, type_api: TypeApi<TypeMap>): Route<ArgMap<TypeMap, Arg>> {
+    let key: keyof Arg | void;
+    for (const fld in arg) {
+        key = fld;
+        break;
+    }
+    if (!key) throw "No args";
+
+    return {
+        parse: path => {
+            if (path.charAt(0) != '?') return;
+            const qargs = query_parse(path.substring(1));
+            const args = {} as ArgMap<TypeMap, Arg>;
+            for (const key in arg) {
+                const api = type_api[arg[key]];
+                const val = qargs[key];
+                if (typeof val != 'string') return;
+                const res = api.parse(val);
+                if (!res || res[1] != '') return;
+                args[key] = res[0];
+            }
+            return [args, ''];
+        },
+        build: args => {
+            const qargs = {} as QueryArgs;
+            for (const key in arg) {
+                if (!(key in args)) return;
+                const api = type_api[arg[key]];
+                const val = api.build(args[key]);
+                if (typeof val != 'string') return;
+                qargs[key] = val;
+            }
+            return `?${query_format(qargs)}`;
+        }
+    };
+}
+
 export function route_or<Args1, Args2>(r1: Route<Args1>, r2: Route<Args2>): Route<Args1 | Args2>;
 export function route_or<Args1, Args2, Args3>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>): Route<Args1 | Args2 | Args3>;
 export function route_or<Args1, Args2, Args3, Args4>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>): Route<Args1 | Args2 | Args3 | Args4>;
@@ -228,3 +285,7 @@ export const numTypes: TypeApi<NumTypes> = {
         build: arg => is_int(arg) && arg >= 0 ? `${arg}` : undefined
     }
 };
+
+export interface HasTypes {
+    has: boolean;
+}

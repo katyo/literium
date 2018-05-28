@@ -10,6 +10,8 @@ const {
     blog_by_tag_and_sort_by_date,
     blog_by_tag_or_sort_by_date,
     blog_by_tag_and_opt_sort_by_date,
+    blog_list,
+    blog_search,
 } = routes;
 
 describe('route', () => {
@@ -79,6 +81,23 @@ describe('route', () => {
             });
         });
 
+        describe('query args', () => {
+            it('pass', () => {
+                deepEqual(route_match(blog_list, '/blog?offset=20&count=10'), { offset: 20, count: 10 });
+                deepEqual(route_match(blog_list, '/blog?count=10&offset=20&other'), { offset: 20, count: 10 });
+                deepEqual(route_match(blog_list, '/blog?count=5'), { count: 5 });
+                deepEqual(route_match(blog_search, '/blog/search?phrase=3D%20modeling'), { phrase: '3D modeling' });
+            });
+            it('fail', () => {
+                deepEqual(route_match(blog_list, '/blog'), undefined);
+                deepEqual(route_match(blog_list, '/blog?'), undefined);
+                deepEqual(route_match(blog_list, '/blog/?count=5'), undefined);
+                deepEqual(route_match(blog_list, '/blog/?offset=20&count=10'), undefined);
+                deepEqual(route_match(blog_search, '/blog/search'), undefined);
+                deepEqual(route_match(blog_search, '/blog/search?phrase'), undefined);
+            });
+        });
+
         describe('mix routes', () => {
             it('pass', () => {
                 deepEqual(route_match(blog_by_tag_or_sort_by_date, '/blog/tag-123'), { tag: "123" });
@@ -126,6 +145,13 @@ describe('route', () => {
         it('str and ord args', () => {
             deepEqual(route_build(blog_by_tag_and_sort_by_date, { tag: "123", sort: Order.Asc }), '/blog/tag-123/date-asc');
             deepEqual(route_build(blog_by_tag_and_sort_by_date, { tag: "git", sort: Order.Desc }), '/blog/tag-git/date-desc');
+        });
+
+        it('query args', () => {
+            deepEqual(route_build(blog_list, { offset: 20, count: 10 }), '/blog?offset=20&count=10');
+            deepEqual(route_build(blog_list, { count: 10, offset: 20 }), '/blog?offset=20&count=10');
+            deepEqual(route_build(blog_list, { count: 5 }), '/blog?count=5');
+            deepEqual(route_build(blog_search, { phrase: '3D modeling' }), '/blog/search?phrase=3D%20modeling');
         });
 
         it('mix routes', () => {
