@@ -61,6 +61,26 @@ route_build(blog_id, {id: 1})   // => '1'
 The first argument of `route_arg()` is the object with property name as key and with property type-tag as value.
 The available type-tags and corresponding value types is defined by the second argument of `route_arg()`.
 
+### Query string arguments
+
+To deal with query string you can use `route_query()`.
+
+```typescript
+import { route_query, route_match, route_build, baseTypes } from 'literium-router';
+
+const blog_posts = route_query({offset: 'num', length: 'num'}, baseTypes);
+// => Route<{offset: number, length: number}>
+
+route_match(blog_posts, '?offset=10&length=5')       // => {offset:10,length:5}
+route_match(blog_posts, '?length=5&offset=10')       // => {offset:10,length:5}
+route_match(blog_posts, '?length=5')                 // => undefined (no length arg)
+
+route_build(blog_posts, {length:5})                  // error (missing 'offset' property)
+route_build(blog_posts, {offset:10, length:5})       // => '?offset=10&length=5'
+```
+
+When you need process different query strings you can alternate queryes using [variants](#route-variants).
+
 ### Complex routes
 
 To build complex routes you can use `route_and()` to sequentially combine sub-routes.
@@ -153,6 +173,20 @@ route_build(blogs_by_date, {sort:Order.Desc})   // => '/blog/date-desc'
 route_build(blogs_by_date, {})                  // error (missing 'sort' property)
 route_build(blogs_by_date, {sort:'asc'})        // error (type mismatch of 'sort' property)
 ```
+
+### Mixing types
+
+In some cases you need to merge different sets of types. You can use `type_mix()` for this purpose.
+
+```typescript
+import { route_query, baseTypes, numTypes } from 'literium-router';
+
+const mixTypes = type_mix(baseTypes, numTypes);
+
+const search_query = route_query({phrase: 'str', offset: 'nat', count: 'nat'}, mixTypes);
+```
+
+In example above we used `"str"` type from `baseTypes` and `"nat"` type from `numTypes`.
 
 ### Router
 
