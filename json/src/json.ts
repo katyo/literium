@@ -1,4 +1,4 @@
-import { Result, result_ok as ok, result_err as err } from 'literium';
+import { Result, ok, err, map_err, then_ok } from 'literium';
 
 export type JsonResult<Type> = Result<Type, string>;
 
@@ -10,54 +10,58 @@ export interface JsonType<Type> {
 // Basic atomic types
 
 export const str: JsonType<string> = {
-    p(v) { return typeof v != 'string' ? err('!string') : ok(v); },
-    b(v) { return typeof v != 'string' ? err('!string') : ok(v); }
+    p: (v) => typeof v != 'string' ? err('!string') : ok(v),
+    b: (v) => typeof v != 'string' ? err('!string') : ok(v),
 };
 
 export const num: JsonType<number> = {
-    p(v) { return typeof v != 'number' ? err('!number') : ok(v); },
-    b(v) { return typeof v != 'number' ? err('!number') : ok(v); }
+    p: (v) => typeof v != 'number' ? err('!number') : ok(v),
+    b: (v) => typeof v != 'number' ? err('!number') : ok(v),
 };
 
 export const bin: JsonType<boolean> = {
-    p(v) { return typeof v != 'boolean' ? err('!boolean') : ok(v); },
-    b(v) { return typeof v != 'boolean' ? err('!boolean') : ok(v); }
+    p: (v) => typeof v != 'boolean' ? err('!boolean') : ok(v),
+    b: (v) => typeof v != 'boolean' ? err('!boolean') : ok(v),
 };
 
 export const und: JsonType<void> = {
-    p(v) { return v != null ? err('defined') : ok(undefined); },
-    b(v) { return v != null ? err('defined') : ok(null); }
+    p: (v) => v != null ? err('defined') : ok(undefined),
+    b: (v) => v != null ? err('defined') : ok(null),
 };
 
 // Extra numeric types
 
+const fin_check = then_ok<number, string, number>(v => isFinite(v) ? ok(v) : err('infinite'));
+
 export const fin: JsonType<number> = {
-    p(v) { const n = num.p(v); return !n.$ ? n : !isFinite(v) ? err('infinite') : ok(v); },
-    b(v) { const n = num.b(v); return !n.$ ? n : !isFinite(v) ? err('infinite') : ok(v); }
+    p: (v) => fin_check(num.p(v)),
+    b: (v) => fin_check(num.b(v)),
 };
+
+const pos_check = then_ok<number, string, number>(v => v < 0 ? err('negative') : ok(v));
 
 export const pos: JsonType<number> = {
-    p(v) { const n = num.p(v); return !n.$ ? n : v < 0 ? err('negative') : ok(v); },
-    b(v) { const n = num.b(v); return !n.$ ? n : v < 0 ? err('negative') : ok(v); }
+    p: (v) => pos_check(num.p(v)),
+    b: (v) => pos_check(num.b(v)),
 };
+
+const neg_check = then_ok<number, string, number>(v => v > 0 ? err('positive') : ok(v));
 
 export const neg: JsonType<number> = {
-    p(v) { const n = num.p(v); return !n.$ ? n : v > 0 ? err('positive') : ok(v); },
-    b(v) { const n = num.b(v); return !n.$ ? n : v > 0 ? err('positive') : ok(v); }
+    p: (v) => neg_check(num.p(v)),
+    b: (v) => neg_check(num.b(v)),
 };
 
-function is_int(v: any): boolean {
-    return typeof v == 'number' && isFinite(v) && !(v % 1);
-}
+const int_check = then_ok<number, string, number>(v => v % 1 ? err('!integer') : ok(v));
 
 export const int: JsonType<number> = {
-    p(v) { const n = num.p(v); return !n.$ ? n : !is_int(v) ? err('!integer') : ok(v); },
-    b(v) { const n = num.b(v); return !n.$ ? n : !is_int(v) ? err('!integer') : ok(v); }
+    p: (v) => int_check(fin.p(v)),
+    b: (v) => int_check(fin.b(v)),
 };
 
 export const nat: JsonType<number> = {
-    p(v) { const n = int.p(v); return !n.$ ? n : v < 0 ? err('negative') : ok(v); },
-    b(v) { const n = int.b(v); return !n.$ ? n : v < 0 ? err('negative') : ok(v); }
+    p: (v) => pos_check(int.p(v)),
+    b: (v) => pos_check(int.b(v)),
 };
 
 // Container types
@@ -154,9 +158,27 @@ export function tup(...ts: JsonType<any>[]): JsonType<any[]> {
 }
 
 // Type modifiers
+const and_defined = map_err((e: string) => `${e} & defined`);
 
 export function opt<Type>(t: JsonType<Type>): JsonType<Type | void> {
-    return alt(t, und);
+    return {
+        p: (v) => v != null ? and_defined(t.p(v)) : ok(undefined),
+        b: (v) => v != undefined ? and_defined(t.b(v)) : ok(null),
+    };
+}
+
+export function val<Type>(d: Type): JsonType<Type> {
+    return {
+        p: () => ok(d),
+        b: () => ok(d),
+    };
+}
+
+export function def<Type>(t: JsonType<Type>, d: Type): JsonType<Type> {
+    return {
+        p: (v) => v != null ? and_defined(t.p(v)) : ok(d),
+        b: (v) => v != undefined ? and_defined(t.b(v)) : ok(d),
+    };
 }
 
 // Type alternatives
