@@ -1,27 +1,14 @@
-// satisfy existing argument type
-export interface PathArg<TypeMap> { [name: string]: keyof TypeMap }
-
-// map argument type
-export type ArgMap<TypeMap, Arg extends PathArg<TypeMap>> = { [Name in keyof Arg]: TypeMap[Arg[Name]] };
-
-export interface TypeImpl<Type> {
-    parse(path: string): [Type, string] | void;
-    build(arg: Type): string | void;
-}
-
-export type TypeApi<TypeMap> = { [Tag in keyof TypeMap]: TypeImpl<TypeMap[Tag]> };
-
 export interface Route<Args> {
     // match path to arguments
-    parse(path: string): [Args, string] | void;
+    p(path: string): [Args, string] | void;
     // build path from arguments
-    build(args: Args): string | void;
+    b(args: Args): string | void;
 }
 
 export type Routes<State> = { [Id in keyof State]: Route<State[Id]> };
 
-export function route_match<Args>(route: Route<Args>, path: string): Args | void {
-    const res = route.parse(path);
+export function match<Args>(route: Route<Args>, path: string): Args | void {
+    const res = route.p(path);
     if (!res || res[1] != '') return;
     return res[0];
 }
@@ -29,26 +16,26 @@ export function route_match<Args>(route: Route<Args>, path: string): Args | void
 // The trick with ActualArgs type parameter makes passed arguments to be the same as route expects.
 // Without it the compiler leads the type of the route to the type of arguments.
 // Also it is important the arguments must be of the type 'ActualArgs & Args', because we cannot set type condition 'ActualArgs = Args'.
-export function route_build<Args, ActualArgs extends Args>(route: Route<Args>, args: ActualArgs & Args): string {
-    const path = route.build(args);
+export function build<Args, ActualArgs extends Args>(route: Route<Args>, args: ActualArgs & Args): string {
+    const path = route.b(args);
     if (path === undefined) throw "Cannot build path";
     return path;
 }
 
-export function route_str(path: string): Route<{}> {
+export function dir(path: string): Route<{}> {
     const ent: string = encodeURI(path);
 
     return {
-        parse: path => path.substr(0, ent.length) == ent ?
+        p: path => path.substr(0, ent.length) == ent ?
             [{}, path.substr(ent.length)] : undefined,
-        build: () => ent
+        b: () => ent
     };
 }
 
-export function route_def<Arg>(arg: Arg): Route<Arg> {
+export function def<Arg>(arg: Arg): Route<Arg> {
     return {
-        parse: path => [arg, path],
-        build: args => {
+        p: path => [arg, path],
+        b: args => {
             for (const key in arg) {
                 if (!(key in args) || args[key] !== arg[key]) return;
             }
@@ -57,26 +44,28 @@ export function route_def<Arg>(arg: Arg): Route<Arg> {
     };
 }
 
-export function route_arg<TypeMap, Arg extends PathArg<TypeMap>>(arg: Arg, type_api: TypeApi<TypeMap>): Route<ArgMap<TypeMap, Arg>> {
-    let key: keyof Arg | void;
-    let api: TypeImpl<TypeMap[keyof TypeMap]>;
+export type ArgMap<TypeMap> = { [Tag in keyof TypeMap]: Route<TypeMap[Tag]> };
+
+export function arg<TypeMap>(arg: ArgMap<TypeMap>): Route<TypeMap> {
+    let key: keyof TypeMap | void;
+    let api: Route<TypeMap[keyof TypeMap]>;
     for (const fld in arg) {
         key = fld;
-        api = type_api[arg[key]];
+        api = arg[key];
         break;
     }
     if (!key) throw "No arg";
 
     return {
-        parse: path => {
-            const res = api.parse(path);
+        p: path => {
+            const res = api.p(path);
             if (!res) return;
             const [val, rest] = res;
-            return [{ [key as keyof Arg]: val } as ArgMap<TypeMap, Arg>, rest];
+            return [{ [key as keyof TypeMap]: val } as any as TypeMap, rest];
         },
-        build: args => {
+        b: args => {
             if (!(key in args)) return;
-            return api.build(args[key as keyof Arg]);
+            return api.b(args[key as keyof TypeMap]);
         }
     };
 }
@@ -92,7 +81,7 @@ export function query_parse(str: string): QueryArgs {
     return args;
 }
 
-export function query_format(args: QueryArgs): string {
+export function query_build(args: QueryArgs): string {
     const strs: string[] = [];
     for (const name in args) {
         const value = args[name];
@@ -101,8 +90,8 @@ export function query_format(args: QueryArgs): string {
     return strs.join('&');
 }
 
-export function route_query<TypeMap, Arg extends PathArg<TypeMap>>(arg: Arg, type_api: TypeApi<TypeMap>): Route<ArgMap<TypeMap, Arg>> {
-    let key: keyof Arg | void;
+export function query<TypeMap>(arg: ArgMap<TypeMap>): Route<TypeMap> {
+    let key: keyof TypeMap | void;
     for (const fld in arg) {
         key = fld;
         break;
@@ -110,92 +99,98 @@ export function route_query<TypeMap, Arg extends PathArg<TypeMap>>(arg: Arg, typ
     if (!key) throw "No args";
 
     return {
-        parse: path => {
+        p: path => {
             if (path.charAt(0) != '?') return;
             const qargs = query_parse(path.substring(1));
-            const args = {} as ArgMap<TypeMap, Arg>;
+            const args = {} as TypeMap;
             for (const key in arg) {
-                const api = type_api[arg[key]];
+                const api = arg[key];
                 const val = qargs[key];
                 if (typeof val != 'string') return;
-                const res = api.parse(val);
+                const res = api.p(val);
                 if (!res || res[1] != '') return;
                 args[key] = res[0];
             }
             return [args, ''];
         },
-        build: args => {
+        b: args => {
             const qargs = {} as QueryArgs;
             for (const key in arg) {
                 if (!(key in args)) return;
-                const api = type_api[arg[key]];
-                const val = api.build(args[key]);
+                const api = arg[key];
+                const val = api.b(args[key]);
                 if (typeof val != 'string') return;
                 qargs[key] = val;
             }
-            return `?${query_format(qargs)}`;
+            return `?${query_build(qargs)}`;
         }
     };
 }
 
-export function route_or<Args1, Args2>(r1: Route<Args1>, r2: Route<Args2>): Route<Args1 | Args2>;
-export function route_or<Args1, Args2, Args3>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>): Route<Args1 | Args2 | Args3>;
-export function route_or<Args1, Args2, Args3, Args4>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>): Route<Args1 | Args2 | Args3 | Args4>;
-export function route_or<Args1, Args2, Args3, Args4, Args5>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>): Route<Args1 | Args2 | Args3 | Args4 | Args5>;
-export function route_or<Args1, Args2, Args3, Args4, Args5, Args6>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>): Route<Args1 | Args2 | Args3 | Args4 | Args5 | Args6>;
-export function route_or<Args1, Args2, Args3, Args4, Args5, Args6, Args7>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>): Route<Args1 | Args2 | Args3 | Args4 | Args5 | Args6 | Args7>;
-export function route_or<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>): Route<Args1 | Args2 | Args3 | Args4 | Args5 | Args6 | Args7 | Args8>;
-export function route_or<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>): Route<Args1 | Args2 | Args3 | Args4 | Args5 | Args6 | Args7 | Args8 | Args9>;
-export function route_or<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>): Route<Args1 | Args2 | Args3 | Args4 | Args5 | Args6 | Args7 | Args8 | Args9>;
-export function route_or(...rs: Route<object>[]): Route<object> {
+// Combinators
+
+export function opt<Args>(r: Route<Args>): Route<Args | void> {
+    return alt(r, und);
+}
+
+export function alt<Args1, Args2>(r1: Route<Args1>, r2: Route<Args2>): Route<Args1 | Args2>;
+export function alt<Args1, Args2, Args3>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>): Route<Args1 | Args2 | Args3>;
+export function alt<Args1, Args2, Args3, Args4>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>): Route<Args1 | Args2 | Args3 | Args4>;
+export function alt<Args1, Args2, Args3, Args4, Args5>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>): Route<Args1 | Args2 | Args3 | Args4 | Args5>;
+export function alt<Args1, Args2, Args3, Args4, Args5, Args6>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>): Route<Args1 | Args2 | Args3 | Args4 | Args5 | Args6>;
+export function alt<Args1, Args2, Args3, Args4, Args5, Args6, Args7>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>): Route<Args1 | Args2 | Args3 | Args4 | Args5 | Args6 | Args7>;
+export function alt<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>): Route<Args1 | Args2 | Args3 | Args4 | Args5 | Args6 | Args7 | Args8>;
+export function alt<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>): Route<Args1 | Args2 | Args3 | Args4 | Args5 | Args6 | Args7 | Args8 | Args9>;
+export function alt<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>): Route<Args1 | Args2 | Args3 | Args4 | Args5 | Args6 | Args7 | Args8 | Args9>;
+export function alt(...rs: Route<object>[]): Route<object> {
     return {
-        parse: path => {
+        p: path => {
             for (let i = 0; i < rs.length; i++) {
-                const res = rs[i].parse(path);
+                const res = rs[i].p(path);
                 if (res !== undefined) return res;
             }
         },
-        build: args => {
+        b: args => {
             for (let i = 0; i < rs.length; i++) {
-                const path = rs[i].build(args);
+                const path = rs[i].b(args);
                 if (path !== undefined) return path;
             }
         }
     };
 }
 
-export function route_and<Args1, Args2>(r1: Route<Args1>, r2: Route<Args2>): Route<Args1 & Args2>;
-export function route_and<Args1, Args2, Args3>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>): Route<Args1 & Args2 & Args3>;
-export function route_and<Args1, Args2, Args3, Args4>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>): Route<Args1 & Args2 & Args3 & Args4>;
-export function route_and<Args1, Args2, Args3, Args4, Args5>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>): Route<Args1 & Args2 & Args3 & Args4 & Args5>;
-export function route_and<Args1, Args2, Args3, Args4, Args5, Args6>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6>;
-export function route_and<Args1, Args2, Args3, Args4, Args5, Args6, Args7>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7>;
-export function route_and<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8>;
-export function route_and<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9>;
-export function route_and<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9>;
-export function route_and<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10>;
-export function route_and<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10, Args11>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>, r11: Route<Args11>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10 & Args11>;
-export function route_and<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10, Args11, Args12>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>, r11: Route<Args11>, r12: Route<Args12>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10 & Args11 & Args12>;
-export function route_and<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10, Args11, Args12, Args13>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>, r11: Route<Args11>, r12: Route<Args12>, r13: Route<Args13>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10 & Args11 & Args12 & Args13>;
-export function route_and<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10, Args11, Args12, Args13, Args14>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>, r11: Route<Args11>, r12: Route<Args12>, r13: Route<Args13>, r14: Route<Args14>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10 & Args11 & Args12 & Args13 & Args14>;
-export function route_and<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10, Args11, Args12, Args13, Args14, Args15>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>, r11: Route<Args11>, r12: Route<Args12>, r13: Route<Args13>, r14: Route<Args14>, r15: Route<Args15>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10 & Args11 & Args12 & Args13 & Args14 & Args15>;
-export function route_and<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10, Args11, Args12, Args13, Args14, Args15, Args16>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>, r11: Route<Args11>, r12: Route<Args12>, r13: Route<Args13>, r14: Route<Args14>, r15: Route<Args15>, r16: Route<Args16>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10 & Args11 & Args12 & Args13 & Args14 & Args15 & Args16>;
-export function route_and(...rs: Route<object>[]): Route<object> {
+export function seq<Args1, Args2>(r1: Route<Args1>, r2: Route<Args2>): Route<Args1 & Args2>;
+export function seq<Args1, Args2, Args3>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>): Route<Args1 & Args2 & Args3>;
+export function seq<Args1, Args2, Args3, Args4>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>): Route<Args1 & Args2 & Args3 & Args4>;
+export function seq<Args1, Args2, Args3, Args4, Args5>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>): Route<Args1 & Args2 & Args3 & Args4 & Args5>;
+export function seq<Args1, Args2, Args3, Args4, Args5, Args6>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6>;
+export function seq<Args1, Args2, Args3, Args4, Args5, Args6, Args7>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7>;
+export function seq<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8>;
+export function seq<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9>;
+export function seq<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9>;
+export function seq<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10>;
+export function seq<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10, Args11>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>, r11: Route<Args11>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10 & Args11>;
+export function seq<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10, Args11, Args12>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>, r11: Route<Args11>, r12: Route<Args12>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10 & Args11 & Args12>;
+export function seq<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10, Args11, Args12, Args13>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>, r11: Route<Args11>, r12: Route<Args12>, r13: Route<Args13>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10 & Args11 & Args12 & Args13>;
+export function seq<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10, Args11, Args12, Args13, Args14>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>, r11: Route<Args11>, r12: Route<Args12>, r13: Route<Args13>, r14: Route<Args14>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10 & Args11 & Args12 & Args13 & Args14>;
+export function seq<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10, Args11, Args12, Args13, Args14, Args15>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>, r11: Route<Args11>, r12: Route<Args12>, r13: Route<Args13>, r14: Route<Args14>, r15: Route<Args15>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10 & Args11 & Args12 & Args13 & Args14 & Args15>;
+export function seq<Args1, Args2, Args3, Args4, Args5, Args6, Args7, Args8, Args9, Args10, Args11, Args12, Args13, Args14, Args15, Args16>(r1: Route<Args1>, r2: Route<Args2>, r3: Route<Args3>, r4: Route<Args4>, r5: Route<Args5>, r6: Route<Args6>, r7: Route<Args7>, r8: Route<Args8>, r9: Route<Args9>, r10: Route<Args10>, r11: Route<Args11>, r12: Route<Args12>, r13: Route<Args13>, r14: Route<Args14>, r15: Route<Args15>, r16: Route<Args16>): Route<Args1 & Args2 & Args3 & Args4 & Args5 & Args6 & Args7 & Args8 & Args9 & Args10 & Args11 & Args12 & Args13 & Args14 & Args15 & Args16>;
+export function seq(...rs: Route<object>[]): Route<object> {
     return {
-        parse: path => {
+        p: path => {
             let args = {};
             for (let i = 0; i < rs.length; i++) {
-                const res = rs[i].parse(path);
+                const res = rs[i].p(path);
                 if (res === undefined) return;
                 args = { ...args, ...res[0] };
                 path = res[1];
             }
             return [args, path];
         },
-        build: args => {
+        b: args => {
             let path = '';
             for (let i = 0; i < rs.length; i++) {
-                const part = rs[i].build(args);
+                const part = rs[i].b(args);
                 if (part === undefined) return;
                 path += part;
             }
@@ -204,10 +199,12 @@ export function route_and(...rs: Route<object>[]): Route<object> {
     };
 }
 
-export function router_match<State>(routes: Routes<State>, path: string): Partial<State> | void {
+// Router
+
+export function matchs<State>(routes: Routes<State>, path: string): Partial<State> | void {
     let state: Partial<State> | void;
     for (const id in routes) {
-        const args = route_match(routes[id], path);
+        const args = match(routes[id], path);
         if (args) {
             if (!state) state = {} as State;
             state[id] = args;
@@ -216,76 +213,56 @@ export function router_match<State>(routes: Routes<State>, path: string): Partia
     return state;
 }
 
-export function router_build<State>(routes: Routes<State>, state: Partial<State>): string | void {
+export function builds<State>(routes: Routes<State>, state: Partial<State>): string | void {
     for (const id in state) {
         const args = state[id];
         if (args !== undefined) {
-            return route_build(routes[id], args as State[keyof State]);
+            return build(routes[id], args as State[keyof State]);
         }
     }
 }
 
-export function type_mix<Api1, Api2>(api1: TypeApi<Api1>, api2: TypeApi<Api2>): TypeApi<Api1 & Api2>;
-export function type_mix<Api1, Api2, Api3>(api1: TypeApi<Api1>, api2: TypeApi<Api2>, api3: TypeApi<Api3>): TypeApi<Api1 & Api2 & Api3>;
-export function type_mix<Api1, Api2, Api3, Api4>(api1: TypeApi<Api1>, api2: TypeApi<Api2>, api3: TypeApi<Api3>, api4: TypeApi<Api4>): TypeApi<Api1 & Api2 & Api3 & Api4>;
-export function type_mix<Api1, Api2, Api3, Api4, Api5>(api1: TypeApi<Api1>, api2: TypeApi<Api2>, api3: TypeApi<Api3>, api4: TypeApi<Api4>, api5: TypeApi<Api5>): TypeApi<Api1 & Api2 & Api3 & Api4 & Api5>;
-export function type_mix<Api1, Api2, Api3, Api4, Api5, Api6>(api1: TypeApi<Api1>, api2: TypeApi<Api2>, api3: TypeApi<Api3>, api4: TypeApi<Api4>, api5: TypeApi<Api5>, api6: TypeApi<Api6>): TypeApi<Api1 & Api2 & Api3 & Api4 & Api5 & Api6>;
-export function type_mix<Api1, Api2, Api3, Api4, Api5, Api6, Api7>(api1: TypeApi<Api1>, api2: TypeApi<Api2>, api3: TypeApi<Api3>, api4: TypeApi<Api4>, api5: TypeApi<Api5>, api6: TypeApi<Api6>, api7: TypeApi<Api7>): TypeApi<Api1 & Api2 & Api3 & Api4 & Api5 & Api6 & Api7>;
-export function type_mix<Api1, Api2, Api3, Api4, Api5, Api6, Api7, Api8>(api1: TypeApi<Api1>, api2: TypeApi<Api2>, api3: TypeApi<Api3>, api4: TypeApi<Api4>, api5: TypeApi<Api5>, api6: TypeApi<Api6>, api7: TypeApi<Api7>, api8: TypeApi<Api8>): TypeApi<Api1 & Api2 & Api3 & Api4 & Api5 & Api6 & Api7 & Api8>;
-export function type_mix(...ts: TypeApi<object>[]): TypeApi<object> {
-    let r = {};
-    for (const t of ts) r = { ...r, ...t };
-    return r;
-}
+// Basic types
 
-export interface BaseTypes {
-    str: string;
-    num: number;
-}
-
-export const baseTypes: TypeApi<BaseTypes> = {
-    str: {
-        parse: path => {
-            const m = path.match(/^([^\/\?]+)(.*)$/);
-            if (m) return [decodeURIComponent(m[1]), m[2]];
-        },
-        build: arg => typeof arg == 'string' ? encodeURIComponent(arg) : undefined
+export const str: Route<string> = {
+    p: path => {
+        const m = path.match(/^([^\/\?]+)(.*)$/);
+        if (m) return [decodeURIComponent(m[1]), m[2]];
     },
-    num: {
-        parse: path => {
-            const m = path.match(/^(\-?\d+(?:\.\d+)?)(.*)$/);
-            if (m) return [parseFloat(m[1]), m[2]];
-        },
-        build: arg => typeof arg == 'number' ? `${arg}` : undefined,
-    }
+    b: arg => typeof arg == 'string' ? encodeURIComponent(arg) : undefined
 };
 
-export interface NumTypes {
-    nat: number;
-    int: number;
-}
+export const num: Route<number> = {
+    p: path => {
+        const m = path.match(/^(\-?\d+(?:\.\d+)?)(.*)$/);
+        if (m) return [parseFloat(m[1]), m[2]];
+    },
+    b: arg => typeof arg == 'number' ? `${arg}` : undefined,
+};
+
+export const und: Route<void> = {
+    p: path => [undefined, path],
+    b: () => ''
+};
+
+// Numeric types
 
 function is_int(arg: any): boolean {
     return typeof arg == 'number' && isFinite(arg) && !(arg % 1);
 }
 
-export const numTypes: TypeApi<NumTypes> = {
-    int: {
-        parse: path => {
-            const m = path.match(/^(\-?\d+)(.*)$/);
-            if (m) return [parseInt(m[1]), m[2]];
-        },
-        build: arg => is_int(arg) ? `${arg}` : undefined
+export const int: Route<number> = {
+    p: path => {
+        const m = path.match(/^(\-?\d+)(.*)$/);
+        if (m) return [parseInt(m[1]), m[2]];
     },
-    nat: {
-        parse: path => {
-            const m = path.match(/^(\d+)(.*)$/);
-            if (m) return [parseInt(m[1]), m[2]];
-        },
-        build: arg => is_int(arg) && arg >= 0 ? `${arg}` : undefined
-    }
+    b: arg => is_int(arg) ? `${arg}` : undefined
 };
 
-export interface HasTypes {
-    has: boolean;
-}
+export const nat: Route<number> = {
+    p: path => {
+        const m = path.match(/^(\d+)(.*)$/);
+        if (m) return [parseInt(m[1]), m[2]];
+    },
+    b: arg => is_int(arg) && arg >= 0 ? `${arg}` : undefined
+};

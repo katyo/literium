@@ -20,204 +20,183 @@ You can construct complex routes using simple routing algebra.
 
 ## Routing algebra
 
-### String route
+### Atomic routes
+
+#### Route with static path-piece
 
 In simplest case you can use path string to create routes.
 
 ```typescript
-import { route_str, route_match, route_build } from 'literium-router';
+import { dir, match, build } from 'literium-router';
 
-const blog = route_str('/blog');
+const blog = dir('/blog');
 // => Route<{}>
 
-route_match(blog, '/blog')   // => {}
-route_match(blog, '/blog/1') // => undefined
-route_match(blog, '/other')  // => undefined
+match(blog, '/blog')   // => {}
+match(blog, '/blog/1') // => undefined
+match(blog, '/other')  // => undefined
 
-route_build(blog, {})        // => '/blog'
-route_build(blog, {id: 1})   // error (extra 'id' property)
+build(blog, {})        // => '/blog'
+build(blog, {id: 1})   // error (extra 'id' property)
 ```
 
 This route corresponds to path _/blog_ and empty object.
 
-### Route with argument
+#### Route with argument
 
 When you want handle some data in the path string you can create route with the typed argument.
 
 ```typescript
-import { route_arg, route_match, route_build, baseTypes } from 'literium-router';
+import { num, arg, match, build } from 'literium-router';
 
-const blog_id = route_arg({id: 'num'}, baseTypes);
+const blog_id = arg({id: num});
 // => Route<{id: number}>
 
-route_match(blog_id, '1')       // => {id:1}
-route_match(blog_id, 'other')   // => undefined
-route_match(blog_id, 'blog/1')  // => undefined
+match(blog_id, '1')       // => {id:1}
+match(blog_id, 'other')   // => undefined
+match(blog_id, 'blog/1')  // => undefined
 
-route_build(blog_id, {})        // error (missing 'id' property)
-route_build(blog_id, {id: 1})   // => '1'
+build(blog_id, {})        // error (missing 'id' property)
+build(blog_id, {id: 1})   // => '1'
 ```
 
-The first argument of `route_arg()` is the object with property name as key and with property type-tag as value.
-The available type-tags and corresponding value types is defined by the second argument of `route_arg()`.
+The first argument of `arg()` is the object with property name as key and with property type-tag as value.
+The available type-tags and corresponding value types is defined by the second argument of `arg()`.
 
-### Query string arguments
+#### Query string arguments
 
-To deal with query string you can use `route_query()`.
+To deal with query string you can use `query()`.
 
 ```typescript
-import { route_query, route_match, route_build, baseTypes } from 'literium-router';
+import { num, query, match, build } from 'literium-router';
 
-const blog_posts = route_query({offset: 'num', length: 'num'}, baseTypes);
+const blog_posts = query({offset: num, length: num});
 // => Route<{offset: number, length: number}>
 
-route_match(blog_posts, '?offset=10&length=5')       // => {offset:10,length:5}
-route_match(blog_posts, '?length=5&offset=10')       // => {offset:10,length:5}
-route_match(blog_posts, '?length=5')                 // => undefined (no length arg)
+match(blog_posts, '?offset=10&length=5')       // => {offset:10,length:5}
+match(blog_posts, '?length=5&offset=10')       // => {offset:10,length:5}
+match(blog_posts, '?length=5')                 // => undefined (no length arg)
 
-route_build(blog_posts, {length:5})                  // error (missing 'offset' property)
-route_build(blog_posts, {offset:10, length:5})       // => '?offset=10&length=5'
+build(blog_posts, {length:5})                  // error (missing 'offset' property)
+build(blog_posts, {offset:10, length:5})       // => '?offset=10&length=5'
 ```
 
 When you need process different query strings you can alternate queryes using [variants](#route-variants).
 
-### Complex routes
+### Route combinators
 
-To build complex routes you can use `route_and()` to sequentially combine sub-routes.
+#### Sequential
+
+To build complex routes you can use `seq()` to sequentially combine sub-routes.
 
 ```typescript
-import { route_str, route_arg, route_and, route_match, route_build, baseTypes } from 'literium-router';
+import { num, dir, arg, seq, match, build } from 'literium-router';
 
-const blog_by_id = route_and(route_str('/blog/'), route_arg({id: 'num'}, baseTypes);
+const blog_by_id = seq(dir('/blog/'), arg({id: num});
 // => Route<{id: number}>
 
-route_match(blog_by_id, '/blog/1')  // => {id:1}
-route_match(blog_by_id, '/blog/1/') // => undefined
-route_match(blog_by_id, '/other')   // => undefined
-route_match(blog_by_id, '1')        // => undefined
+match(blog_by_id, '/blog/1')  // => {id:1}
+match(blog_by_id, '/blog/1/') // => undefined
+match(blog_by_id, '/other')   // => undefined
+match(blog_by_id, '1')        // => undefined
 
-route_build(blog_by_id, {})        // error (missing 'id' property)
-route_build(blog_by_id, {id: 1})   // => '/blog/1'
+build(blog_by_id, {})        // error (missing 'id' property)
+build(blog_by_id, {id: 1})   // => '/blog/1'
 ```
 
-### Route variants
+#### Variants
 
 And of course you can combine some number of routes which can be used alternatively.
 
 ```typescript
-import { route_str, route_arg, route_and, route_match, route_build, baseTypes } from 'literium-router';
+import { str, num, dir, arg, seq, alt, match, build } from 'literium-router';
 
-const blogs_by_tag = route_and(route_str('/blog/tag-'), route_arg(baseTypes, {id: 'str'}));
+const blogs_by_tag = seq(dir('/blog/tag-'), arg({id: str}));
 // => Route<{id: string}>
-const by_author = route_and(route_str('/author-'), route_arg(baseTypes, {user: 'num'}));
+const by_author = seq(dir('/author-'), arg({user: num}));
 // => Route<{user: number}>
 
-const blogs_by_tag_opt_by_author = route_and(blogs_by_tag, route_or(by_author, route_str('')));
+const blogs_by_tag_opt_by_author = seq(blogs_by_tag, alt(by_author, dir('')));
 // => Route<{tag: string} | {tag: string} & {user: number}>
 
-route_match(blogs_by_tag_opt_by_author, '/blog/tag-js')           // => {tag:"js"}
-route_match(blogs_by_tag_opt_by_author, '/blog/tag-js/author-3')  // => {tag:"js",user:3}
-route_match(blogs_by_tag_opt_by_author, '/blog/tag-js/')          // => undefined
-route_match(blogs_by_tag_opt_by_author, '/blog/tag-js/author-')   // => undefined
-route_match(blogs_by_tag_opt_by_author, '/other')                 // => undefined
+match(blogs_by_tag_opt_by_author, '/blog/tag-js')           // => {tag:"js"}
+match(blogs_by_tag_opt_by_author, '/blog/tag-js/author-3')  // => {tag:"js",user:3}
+match(blogs_by_tag_opt_by_author, '/blog/tag-js/')          // => undefined
+match(blogs_by_tag_opt_by_author, '/blog/tag-js/author-')   // => undefined
+match(blogs_by_tag_opt_by_author, '/other')                 // => undefined
 
-route_build(blogs_by_tag_opt_by_author, {})                   // error (missing 'tag' property)
-route_build(blogs_by_tag_opt_by_author, {tag:"git"})          // => '/blog/tag-git'
-route_build(blogs_by_tag_opt_by_author, {user:3})             // error (missing 'tag' property)
-route_build(blogs_by_tag_opt_by_author, {tag:"git",user:3})   // => '/blog/tag-git/author-3'
+build(blogs_by_tag_opt_by_author, {})                   // error (missing 'tag' property)
+build(blogs_by_tag_opt_by_author, {tag:"git"})          // => '/blog/tag-git'
+build(blogs_by_tag_opt_by_author, {user:3})             // error (missing 'tag' property)
+build(blogs_by_tag_opt_by_author, {tag:"git",user:3})   // => '/blog/tag-git/author-3'
 ```
 
 __NOTE:__ Keep in mind the more complex variant must precede simple because in else case the simple routes may become unreachable to match.
 This assumption is accepted in order to simplify and speedup route matching algorithm.
 
-### Argument types
+### Custom route types
 
 One of the more helpful feature of this router is the possibility to define your own argument types.
 For example, suppose we have enum type _Order_ which has two values: _Asc_ and _Desc_. We can simply use it in our routes as arguments when we defined corresponding TypeApi.
 
 ```typescript
-import { route_str, route_arg, route_and, route_match, route_build, TypeApi } from 'literium-router';
+import { dir, arg, seq, match, build, Route } from 'literium-router';
 
 // Our enum type
 export const enum Order { Asc, Desc }
 
-// The type-tag to type mapping
-export interface OrderType {
-    ord: Order;
-}
-
-// The implementation of TypeApi
-export const orderType: TypeApi<OrderType> = {
-    ord: {
-        // The parser function (path => value)
-        parse: path => {
-            const m = path.match(/^(asc|desc)(.*)$/);
-            if (m) return [m[1] == 'asc' ? Order.Asc : Order.Desc, m[2]];
-        },
-        // The builder function (value => path)
-        build: arg => arg === Order.Asc || arg === Order.Desc ?
-            `${arg == Order.Asc ? 'asc' : 'desc'}` : undefined
+// The implementation of Route
+export const ord: Route<Order> = {
+    // The parser function (path => value)
+    p: path => {
+        const m = path.match(/^(asc|desc)(.*)$/);
+        if (m) return [m[1] == 'asc' ? Order.Asc : Order.Desc, m[2]];
     },
+    // The builder function (value => path)
+    b: arg => arg === Order.Asc || arg === Order.Desc ?
+        `${arg == Order.Asc ? 'asc' : 'desc'}` : undefined
 };
 
-const blogs_by_date = route_and(route_str('/blog/date-'), route_arg(orderType, {sort: 'ord'}));
+const blogs_by_date = seq(dir('/blog/date-'), arg({sort: ord}));
 // => Route<{sort: Order}>
 
-route_match(blogs_by_date, '/blog/date-asc')    // => {sort:Order.Asc}
-route_match(blogs_by_date, '/blog/date-desc')   // => {sort:Order.Desc}
-route_match(blogs_by_date, '/blog/date-')       // => undefined
-route_match(blogs_by_date, '/blog/date-other')  // => undefined
+match(blogs_by_date, '/blog/date-asc')    // => {sort:Order.Asc}
+match(blogs_by_date, '/blog/date-desc')   // => {sort:Order.Desc}
+match(blogs_by_date, '/blog/date-')       // => undefined
+match(blogs_by_date, '/blog/date-other')  // => undefined
 
-route_build(blogs_by_date, {sort:Order.Asc})    // => '/blog/date-asc'
-route_build(blogs_by_date, {sort:Order.Desc})   // => '/blog/date-desc'
-route_build(blogs_by_date, {})                  // error (missing 'sort' property)
-route_build(blogs_by_date, {sort:'asc'})        // error (type mismatch of 'sort' property)
+build(blogs_by_date, {sort:Order.Asc})    // => '/blog/date-asc'
+build(blogs_by_date, {sort:Order.Desc})   // => '/blog/date-desc'
+build(blogs_by_date, {})                  // error (missing 'sort' property)
+build(blogs_by_date, {sort:'asc'})        // error (type mismatch of 'sort' property)
 ```
-
-### Mixing types
-
-In some cases you need to merge different sets of types. You can use `type_mix()` for this purpose.
-
-```typescript
-import { route_query, baseTypes, numTypes } from 'literium-router';
-
-const mixTypes = type_mix(baseTypes, numTypes);
-
-const search_query = route_query({phrase: 'str', offset: 'nat', count: 'nat'}, mixTypes);
-```
-
-In example above we used `"str"` type from `baseTypes` and `"nat"` type from `numTypes`.
 
 ### Router
 
 Usually in real-life applications we don't like to operate with routes separately.
-One of ways to works with all defined routes together is using of the methods `router_match()` and `router_build()`.
+One of ways to works with all defined routes together is using of the methods `matchs()` and `builds()`.
 
 This methods gets the object with routes names as keys and routes itself as values.
 It operates with the complex state which represents object with routes names as keys and corresponding route arguments objects as values.
 
 ```typescript
-import { route_str, route_arg, route_and, router_match, router_build, baseTypes } from 'literium-router';
+import { num, str, dir, arg, seq, matchs, builds } from 'literium-router';
 
-const root = route_str('/');
-const blog_by_id = route_and(root, route_str('blog/'), route_arg({id:'num'}, baseTypes));
-const blogs_by_tag = route_and(root, route_str('blog/tag-'), route_arg({tag:'str'}, baseTypes));
+const root = dir('/');
+const blog_by_id = seq(root, dir('blog/'), arg({id:num}));
+const blogs_by_tag = seq(root, dir('blog/tag-'), arg({tag:str}));
 
 const routes = { root, blogs_by_tag, blog_by_id };
 
-router_match(routes, '/')              // => {root:{}}
-router_match(routes, '/blog/2')        // => {blog_by_id:{id:2}}
-router_match(routes, '/blog/tag-es6')  // => {blogs_by_tag:{tag:"es6"}}
+matchs(routes, '/')              // => {root:{}}
+matchs(routes, '/blog/2')        // => {blog_by_id:{id:2}}
+matchs(routes, '/blog/tag-es6')  // => {blogs_by_tag:{tag:"es6"}}
 
-router_build(routes, {root:{}})                   // => '/'
-router_build(routes, {blog_by_id:{id:2}})         // => '/blog/2'
-router_build(routes, {blogs_by_tag:{tag:"es6"}})  // => '/blog/tag-es6'
+builds(routes, {root:{}})                   // => '/'
+builds(routes, {blog_by_id:{id:2}})         // => '/blog/2'
+builds(routes, {blogs_by_tag:{tag:"es6"}})  // => '/blog/tag-es6'
 ```
 
 ## TypeScript 2.7 issue
 
 The _TypeScript 2.7.x_ have an [issue](https://github.com/Microsoft/TypeScript/issues/22169) which breaks the type inference of object values, so I strongly recommend to use _TypeScript 2.6.x_ until _TypeScript 2.8.x_ has been released.
-
-## Todo
-
-* Handling search parameters
