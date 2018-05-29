@@ -1,0 +1,53 @@
+{
+  "name": "literium-json",
+  "version": "0.1.1",
+  "description": "Type-safe JSON module for Literium web-framework.",
+  "main": "json.js",
+  "typings": "json.d.ts",
+  "module": "es/json.js",
+  "scripts": {
+    "compile": "npm run compile-es && npm run compile-js",
+    "clean": "npm run clean-es && npm run clean-js",
+    "compile-es": "tsc --outDir es --module es6 --moduleResolution node",
+    "clean-es": "rm -rf es",
+    "compile-js": "tsc --outDir ./",
+    "clean-js": "rm -rf *.d.ts *.js *.js.map",
+    "prepublish": "npm run compile",
+    "compile-test": "browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
+    "clean-test": "rm -f test-out.js",
+    "test": "testem ci",
+    "test-node": "mocha -r ts-node/register test/index.ts -R spec",
+    "test-dev": "testem",
+    "test-typing": "ts-node test/typing"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/katyo/literium/tree/master/json"
+  },
+  "keywords": [
+    "json",
+    "typed",
+    "typesafe",
+    "literium",
+    "framework"
+  ],
+  "author": "K. <kayo@illumium.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/katyo/literium/issues"
+  },
+  "devDependencies": {
+    "@types/mocha": "^5.2.0",
+    "@types/node": "^9.6.7",
+    "browserify": "^16.2.0",
+    "mocha": "^5.1.1",
+    "testem": "^2.4.0",
+    "ts-node": "^6.0.1",
+    "tsify": "^4.0.0",
+    "typescript": "^2.8.3"
+  },
+  "dependencies": {
+    "tslib": "^1.9.0",
+    "literium": "^0.1.1"
+  }
+}
