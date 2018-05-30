@@ -170,7 +170,7 @@ build(son, [] as any)   // => err("!string & !number")
 
 #### Optional
 
-The `opt()` is a shortcut for alternative of some type with `und` which is useful for defining an optional values in model.
+The `opt()` is useful for defining an optional values in model.
 
 ```typescript
 import { str, opt, parse, build } from 'literium-json';
@@ -186,6 +186,47 @@ build(so, "abc")       // => ok(`"abc"`)
 build(so, 123 as any)  // => err("!string & defined")
 build(so, true as any) // => err("!string & defined")
 build(so, [] as any)   // => err("!string & defined")
+```
+
+#### Defaults
+
+Also you can add the optional values with default values using `def()`.
+
+```typescript
+import { str, def, parse, build } from 'literium-json';
+
+const sd = def(str, "def");
+
+parse(sd, `"abc"`)    // => ok("abc")
+parse(sd, `null`)     // => ok("def")
+parse(sd, `123`)      // => err("!string & defined")
+parse(sd, `[]`)       // => err("!string & defined")
+
+build(sd, "abc")       // => ok(`"abc"`)
+build(sd, "def")       // => ok(`null`)
+build(sd, 123 as any)  // => err("!string")
+build(sd, [] as any)   // => err("!string")
+```
+
+#### Constant
+
+Use `val()` to add some constant value into model.
+
+```typescript
+import { str, val, dict, parse, build } from 'literium-json';
+
+const d = dict({
+    a: str,
+    b: val(123),
+});
+
+parse(d, `{"a":"abc"}`)          // => ok({a:"abc",b:123})
+parse(d, `{"a":"abc","b":456}`)  // => ok({a:"abc",b:123})
+parse(d, `{}`)                   // => err(".a missing")
+
+build(d, {a:"abc"})              // => ok(`{"a":"abc"}`)
+build(d, {a:"abc",b:123})        // => ok(`{"a":"abc"}`)
+build(d, {})                     // => err(".a missing")
 ```
 
 #### Value mapping

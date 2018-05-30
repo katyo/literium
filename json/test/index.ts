@@ -1,6 +1,6 @@
 import { deepStrictEqual as dse } from 'assert';
 import { ok, err } from 'literium';
-import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, tup, alt, opt, map, then, parse, build, JsonType } from '../src/json';
+import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, tup, alt, opt, def, val, map, then, parse, build, JsonType } from '../src/json';
 
 // custom type
 
@@ -275,6 +275,20 @@ describe('json', () => {
                 });
             });
 
+            it('def', () => {
+                const t = def(str, "def");
+                dse(parse(t, `"abc"`), ok("abc"));
+                dse(parse(t, `"def"`), ok("def"));
+                dse(parse(t, `null`), ok("def"));
+                dse(parse(t, `123`), err("!string & defined"));
+            });
+
+            it('val', () => {
+                const t = val(123);
+                dse(parse(t, `123`), ok(123));
+                dse(parse(t, `null`), ok(123));
+            });
+
             it('map', () => {
                 dse(parse(idx, `0`), ok(1));
                 dse(parse(idx, `9`), ok(10));
@@ -502,6 +516,20 @@ describe('json', () => {
                     dse(build(t, { "a": 123 } as any), err(".a !string & defined"));
                     dse(build(t, { "a": [] } as any), err(".a !string & defined"));
                 });
+            });
+
+            it('def', () => {
+                const t = def(str, "def");
+                dse(build(t, "abc"), ok(`"abc"`));
+                dse(build(t, "def"), ok(`null`));
+                dse(build(t, null as any), err("!string"));
+                dse(build(t, 123 as any), err("!string"));
+            });
+
+            it('val', () => {
+                const t = val(123);
+                dse(build(t, 123), ok(`null`));
+                dse(build(t, undefined as any), ok(`null`));
             });
 
             it('map', () => {
