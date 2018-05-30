@@ -1,4 +1,4 @@
-import { KeyCode, VNode, Send, h, either_a, either_b, keyed } from 'literium';
+import { KeyCode, VNode, Send, h, a, b, keyed } from 'literium';
 import { initHighlight, vdomRender } from 'literium-highlight';
 import { State, Event, Selection, Region } from './common';
 import { cancelEvent, hasSpecialKey, getCharacter } from './utils';
@@ -98,7 +98,7 @@ function sendInput(state: State, char: string | number, send: Send<Event>) {
     }
 
     send(keyed('change' as 'change', content));
-    send(keyed('select' as 'select', either_a(cursor) as Selection));
+    send(keyed('select' as 'select', a(cursor) as Selection));
 }
 
 function sendSelection(state: State, node: HTMLElement, send: Send<Event>) {
@@ -147,8 +147,8 @@ function setRange(range: Range, start: [Node, number], end: [Node, number]) {
 function getSelection(node: HTMLElement): Selection {
     const sel = node.ownerDocument.getSelection();
     const start = findPosition(node, sel.anchorNode, sel.anchorOffset);
-    return sel.isCollapsed ? either_a(start) :
-        either_b([start, findPosition(node, sel.focusNode, sel.focusOffset)] as Region);
+    return sel.isCollapsed ? a(start) :
+        b([start, findPosition(node, sel.focusNode, sel.focusOffset)] as Region);
 }
 
 export const enum NodeType {

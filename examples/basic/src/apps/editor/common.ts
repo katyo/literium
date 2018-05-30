@@ -1,4 +1,4 @@
-import { Either, Keyed, either_a, either_b } from 'literium';
+import { Either, Keyed, a, b } from 'literium';
 
 export type Region = [number, number];
 
@@ -14,7 +14,7 @@ export type Event = Keyed<'change', string> | Keyed<'select', Selection>;
 export function create(): State {
     return {
         content: '',
-        selection: either_a(0)
+        selection: a(0)
     };
 }
 
@@ -35,8 +35,8 @@ function fixRange(val: number, min: number, max: number): number {
 
 function fixSelection({ content }: State, sel: Selection): Selection {
     return sel.$ ?
-        either_b([fixRange(sel._[0], 0, content.length), fixRange(sel._[1], 0, content.length)] as [number, number]) :
-        either_a(fixRange(sel._, 0, content.length));
+        b([fixRange(sel._[0], 0, content.length), fixRange(sel._[1], 0, content.length)] as [number, number]) :
+        a(fixRange(sel._, 0, content.length));
 }
 
 export function equalSelection(a: Selection, b: Selection): boolean {

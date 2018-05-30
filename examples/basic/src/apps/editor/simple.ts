@@ -1,4 +1,4 @@
-import { VNode, Send, either_a, either_b, h, keyed } from 'literium';
+import { VNode, Send, a, b, h, keyed } from 'literium';
 import { State, Event, Selection } from './common';
 
 export function render(state: State, send: Send<Event>): VNode {
@@ -29,8 +29,8 @@ export function render(state: State, send: Send<Event>): VNode {
 function getSelection(elm: HTMLInputElement): Selection {
     const { selectionStart, selectionEnd } = elm;
     return selectionStart == selectionEnd ?
-        either_a(selectionStart as number) :
-        either_b([selectionStart, selectionEnd] as [number, number]);
+        a(selectionStart as number) :
+        b([selectionStart, selectionEnd] as [number, number]);
 }
 
 function sendSelection(state: State, node: HTMLInputElement, send: Send<Event>) {
