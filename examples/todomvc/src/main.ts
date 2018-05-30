@@ -1,4 +1,4 @@
-import { VNode, Send, Component, Keyed, h, page, send_wrap } from 'literium';
+import { VNode, Send, Component, Keyed, h, page, keyed_send } from 'literium';
 import * as Todo from './todo';
 import { createStore } from 'literium-runner';
 
@@ -32,7 +32,7 @@ function update(state: State, event: Event) {
     return state;
 }
 
-const send_todo = send_wrap('todo');
+const send_todo = keyed_send('todo');
 
 function render(state: State, send: Send<Event>) {
     return page({

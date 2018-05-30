@@ -1,4 +1,4 @@
-import { Option, some, none } from 'literium';
+import { Option, some, none } from 'literium-base';
 
 export interface Route<Args> {
     // match path to arguments

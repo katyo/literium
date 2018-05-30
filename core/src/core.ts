@@ -1,16 +1,5 @@
 import { VNodeChild } from './vdom';
-
-export interface Send<Event> {
-    (event: Event): void;
-}
-
-export interface Done {
-    (): void;
-}
-
-export interface Fork<Event> {
-    (): [Send<Event>, Done];
-}
+import { Send, Fork } from 'literium-base';
 
 export interface Create<State, Event> {
     (fork: Fork<Event>): State;

@@ -1,6 +1,6 @@
 {
   "name": "literium-router",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Type-safe router module for Literium web-framework.",
   "main": "router.js",
   "typings": "router.d.ts",
@@ -29,7 +29,10 @@
     "typed",
     "typesafe",
     "literium",
-    "framework"
+    "framework",
+    "typescript",
+    "es6",
+    "es2015"
   ],
   "author": "K. <kayo@illumium.org>",
   "license": "MIT",
@@ -47,6 +50,7 @@
     "typescript": "^2.8.3"
   },
   "dependencies": {
-    "tslib": "^1.9.0"
+    "tslib": "^1.9.0",
+    "literium-base": "^0.2.0"
   }
 }

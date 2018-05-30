@@ -1,4 +1,4 @@
-import { Result, ok, err, map_ok, map_err, then_ok } from 'literium';
+import { Result, ok, err, map_ok, map_err, then_ok } from 'literium-base';
 
 export type JsonResult<Type> = Result<Type, string>;
 

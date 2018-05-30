@@ -1,6 +1,6 @@
 {
   "name": "literium-runner",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Runner module for Literium web-framework.",
   "main": "index.js",
   "typings": "index.d.ts",
@@ -34,7 +34,10 @@
     "client",
     "server",
     "literium",
-    "framework"
+    "framework",
+    "typescript",
+    "es6",
+    "es2015"
   ],
   "author": "K. <kayo@illumium.org>",
   "license": "MIT",
@@ -51,6 +54,6 @@
     "typescript": "^2.8.3"
   },
   "peerDependencies": {
-    "literium": "^0.1.1"
+    "literium": "^0.2.0"
   }
 }

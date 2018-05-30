@@ -1,16 +1,27 @@
+import { Keyed } from './keyed';
 import { Result } from './result';
 import { Either } from './either';
 
-export type Option<Value> = { $: 1, _: Value; } | { $: 0 };
+export type Some<Value> = Keyed<1, Value>;
+export type None = Keyed<0, void>;
+export type Option<Value> = Some<Value> | None;
 
-const _none = { $: 0 };
+const _none: None = { $: 0, _: undefined };
 
-export function some<Value>(val: Value): Option<Value> {
-    return { $: 1, _: val };
+export function some<Value>(_: Value): Option<Value> {
+    return { $: 1, _ };
 }
 
 export function none<Value>(): Option<Value> {
     return _none as Option<Value>;
+}
+
+export function is_some<Value>(o: Option<Value>): o is Some<Value> {
+    return !!o.$;
+}
+
+export function is_none<Value>(o: Option<Value>): o is None {
+    return !o.$;
 }
 
 export function then_some<Value, NewValue>(fn: (_: Value) => Option<NewValue>): (_: Option<Value>) => Option<NewValue> {
@@ -25,17 +36,25 @@ export function map_some<Value, NewValue>(fn: (_: Value) => NewValue): (_: Optio
     return then_some(v => some(fn(v)));
 }
 
-export function map_none(fn: () => void): <Value>(_: Option<Value>) => Option<Value> {
+export function map_none(fn: () => void): <Value>(o: Option<Value>) => Option<Value> {
     return <Value>(o: Option<Value>) => o.$ ? o : (fn(), _none as Option<Value>);
 }
 
-export function unwrap_some<Value>(opt: Option<Value>): Value {
+export function and_some<NewValue>(v: NewValue): <Value>(o: Option<Value>) => Option<NewValue> {
+    return map_some(() => v);
+}
+
+export function un_some<Value>(opt: Option<Value>): Value {
     if (opt.$) return opt._;
     throw "option none";
 }
 
-export function unwrap_some_or<Value>(def: Value): (_: Option<Value>) => Value {
+export function un_some_or<Value>(def: Value): (_: Option<Value>) => Value {
     return (opt: Option<Value>) => opt.$ ? opt._ : def;
+}
+
+export function un_some_else<Value>(def: () => Value): (_: Option<Value>) => Value {
+    return (opt: Option<Value>) => opt.$ ? opt._ : def();
 }
 
 export function ok_some<Error>(e: Error): <Value>(_: Option<Value>) => Result<Value, Error> {

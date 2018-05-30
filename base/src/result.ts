@@ -1,7 +1,12 @@
+import { Keyed } from './keyed';
 import { Option, none } from './option';
 import { Either } from './either';
 
-export type Result<Value, Error> = { $: 1, _: Value; } | { $: 0, _: Error };
+export type Ok<Value> = Keyed<1, Value>;
+
+export type Err<Error> = Keyed<0, Error>;
+
+export type Result<Value, Error> = Ok<Value> | Err<Error>;
 
 export function ok<Value, Error>(val: Value): Result<Value, Error> {
     return { $: 1, _: val };
@@ -9,6 +14,14 @@ export function ok<Value, Error>(val: Value): Result<Value, Error> {
 
 export function err<Value, Error>(err: Error): Result<Value, Error> {
     return { $: 0, _: err };
+}
+
+export function is_ok<Value, Error>(r: Result<Value, Error>): r is Ok<Value> {
+    return !!r.$;
+}
+
+export function is_err<Value, Error>(r: Result<Value, Error>): r is Err<Error> {
+    return !r.$;
 }
 
 export function then_ok<Value, Error, NewValue>(fn: (_: Value) => Result<NewValue, Error>): (res: Result<Value, Error>) => Result<NewValue, Error> {
@@ -31,26 +44,34 @@ export function and_ok<NewValue>(v: NewValue): <Value, Error>(res: Result<Value,
     return map_ok(() => v);
 }
 
-export function and_err<NewError>(e: NewError): <Value, Error>(res: Result<Value, Error>) => Result<Value, NewError> {
+export function or_err<NewError>(e: NewError): <Value, Error>(res: Result<Value, Error>) => Result<Value, NewError> {
     return map_err(() => e);
 }
 
-export function unwrap_ok<Value, Error>(res: Result<Value, Error>): Value {
+export function un_ok<Value, Error>(res: Result<Value, Error>): Value {
     if (res.$) return res._;
     throw "result err";
 }
 
-export function unwrap_ok_or<Value>(def: Value): <Error>(res: Result<Value, Error>) => Value {
-    return <Error>(res: Result<Value, Error>) => res.$ ? res._ : def;
-}
-
-export function unwrap_err<Value, Error>(res: Result<Value, Error>): Error {
+export function un_err<Value, Error>(res: Result<Value, Error>): Error {
     if (!res.$) return res._ as Error;
     throw "result ok";
 }
 
-export function unwrap_err_or<Error>(def: Error): <Value>(res: Result<Value, Error>) => Error {
+export function un_ok_or<Value>(def: Value): <Error>(res: Result<Value, Error>) => Value {
+    return <Error>(res: Result<Value, Error>) => res.$ ? res._ : def;
+}
+
+export function un_err_or<Error>(def: Error): <Value>(res: Result<Value, Error>) => Error {
     return <Value>(res: Result<Value, Error>) => res.$ ? def : res._ as Error;
+}
+
+export function un_ok_else<Value, Error>(def: (e: Error) => Value): (res: Result<Value, Error>) => Value {
+    return (res: Result<Value, Error>) => res.$ ? res._ : def(res._);
+}
+
+export function un_err_else<Value, Error>(def: (v: Value) => Error): (res: Result<Value, Error>) => Error {
+    return (res: Result<Value, Error>) => res.$ ? def(res._) : res._;
 }
 
 export function some_ok<Value, Error>(res: Result<Value, Error>): Option<Value> {
@@ -58,7 +79,7 @@ export function some_ok<Value, Error>(res: Result<Value, Error>): Option<Value> 
 }
 
 export function some_err<Value, Error>(res: Result<Value, Error>): Option<Error> {
-    return res.$ ? none() : res as Option<Error>;
+    return res.$ ? none() : { $: 1, _: res._ };
 }
 
 export function a_ok<A, B>(res: Result<A, B>): Either<A, B> {

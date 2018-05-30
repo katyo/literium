@@ -1,5 +1,5 @@
 import { deepStrictEqual as dse } from 'assert';
-import { ok, err } from 'literium';
+import { ok, err } from 'literium-base';
 import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, tup, alt, opt, def, val, map, then, parse, build, JsonType } from '../src/json';
 
 // custom type
