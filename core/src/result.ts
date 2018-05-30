@@ -1,5 +1,5 @@
 import { Option, none } from './option';
-import { Either, a, b } from './either';
+import { Either } from './either';
 
 export type Result<Value, Error> = { $: 1, _: Value; } | { $: 0, _: Error };
 
@@ -62,7 +62,7 @@ export function some_err<Value, Error>(res: Result<Value, Error>): Option<Error>
 }
 
 export function a_ok<A, B>(res: Result<A, B>): Either<A, B> {
-    return res.$ ? a(res._) : b(res._);
+    return res.$ ? { $: 0, _: res._ } : { $: 1, _: res._ };
 }
 
 export function b_ok<A, B>(res: Result<B, A>): Either<A, B> {
