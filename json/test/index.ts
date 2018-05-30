@@ -1,6 +1,6 @@
 import { deepStrictEqual as dse } from 'assert';
 import { ok, err } from 'literium';
-import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, tup, alt, opt, parse, build, JsonType } from '../src/json';
+import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, tup, alt, opt, map, then, parse, build, JsonType } from '../src/json';
 
 // custom type
 
@@ -48,6 +48,20 @@ export function pair<Key, Value>(tk: JsonType<Key>, tv: JsonType<Value>): JsonTy
         }
     };
 }
+
+// mapping
+
+const start_from_one = map(
+    (v: number) => v + 1,
+    (v: number) => v - 1
+);
+const idx = start_from_one(int);
+
+const validate_even = then(
+    (v: number) => v % 2 ? err('odd') : ok(v),
+    (v: number) => v % 2 ? err('odd') : ok(v),
+);
+const even = validate_even(int);
 
 describe('json', () => {
     describe('parse', () => {
@@ -259,6 +273,19 @@ describe('json', () => {
                     dse(parse(t, `{"a":123}`), err(".a !string & defined"));
                     dse(parse(t, `{"a":[]}`), err(".a !string & defined"));
                 });
+            });
+
+            it('map', () => {
+                dse(parse(idx, `0`), ok(1));
+                dse(parse(idx, `9`), ok(10));
+            });
+
+            it('then', () => {
+                dse(parse(even, `0`), ok(0));
+                dse(parse(even, `1`), err("odd"));
+                dse(parse(even, `2`), ok(2));
+                dse(parse(even, `99`), err("odd"));
+                dse(parse(even, `100`), ok(100));
             });
         });
     });
@@ -475,6 +502,19 @@ describe('json', () => {
                     dse(build(t, { "a": 123 } as any), err(".a !string & defined"));
                     dse(build(t, { "a": [] } as any), err(".a !string & defined"));
                 });
+            });
+
+            it('map', () => {
+                dse(build(idx, 1), ok(`0`));
+                dse(build(idx, 10), ok(`9`));
+            });
+
+            it('then', () => {
+                dse(build(even, 0), ok(`0`));
+                dse(build(even, 1), err("odd"));
+                dse(build(even, 2), ok(`2`));
+                dse(build(even, 99), err("odd"));
+                dse(build(even, 100), ok(`100`));
             });
         });
     });

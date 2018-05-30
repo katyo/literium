@@ -1,4 +1,4 @@
-import { Result, ok, err, map_err, then_ok } from 'literium';
+import { Result, ok, err, map_ok, map_err, then_ok } from 'literium';
 
 export type JsonResult<Type> = Result<Type, string>;
 
@@ -178,6 +178,25 @@ export function def<Type>(t: JsonType<Type>, d: Type): JsonType<Type> {
     return {
         p: (v) => v != null ? and_defined(t.p(v)) : ok(d),
         b: (v) => v != undefined ? and_defined(t.b(v)) : ok(d),
+    };
+}
+
+export function map<Type, NewType>(p: (v: Type) => NewType, b: (v: NewType) => Type): (t: JsonType<Type>) => JsonType<NewType> {
+    const map_p = map_ok(p);
+    return t => ({
+        p: v => map_p(t.p(v)),
+        b: v => t.b(b(v)),
+    });
+}
+
+export function then<Type, NewType>(p: (v: Type) => JsonResult<NewType>, b: (v: NewType) => JsonResult<Type>): (t: JsonType<Type>) => JsonType<NewType> {
+    const then_p = then_ok(p);
+    return t => {
+        const then_b = then_ok(t.b);
+        return {
+            p: v => then_p(t.p(v)),
+            b: v => then_b(b(v)),
+        };
     };
 }
 

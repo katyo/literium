@@ -170,7 +170,7 @@ build(son, [] as any)   // => err("!string & !number")
 
 #### Optional
 
-The `opt` is a shortcut for alternative of some type with `und` which is useful for defining an optional values in model.
+The `opt()` is a shortcut for alternative of some type with `und` which is useful for defining an optional values in model.
 
 ```typescript
 import { str, opt, parse, build } from 'literium-json';
@@ -188,6 +188,47 @@ build(so, true as any) // => err("!string & defined")
 build(so, [] as any)   // => err("!string & defined")
 ```
 
+#### Value mapping
+
+In some cases you need simply to change the type of value or modify value but you would like to avoid implementing new parser. You can use mapping like bellow:
+
+```typescript
+import { int, map, parse, build } from 'literium-json';
+
+const start_from_one = map(
+  (v: number) => v + 1,
+  (v: number) => v - 1
+);
+const idx = start_from_one(int);
+
+parse(idx, `0`) // => ok(1)
+parse(idx, `9`) // => ok(10)
+
+build(idx, 1)   // => ok(`0`)
+build(idx, 10)  // => ok(`9`)
+```
+
+#### Advanced validation
+
+In some advanced cases you need apply some extra validation to already parsed values. You can do it with `then()` like so:
+
+```typescript
+import { ok, err } from 'literium';
+import { int, then, parse, build } from 'literium-json';
+
+const validate_even = then(
+  (v: number) => v % 2 ? err('odd') : ok(v),
+  (v: number) => v % 2 ? err('odd') : ok(v),
+);
+const even = validate_even(int);
+
+parse(even, `0`) // => ok(0)
+parse(even, `9`) // => err('odd')
+
+build(even, 0)   // => ok(`0`)
+build(even, 9)   // => err('odd')
+```
+
 ### User-defined types and combinators
 
 #### Custom type
@@ -196,7 +237,7 @@ One of the more helpful feature of this library is the possibility to define you
 For example, suppose we have enum type _Order_ which has two values: _Asc_ and _Desc_. We can simply use it in our data models when we defined corresponding JsonType for it.
 
 ```typescript
-import { result_ok as ok, result_err as err } from 'literium';
+import { ok, err } from 'literium';
 import { str, parse, build, JsonType } from 'literium-json';
 
 // Our enum type
@@ -231,7 +272,7 @@ build(ord, "abc")      // => err("!Order")
 The example below demonstrates how to create custom combinator.
 
 ```typescript
-import { result_ok as ok, result_err as err } from 'literium';
+import { ok, err } from 'literium';
 import { str, num, parse, build, JsonType } from 'literium-json';
 
 export interface Pair<Key, Value> { $: Key, _: Value }
