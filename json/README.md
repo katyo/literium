@@ -1,4 +1,10 @@
-# Type-safe JSON parsing/formatting for Literium web-framework
+# Type-safe JSON parsing/formatting
+
+[![npm version](https://badge.fury.io/js/literium-json.svg)](https://badge.fury.io/js/literium-json)
+[![npm downloads](https://img.shields.io/npm/dm/literium-json.svg)](https://www.npmjs.com/package/literium-json)
+[![Build Status](https://travis-ci.org/katyo/literium.svg?branch=master)](https://travis-ci.org/katyo/literium)
+
+This project is part of **Literium** WEB-framework but can be used standalone.
 
 ## Why
 
