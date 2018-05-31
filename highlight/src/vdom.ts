@@ -1,5 +1,5 @@
 import { VNodeChildren, VNodeChild, h } from 'literium';
-import { Renderer } from '../types';
+import { Renderer } from 'highlight-ts';
 
 export const vdomRender: Renderer<VNodeChildren> = {
     text: (chunk: string) => chunk,

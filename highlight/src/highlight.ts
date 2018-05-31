@@ -1,7 +1,6 @@
 import { VNodeChildren } from 'literium';
-import { Renderer, Options } from './hl/types';
-import { vdomRender } from './hl/render/vdom';
-import { init, process } from './hl/process';
+import { Renderer, Options, init, process } from 'highlight-ts';
+import { vdomRender } from './vdom';
 
 export interface Highlight {
     (src: string, lang?: string | string[]): VNodeChildren;
