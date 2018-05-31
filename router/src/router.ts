@@ -270,7 +270,7 @@ export function builds<State>(routes: Routes<State>, state: Partial<State>): str
     for (const id in state) {
         const args = state[id];
         if (is_def(args)) {
-            return build(routes[id], args as State[keyof State]);
+            return build(routes[id], args as State[Extract<keyof State, string>]);
         }
     }
 }

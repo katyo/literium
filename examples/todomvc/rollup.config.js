@@ -4,7 +4,7 @@ import nodeResolve from 'rollup-plugin-node-resolve';
 import sourceMaps from 'rollup-plugin-sourcemaps';
 import typescript from 'rollup-plugin-typescript2';
 import postcss from 'rollup-plugin-postcss';
-import uglify from 'rollup-plugin-uglify';
+import { uglify } from 'rollup-plugin-uglify';
 import replace from 'rollup-plugin-replace';
 import gzip from 'rollup-plugin-gzip';
 import postcss_import from 'postcss-import';
@@ -59,12 +59,14 @@ export default {
             ie8: true,
             mangle: {
                 toplevel: true,
-                safari10: true
+                //safari10: true,
+                keep_fnames: false,
             },
             compress: {
-                ecma: 5,
+                //ecma: 5,
                 toplevel: true,
                 keep_fargs: false,
+                keep_fnames: false,
                 warnings: true,
                 inline: 2,
                 passes: 2,

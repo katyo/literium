@@ -51,7 +51,7 @@
     "testem": "^2.0.0",
     "ts-node": "^6.0.1",
     "tsify": "^4.0.0",
-    "typescript": "^2.8.3"
+    "typescript": "^2.9.1"
   },
   "peerDependencies": {
     "literium": "^0.2.0"

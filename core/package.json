@@ -45,11 +45,11 @@
     "testem": "^2.0.0",
     "ts-node": "^6.0.1",
     "tsify": "^4.0.0",
-    "typescript": "^2.8.3"
+    "typescript": "^2.9.1"
   },
   "dependencies": {
     "snabbdom-ng": "^0.7.1-ng.10",
-    "tslib": "^1.9.0",
+    "tslib": "^1.9.2",
     "literium-base": "^0.2.0"
   }
 }
