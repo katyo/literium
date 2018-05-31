@@ -1,4 +1,4 @@
-import { Fork } from 'literium';
+import { Fork, Keyed } from 'literium';
 
 export interface HasBase {
     base: string;
@@ -8,13 +8,10 @@ export interface HasPath {
     path: string;
 }
 
-export interface SetPath {
-    $: 'path';
-    path: string;
-}
+export type SetPath = Keyed<'path', string>;
 
-export function setPath<State extends HasPath>(state: State, { path }: SetPath): State {
-    return { ...(state as {}), path } as State;
+export function setPath<State extends HasPath>(state: State, event: SetPath): State {
+    return event.$ == 'path' ? { ...(state as {}), path: event._ } as State : state;
 }
 
 export interface Nav<AppEvent> {

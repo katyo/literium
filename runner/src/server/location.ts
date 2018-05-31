@@ -1,3 +1,4 @@
+import { keyed } from 'literium';
 import { Nav, SetPath } from '../location';
 import { IncomingMessage, ServerResponse } from 'http';
 
@@ -9,7 +10,7 @@ export function initNav<Event extends SetPath>(req: IncomingMessage, res: Server
     return {
         on: (fork) => {
             const [send, done] = fork();
-            send({ $: 'path', path: req.url || '' } as Event);
+            send(keyed('path' as 'path', req.url || '') as Event);
             done();
         },
         go: (url: string) => {

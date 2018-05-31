@@ -1,3 +1,4 @@
+import { keyed } from 'literium';
 import { Nav, SetPath } from '../location';
 
 const urlRegExp = /^([^:]+:)?(\/\/)?(?:([^@:\/\?#]*)@)?(([^:\/\?#]+)(?:\:(\d+))?)?(([\/]?[^\?#]*)?(\?[^#]*)?)?(#.*)?$/;
@@ -53,7 +54,7 @@ export function initNav<Event extends SetPath>(win: Window = window): Nav<Event>
             const [send,] = fork();
 
             set_path = (path: string) => {
-                send({ $: 'path', path } as Event);
+                send(keyed('path' as 'path', path) as Event);
             };
 
             // send initial url
