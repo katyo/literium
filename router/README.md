@@ -66,8 +66,7 @@ build(blog_id, {})        // error (missing 'id' property)
 build(blog_id, {id: 1})   // => '1'
 ```
 
-The first argument of `arg()` is the object with property name as key and with property type-tag as value.
-The available type-tags and corresponding value types is defined by the second argument of `arg()`.
+The argument of `arg()` is the object with property name as key and with property `ArgType<Type>` as a value.
 
 #### Query string arguments
 
@@ -87,7 +86,7 @@ build(blog_posts, {length:5})                  // error (missing 'offset' proper
 build(blog_posts, {offset:10, length:5})       // => '?offset=10&length=5'
 ```
 
-When you need process different query strings you can alternate queryes using [variants](#route-variants).
+When you need process different query strings you can alternate queryes using [variants](#variants).
 
 ### Route combinators
 
