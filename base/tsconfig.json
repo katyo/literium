@@ -23,6 +23,8 @@
     "src/helper.ts",
     "src/send.ts",
     "src/fork.ts",
+    "src/future.ts",
+    "src/future_result.ts",
     "src/index.ts"
   ]
 }

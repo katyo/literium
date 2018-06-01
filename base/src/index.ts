@@ -5,3 +5,5 @@ export * from './either';
 export * from './helper';
 export * from './send';
 export * from './fork';
+export * from './future';
+export * from './future_result';
