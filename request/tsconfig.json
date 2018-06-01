@@ -17,6 +17,7 @@
     ]
   },
   "files": [
+    "src/types.ts",
     "src/request.ts",
     "src/client.ts",
     "src/server.ts"

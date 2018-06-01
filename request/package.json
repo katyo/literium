@@ -1,6 +1,6 @@
 {
   "name": "literium-request",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Request module for Literium web-framework.",
   "main": "request.js",
   "typings": "request.d.ts",
@@ -19,9 +19,11 @@
     "prepublish": "npm run compile",
     "compile-test": "browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
     "clean-test": "rm -f test-out.js",
-    "test": "testem ci",
-    "test-node": "mocha -r ts-node/register test/index.ts -R spec",
-    "test-dev": "testem"
+    "test": "npm run test-server-start; testem ci; npm run test-server-stop",
+    "test-node": "npm run test-server-start; mocha -r ts-node/register test/index.ts -R spec; npm run test-server-stop",
+    "test-dev": "npm run test-server-start; testem; npm run test-server-stop",
+    "test-server-start": "ts-node test/server.ts start 8182",
+    "test-server-stop": "ts-node test/server.ts stop 8182"
   },
   "repository": {
     "type": "git",
@@ -32,7 +34,10 @@
     "client",
     "server",
     "literium",
-    "framework"
+    "framework",
+    "typescript",
+    "es6",
+    "es2015"
   ],
   "author": "K. <kayo@illumium.org>",
   "license": "MIT",
@@ -46,9 +51,9 @@
     "testem": "^2.0.0",
     "ts-node": "^6.0.1",
     "tsify": "^4.0.0",
-    "typescript": "^2.8.3"
+    "typescript": "^2.9.1"
   },
-  "peerDependencies": {
-    "literium": "^0.1.1"
+  "dependencies": {
+    "literium-base": "^0.2.1"
   }
 }

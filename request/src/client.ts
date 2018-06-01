@@ -1,6 +1,6 @@
-import { Method, Headers, GenericBody, DataType, ResFn, ErrFn, AbrFn } from './request';
+import { Method, Headers, GenericBody, DataType, ResFn, ErrFn, AbrFn } from './types';
 
-export function request(method: Method, url: string, headers: Headers, body: GenericBody, res_type: DataType, res_fn: ResFn, err_fn: ErrFn): AbrFn {
+export function request(method: Method, url: string, headers: Headers, body: GenericBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn): AbrFn {
     let xhr = new XMLHttpRequest();
 
     xhr.open(method, url, true);
@@ -12,7 +12,7 @@ export function request(method: Method, url: string, headers: Headers, body: Gen
         xhr_on(xhr, res_fn, res_type);
     };
 
-    if (res_type != DataType.None) {
+    if (res_type != undefined) {
         download_init(xhr, res_type);
     }
 
@@ -43,19 +43,19 @@ function parseHeaders(hs: string) {
     return h;
 }
 
-function xhr_on(xhr: XMLHttpRequest, res_fn: ResFn, res_type: DataType) {
+function xhr_on(xhr: XMLHttpRequest, res_fn: ResFn, res_type: DataType | void) {
     switch (xhr.readyState) {
         case 4: { // done
             delete xhr.onreadystatechange;
-            res_fn(xhr.status, xhr.statusText, parseHeaders(xhr.getAllResponseHeaders()), res_type != DataType.None ? download_done(xhr, res_type) : undefined);
+            res_fn(xhr.status, xhr.statusText, parseHeaders(xhr.getAllResponseHeaders()), res_type != undefined ? download_done(xhr, res_type) : undefined);
         } break;
     }
 };
 
 interface XHRAPI {
     upload(xhr: XMLHttpRequest, body: GenericBody): void;
-    download_init(xhr: XMLHttpRequest, res_type: DataType): void;
-    download_done(xhr: XMLHttpRequest, res_type: DataType): GenericBody;
+    download_init(xhr: XMLHttpRequest, res_type: DataType | void): void;
+    download_done(xhr: XMLHttpRequest, res_type: DataType | void): GenericBody;
 }
 
 const { upload, download_init, download_done } = xhrapi_new();

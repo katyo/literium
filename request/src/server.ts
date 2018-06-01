@@ -1,6 +1,6 @@
 import { parse } from 'url';
 import { request as node_request, IncomingHttpHeaders } from 'http';
-import { Method, Headers, GenericBody, DataType, ResFn, ErrFn, AbrFn } from './request';
+import { Method, Headers, GenericBody, DataType, ResFn, ErrFn, AbrFn } from './types';
 
 function parseHeaders(h: IncomingHttpHeaders | undefined): Headers {
     const hs: Headers = {};
@@ -17,10 +17,10 @@ function parseHeaders(h: IncomingHttpHeaders | undefined): Headers {
     return hs;
 }
 
-export function request(method: Method, url: string, headers: Headers, body: GenericBody, res_type: DataType, res_fn: ResFn, err_fn: ErrFn): AbrFn {
+export function request(method: Method, url: string, headers: Headers, body: GenericBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn): AbrFn {
     const { protocol, hostname, port, path } = parse(url);
     const req = node_request({ method, protocol, hostname, port, path, headers }, (res) => {
-        if (res_type != DataType.None) {
+        if (res_type != undefined) {
             const bufs: Buffer[] = [];
             res.on('data', (buf) => {
                 bufs.push(buf as Buffer);
@@ -43,7 +43,7 @@ export function request(method: Method, url: string, headers: Headers, body: Gen
     });
     req.on('error', err_fn);
     if (body) {
-        req.write(body);
+        req.write(Buffer.from(body));
     }
     req.end();
     return () => {

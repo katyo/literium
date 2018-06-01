@@ -13,3 +13,4 @@ script:
   - npm install ./runner
   - cd router && npm install && npm test && cd -
   - cd json && npm install && npm test && cd -
+  - cd request && npm install && npm test && cd -
