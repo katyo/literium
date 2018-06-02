@@ -12,7 +12,7 @@ describe('request', () => {
                 method: Method.Get,
                 url: `${base}/xhr/ascii`,
                 headers: { 'accept': 'text/plain' },
-                resType: DataType.String,
+                response: DataType.String,
             })(res => {
                 is(is_ok(res));
                 const { status, message, headers, body } = un_ok(res);
@@ -29,7 +29,7 @@ describe('request', () => {
                 method: Method.Get,
                 url: `${base}/xhr/utf8`,
                 headers: { 'accept': 'text/plain; charset=UTF-8' },
-                resType: DataType.String
+                response: DataType.String
             })(res => {
                 is(is_ok(res));
                 const { status, message, headers, body } = un_ok(res);
@@ -46,7 +46,7 @@ describe('request', () => {
                 method: Method.Get,
                 url: `${base}/xhr/binary`,
                 headers: { 'accept': 'application/octet-stream' },
-                resType: DataType.Binary
+                response: DataType.Binary
             })(res => {
                 is(is_ok(res));
                 const { status, message, headers, body } = un_ok(res);
@@ -62,7 +62,7 @@ describe('request', () => {
             request({
                 method: Method.Get,
                 url: `${base}/xhr/error`,
-                resType: DataType.String
+                response: DataType.String
             })(res => {
                 is(is_ok(res));
                 const { status, message, body } = un_ok(res);
@@ -80,7 +80,6 @@ describe('request', () => {
                 method: Method.Put,
                 url: `${base}/xhr/ascii`,
                 headers: { 'Content-Type': 'text/plain' },
-                reqType: DataType.String,
                 body: "Not very long ASCII text content."
             })(res => {
                 is(is_ok(res));
@@ -96,7 +95,6 @@ describe('request', () => {
                 method: Method.Put,
                 url: `${base}/xhr/ascii`,
                 headers: { 'Content-Type': 'text/plain' },
-                reqType: DataType.String,
                 body: "Not very long ASCII text content!"
             })(res => {
                 is(is_ok(res));
@@ -112,7 +110,6 @@ describe('request', () => {
                 method: Method.Put,
                 url: `${base}/xhr/utf8`,
                 headers: { 'Content-Type': 'text/plain; charset=UTF-8' },
-                reqType: DataType.String,
                 body: "Не очень длинное UTF-8 содержимое."
             })(res => {
                 is(is_ok(res));
@@ -128,7 +125,6 @@ describe('request', () => {
                 method: Method.Put,
                 url: `${base}/xhr/utf8`,
                 headers: { 'Content-Type': 'text/plain; charset=UTF-8' },
-                reqType: DataType.String,
                 body: "Не очень длинное UTF-8 содержимое!"
             })(res => {
                 is(is_ok(res));
@@ -144,7 +140,6 @@ describe('request', () => {
                 method: Method.Put,
                 url: `${base}/xhr/binary`,
                 headers: { 'Content-Type': 'application/octet-stream' },
-                reqType: DataType.Binary,
                 body: new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30])
             })(res => {
                 is(is_ok(res));
@@ -160,7 +155,6 @@ describe('request', () => {
                 method: Method.Put,
                 url: `${base}/xhr/binary`,
                 headers: { 'Content-Type': 'application/octet-stream' },
-                reqType: DataType.Binary,
                 body: new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31])
             })(res => {
                 is(is_ok(res));
@@ -175,7 +169,6 @@ describe('request', () => {
             request({
                 method: Method.Put,
                 url: `${base}/xhr/error`,
-                reqType: DataType.String,
                 body: '',
             })(res => {
                 is(is_ok(res));

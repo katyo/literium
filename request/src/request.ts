@@ -10,22 +10,17 @@ export interface RequestWithoutBody<TMethod extends Method> {
     timeout?: number;
 }
 
-export interface RequestWithBodyT<TMethod extends Method, TData extends DataType, TBody extends GenericBody> extends RequestWithoutBody<TMethod> {
-    reqType: TData;
-    body: TBody;
+export interface RequestWithBody<TMethod extends Method> extends RequestWithoutBody<TMethod> {
+    body: GenericBody;
 }
-
-export type RequestWithBody<TMethod extends Method>
-    = RequestWithBodyT<TMethod, DataType.String, string>
-    | RequestWithBodyT<TMethod, DataType.Binary, ArrayBuffer>;
 
 export interface WithResponseBody<TData extends DataType> {
-    resType: TData;
+    response: TData;
 }
 
-export type Request<TMethod extends Method, TReqData extends DataType, TReqBody extends GenericBody, TResData extends DataType> = RequestWithoutBody<TMethod> | RequestWithBodyT<TMethod, TReqData, TReqBody> | RequestWithoutBody<TMethod> & WithResponseBody<TResData> | RequestWithBodyT<TMethod, TReqData, TReqBody> & WithResponseBody<TResData>;
+export type Request<TMethod extends Method, TResData extends DataType> = RequestWithoutBody<TMethod> | RequestWithBody<TMethod> | RequestWithoutBody<TMethod> & WithResponseBody<TResData> | RequestWithBody<TMethod> & WithResponseBody<TResData>;
 
-export type GenericRequest = Request<Method, DataType, GenericBody, DataType>;
+export type GenericRequest = Request<Method, DataType>;
 
 export interface ResponseWithoutBody {
     status: Status;
@@ -71,7 +66,7 @@ export function request(req: RequestWithBody<MethodWithRequestBody> & WithRespon
 export function request(req: GenericRequest): GenericFutureResponse {
     return send => {
         let timer: any;
-        const abort = backend(req.method, req.url, req.headers || {}, uploadable(req.method) ? (req as RequestWithBody<Method>).body : undefined, downloadable(req.method) ? (req as WithResponseBody<DataType>).resType : undefined, (status: number, message: string, headers: Headers, body?: GenericBody) => {
+        const abort = backend(req.method, req.url, req.headers || {}, uploadable(req.method) ? (req as RequestWithBody<Method>).body : undefined, downloadable(req.method) ? (req as WithResponseBody<DataType>).response : undefined, (status: number, message: string, headers: Headers, body?: GenericBody) => {
             const res: Response<GenericBody> = { status, message, headers, body };
             clearTimeout(timer);
             send(ok(res));
