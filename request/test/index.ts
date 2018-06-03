@@ -1,7 +1,7 @@
 import { strictEqual as se, deepStrictEqual as dse } from 'assert';
 import * as is from 'assert';
-import { is_ok, un_ok } from 'literium-base';
-import { Method, Status, DataType, request } from '../'; //'../src/request';
+import { is_ok, un_ok, un_err } from 'literium-base';
+import { Method, Status, DataType, Error, request } from '../'; //'../src/request';
 
 const base = typeof window != 'undefined' ? '' : 'http://localhost:8182';
 
@@ -175,6 +175,80 @@ describe('request', () => {
                 const { status, message } = un_ok(res);
                 se(status, Status.BadGateway);
                 se(message, 'Bad gateway');
+                done();
+            });
+        });
+    });
+
+    it('timeout error', done => {
+        request({
+            method: Method.Post,
+            url: `${base}/xhr/long`,
+            body: '',
+            timeout: 1000,
+        })(res => {
+            is(!is_ok(res));
+            se(un_err(res), Error.Timeout);
+            done();
+        });
+    });
+
+    /*
+    it('broken error', done => {
+        request({
+            method: Method.Post,
+            url: `${base}/xhr/break`,
+            body: '123',
+        })(res => {
+            is(!is_ok(res));
+            se(un_err(res), Error.Broken);
+            done();
+        });
+    });
+    */
+
+    describe('progress', function() {
+        this.timeout(10000);
+        it('upload', done => {
+            let all = 0;
+            request({
+                method: Method.Post,
+                url: `${base}/xhr/upload`,
+                body: new Array((1 << 24) + 1).join(' '), // 16Megs of spaces
+                progress: ({ left, size, down }) => {
+                    if (!down) {
+                        se(size, 1 << 24);
+                        all = left;
+                    }
+                },
+            })(res => {
+                is(is_ok(res));
+                const { status, message } = un_ok(res);
+                se(status, Status.Created);
+                se(message, 'Created');
+                se(all, 1 << 24);
+                done();
+            });
+        });
+
+        it('download', done => {
+            let all = 0;
+            request({
+                method: Method.Get,
+                url: `${base}/xhr/download`,
+                response: DataType.String,
+                progress: ({ left, size, down }) => {
+                    if (down) {
+                        se(size, 1 << 24);
+                        all = left;
+                    }
+                },
+            })(res => {
+                is(is_ok(res));
+                const { status, message } = un_ok(res);
+                se(status, Status.Ok);
+                se(message, 'OK');
+                se(all, 1 << 24);
                 done();
             });
         });

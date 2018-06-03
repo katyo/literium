@@ -1,6 +1,6 @@
 {
   "name": "literium-request",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Request module for Literium web-framework.",
   "main": "request.js",
   "typings": "request.d.ts",
@@ -20,7 +20,7 @@
     "compile-test": "browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
     "clean-test": "rm -f test-out.js",
     "test": "npm run test-server-start; testem ci; npm run test-server-stop",
-    "test-node": "npm run test-server-start; mocha -r ts-node/register test/index.ts -R spec; npm run test-server-stop",
+    "test-node": "npm run compile; npm run test-server-start; mocha -r ts-node/register test/index.ts -R spec; npm run test-server-stop",
     "test-dev": "npm run test-server-start; testem; npm run test-server-stop",
     "test-server-start": "ts-node test/server.ts start 8182",
     "test-server-stop": "ts-node test/server.ts stop 8182"

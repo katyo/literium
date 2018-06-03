@@ -85,6 +85,11 @@ export const enum Status {
     InvalidSSLCertificate = 526,
 }
 
+export const enum Error {
+    Timeout,
+    Broken,
+};
+
 export type Headers = Record<string, string>;
 
 export const enum DataType {
@@ -97,4 +102,5 @@ export type GenericBody = string | ArrayBuffer;
 export type ResFn = (status: number, message: string, headers: Headers, body: GenericBody | void) => void;
 export type ErrFn = (error: Error) => void;
 export type AbrFn = () => void;
-export type ReqFn = (method: Method, url: string, headers: Headers, body: GenericBody | void, res_type: DataType | void, res_fn: ResFn, err: ErrFn) => AbrFn;
+export type StaFn = (left: number, size: number, down: boolean) => void;
+export type ReqFn = (method: Method, url: string, headers: Headers, body: GenericBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn, sta_fn: StaFn) => AbrFn;

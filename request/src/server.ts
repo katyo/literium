@@ -1,6 +1,7 @@
 import { parse } from 'url';
+import { Readable } from 'stream';
 import { request as node_request, IncomingHttpHeaders } from 'http';
-import { Method, Headers, GenericBody, DataType, ResFn, ErrFn, AbrFn } from './types';
+import { Method, Headers, GenericBody, DataType, Error, ResFn, ErrFn, AbrFn, StaFn } from './types';
 
 function parseHeaders(h: IncomingHttpHeaders | undefined): Headers {
     const hs: Headers = {};
@@ -17,12 +18,27 @@ function parseHeaders(h: IncomingHttpHeaders | undefined): Headers {
     return hs;
 }
 
-export function request(method: Method, url: string, headers: Headers, body: GenericBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn): AbrFn {
+export function request(method: Method, url: string, headers: Headers, body: GenericBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn, sta_fn: StaFn): AbrFn {
     const { protocol, hostname, port, path } = parse(url);
-    const req = node_request({ method, protocol, hostname, port, path, headers }, (res) => {
-        if (res_type != undefined) {
+    const data = body ? Buffer.from(body) : undefined;
+    if (data) {
+        headers['content-length'] = `${data.length}`;
+    }
+    const req = node_request({ method, protocol, hostname, port, path, headers }, res => {
+        if (res_type == undefined) {
+            res_fn(res.statusCode as number,
+                res.statusMessage as string,
+                parseHeaders(res.headers),
+                undefined);
+        } else {
+            const content_length = res.headers['content-length'];
+            const size = content_length ? parseInt(content_length, 10) : -1;
+            let left = 0;
             const bufs: Buffer[] = [];
+            sta_fn(left, size, true);
             res.on('data', (buf) => {
+                left += buf.length;
+                sta_fn(left, size, true);
                 bufs.push(buf as Buffer);
             });
             res.on('end', () => {
@@ -34,18 +50,30 @@ export function request(method: Method, url: string, headers: Headers, body: Gen
                         body.toString('utf8') :
                         body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength));
             });
-        } else {
-            res_fn(res.statusCode as number,
-                res.statusMessage as string,
-                parseHeaders(res.headers),
-                undefined);
+            res.on('error', (e) => {
+                err_fn(Error.Broken);
+            });
         }
     });
-    req.on('error', err_fn);
-    if (body) {
-        req.write(Buffer.from(body));
+    req.on('error', (e) => {
+        err_fn(Error.Broken);
+    });
+    if (data) {
+        let left = 0;
+        new Readable({
+            read(size: number) {
+                for (; ;) {
+                    sta_fn(left, data.length, false);
+                    const read = Math.min(size, data.length - left);
+                    const chunk = read ? data.slice(left, left + read) : null;
+                    left += read;
+                    if (!this.push(chunk) || !read) break;
+                }
+            }
+        }).pipe(req);
+    } else {
+        req.end();
     }
-    req.end();
     return () => {
         req.abort();
     };

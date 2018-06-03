@@ -1,6 +1,6 @@
-import { Method, Headers, GenericBody, DataType, ResFn, ErrFn, AbrFn } from './types';
+import { Method, Headers, GenericBody, DataType, Error, ResFn, ErrFn, AbrFn, StaFn } from './types';
 
-export function request(method: Method, url: string, headers: Headers, body: GenericBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn): AbrFn {
+export function request(method: Method, url: string, headers: Headers, body: GenericBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn, sta_fn: StaFn): AbrFn {
     let xhr = new XMLHttpRequest();
 
     xhr.open(method, url, true);
@@ -8,8 +8,16 @@ export function request(method: Method, url: string, headers: Headers, body: Gen
         xhr.setRequestHeader(name, headers[name]);
     }
 
+    xhr.onerror = () => {
+        err_fn(Error.Broken);
+    };
+
+    xhr.onprogress = ({ loaded, total }) => {
+        sta_fn(loaded, total || -1, true);
+    };
+
     xhr.onreadystatechange = () => {
-        xhr_on(xhr, res_fn, res_type);
+        xhr_on(xhr, res_fn, res_type, err_fn);
     };
 
     if (res_type != undefined) {
@@ -18,13 +26,24 @@ export function request(method: Method, url: string, headers: Headers, body: Gen
 
     try {
         if (body) {
-            upload(xhr, body);
+            const { upload } = xhr;
+            if (upload) {
+                upload.onerror = () => {
+                    err_fn(Error.Broken);
+                };
+                upload.onprogress = ({ loaded, total }) => {
+                    sta_fn(loaded, total, false);
+                };
+            }
+
+            upload_send(xhr, body);
         } else {
             xhr.send(null);
         }
     } catch (error) {
         delete xhr.onreadystatechange;
-        err_fn(error);
+        err_fn(Error.Broken);
+        return () => { };
     }
 
     return () => {
@@ -43,28 +62,35 @@ function parseHeaders(hs: string) {
     return h;
 }
 
-function xhr_on(xhr: XMLHttpRequest, res_fn: ResFn, res_type: DataType | void) {
+function xhr_on(xhr: XMLHttpRequest, res_fn: ResFn, res_type: DataType | void, err_fn: ErrFn) {
     switch (xhr.readyState) {
         case 4: { // done
             delete xhr.onreadystatechange;
-            res_fn(xhr.status, xhr.statusText, parseHeaders(xhr.getAllResponseHeaders()), res_type != undefined ? download_done(xhr, res_type) : undefined);
+            if (xhr.status == 0) {
+                err_fn(Error.Broken);
+            } else {
+                res_fn(xhr.status, xhr.statusText, parseHeaders(xhr.getAllResponseHeaders()), res_type != undefined ? download_done(xhr, res_type) : undefined);
+            }
         } break;
     }
 };
 
-interface XHRAPI {
-    upload(xhr: XMLHttpRequest, body: GenericBody): void;
-    download_init(xhr: XMLHttpRequest, res_type: DataType | void): void;
-    download_done(xhr: XMLHttpRequest, res_type: DataType | void): GenericBody;
-}
+type XHRAPI = [
+    // upload send
+    (xhr: XMLHttpRequest, body: GenericBody) => void,
+    // download init
+    (xhr: XMLHttpRequest, res_type: DataType | void) => void,
+    // download done
+    (xhr: XMLHttpRequest, res_type: DataType | void) => GenericBody
+];
 
-const { upload, download_init, download_done } = xhrapi_new();
+const [upload_send, download_init, download_done] = xhrapi();
 
 interface MozXMLHttpRequest {
     sendAsBinary(data: any): void;
 }
 
-function xhrapi_new(): XHRAPI {
+function xhrapi(): XHRAPI {
     const body_from: (data: GenericBody, res_type: DataType) => GenericBody =
         typeof Uint8Array == 'function' ? (data: GenericBody, res_type: DataType) => {
             if (typeof data == 'string' && res_type == DataType.Binary) {
@@ -87,10 +113,10 @@ function xhrapi_new(): XHRAPI {
             return data;
         };
 
-    var xhr = new XMLHttpRequest();
+    const xhr = new XMLHttpRequest();
     xhr.open('get', '/', true);
 
-    const upload = typeof (xhr as any as MozXMLHttpRequest).sendAsBinary == 'function' ? (xhr: XMLHttpRequest, body: GenericBody) => {
+    const upload_send = typeof (xhr as any as MozXMLHttpRequest).sendAsBinary == 'function' ? (xhr: XMLHttpRequest, body: GenericBody) => {
         // upload binary string using Mozilla-specific sendAsBinary method
         if (typeof body == 'string') {
             xhr.send(body);
@@ -133,9 +159,9 @@ function xhrapi_new(): XHRAPI {
         return body_from(xhr.responseText, res_type);
     }];
 
-    return {
-        upload,
+    return [
+        upload_send,
         download_init,
         download_done,
-    };
+    ];
 }

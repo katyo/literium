@@ -26,7 +26,7 @@ switch (cmd) {
 
 function with_body(req: IncomingMessage, cb: (data: Buffer) => void) {
     const bufs: Buffer[] = [];
-    req.on('data', (buf) => {
+    req.on('data', buf => {
         bufs.push(buf as Buffer);
     });
     req.on('end', () => {
@@ -69,6 +69,13 @@ function handler(req: IncomingMessage, res: ServerResponse) {
                     res.writeHead(403, "Forbidden");
                     res.end();
                     return;
+                case '/xhr/download':
+                    res.writeHead(200, "OK", {
+                        'Content-Type': 'application/octet-stream',
+                        'Content-Length': `${1 << 24}`,
+                    });
+                    res.end(new Array((1 << 24) + 1).join(' ')); // 16Megs of spaces
+                    return;
             }
             break;
         case 'PUT':
@@ -109,6 +116,30 @@ function handler(req: IncomingMessage, res: ServerResponse) {
                 case '/xhr/error':
                     res.writeHead(502, "Bad gateway");
                     res.end();
+                    return;
+            }
+            break;
+        case 'POST':
+            switch (req.url) {
+                case '/xhr/long':
+                    setTimeout(() => {
+                        res.writeHead(201, "Created");
+                        res.end();
+                    }, 2000);
+                    return;
+                case '/xhr/upload':
+                    with_body(req, body => {
+                        if (body.length == 1 << 24 && // 16Megs of spaces
+                            body.reduce((pre, byte) => pre && byte == 0x20, true)) {
+                            res.writeHead(201, "Created");
+                        } else {
+                            res.writeHead(400, "Invalid");
+                        }
+                        res.end();
+                    });
+                    return;
+                case '/xhr/break':
+                    req.connection.end();
                     return;
             }
             break;
