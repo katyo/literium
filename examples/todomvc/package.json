@@ -45,7 +45,8 @@
   },
   "dependencies": {
     "literium": "^0.2.0",
-    "literium-runner": "^0.2.0",
+    "literium-json": "^0.2.0",
+    "literium-runner": "^0.2.1",
     "raf-polyfill": "^1.0.0",
     "ts-node": "^6.0.5",
     "typescript": "^2.9.1",

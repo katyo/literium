@@ -1,6 +1,6 @@
 {
   "name": "literium-runner",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Runner module for Literium web-framework.",
   "main": "index.js",
   "typings": "index.d.ts",
@@ -54,6 +54,7 @@
     "typescript": "^2.9.1"
   },
   "peerDependencies": {
-    "literium": "^0.2.0"
+    "literium": "^0.2.0",
+    "literium-json": "^0.2.0"
   }
 }
