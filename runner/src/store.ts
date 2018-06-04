@@ -1,54 +1,73 @@
 import { dummy, is_ok, un_ok } from 'literium';
 import { JsonType, parse, build } from 'literium-json';
 
-export interface StoreData<Type> {
-    $?: boolean; // data is persistent
-    _?: Type; // actual data value
+export const enum StoreType {
+    Default, // not saved default value
+    Session, // saved into the session storage
+    Persist, // saved into the local storage
 }
 
 export interface StoreCell<Type> {
     $: string; // data cell name
-    _: Type; // default value
+    _?: Type; // current value
+    d: Type; // default value
     j: JsonType<Type>; // validator
+    t: StoreType; // holder storage
 }
 
 const [_load, _save]: [
-    <Type>(name: string, json: JsonType<Type>) => StoreData<Type> | void,
-    <Type>(name: string, json: JsonType<Type>, data: StoreData<Type>) => void
+    <Type>(store: StoreCell<Type>) => void,
+    <Type>(store: StoreCell<Type>) => void
 ] = check() ? [load_, save_] : [dummy, dummy];
 
 export function initStore<Type, JType extends Type>(name: string, json: JsonType<JType>, def: Type): StoreCell<Type> {
-    return { $: name, _: def, j: json };
+    const store = { $: name, d: def, j: json, t: StoreType.Default };
+    _load(store);
+    return store;
+}
+
+export function storeType<Type>(store: StoreCell<Type>): StoreType {
+    return store.t;
 }
 
 export function loadStore<Type>(store: StoreCell<Type>): Type {
-    const cell = _load(store.$, store.j);
-    return cell ? cell._ as Type : store._;
+    return store._ || store.d;
 }
 
-export function saveStore<Type>(store: StoreCell<Type>, data?: Type, persist?: boolean) {
-    const cell = _load(store.$, store.j) || { _: store._ };
-    if (persist != undefined) cell.$ = persist;
-    cell._ = data;
-    _save(store.$, store.j, cell);
+export function moveStore<Type>(store: StoreCell<Type>, t: StoreType) {
+    if (store.t != t) {
+        store.t = t;
+        _save(store);
+    }
 }
 
-function load_<Type>(name: string, json: JsonType<Type>): StoreData<Type> | void {
-    const raw1 = sessionStorage.getItem(name);
-    const raw2 = localStorage.getItem(name);
+export function saveStore<Type>(store: StoreCell<Type>, data?: Type) {
+    store._ = data;
+    _save(store);
+}
+
+function load_<Type>(s: StoreCell<Type>) {
+    const raw1 = sessionStorage.getItem(s.$);
+    const raw2 = localStorage.getItem(s.$);
     const raw = raw1 || raw2;
-    if (!raw) return;
-    const persist = !raw1 && !!raw2;
-    const res = parse(json, raw);
-    return is_ok(res) ? { $: persist, _: un_ok(res) } : undefined;
+    if (raw) {
+        s.t = !raw1 && !!raw2 ? StoreType.Persist : StoreType.Session;
+        const res = parse(s.j, raw);
+        if (is_ok(res)) {
+            s._ = un_ok(res);
+            return;
+        }
+    }
+    s.t = StoreType.Default;
+    s._ = s.d;
 }
 
-function save_<Type>(name: string, json: JsonType<Type>, { $: persist, _: data }: StoreData<Type>) {
-    sessionStorage.removeItem(name);
-    localStorage.removeItem(name);
-    if (persist != undefined && data != undefined) {
-        const res = build(json, data);
-        if (is_ok(res)) (persist ? localStorage : sessionStorage).setItem(name, un_ok(res));
+function save_<Type>(s: StoreCell<Type>) {
+    sessionStorage.removeItem(s.$);
+    localStorage.removeItem(s.$);
+    if (s.t != StoreType.Default && s._ != undefined) {
+        const res = build(s.j, s._);
+        if (is_ok(res)) (s.t == StoreType.Persist ? localStorage : sessionStorage).setItem(name, un_ok(res));
     }
 }
 

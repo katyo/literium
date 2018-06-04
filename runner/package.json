@@ -1,6 +1,6 @@
 {
   "name": "literium-runner",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Runner module for Literium web-framework.",
   "main": "index.js",
   "typings": "index.d.ts",
