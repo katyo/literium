@@ -6,13 +6,7 @@ export interface Future<Type> {
     (send: Send<Type>): Done;
 }
 
-export function now_future<Type>(val: Type): Future<Type> {
-    /*
-    return (send: Send<Type>) => {
-        const timer = setTimeout(() => { send(val); }, 0);
-        return () => { clearTimeout(timer); };
-    };
-    */
+export function future<Type>(val: Type): Future<Type> {
     return (send: Send<Type>) => {
         send(val);
         return dummy;
