@@ -19,10 +19,10 @@ export function then_future_err<Value, Error, NewError>(fn: (e: Error) => Future
     return then_future((r: Result<Value, Error>) => is_ok(r) ? now_future(r as Result<Value, NewError>) : fn(un_err(r)));
 }
 
-export function map_future_ok<Value, NewValue, Error>(fn: (v: Value) => NewValue): (future: FutureResult<Value, Error>) => FutureResult<NewValue, Error> {
-    return then_future((r: Result<Value, Error>) => is_ok(r) ? now_future_ok(fn(un_ok(r))) : now_future(r as Result<NewValue, Error>));
+export function map_future_ok<Value, NewValue>(fn: (v: Value) => NewValue): <Error>(future: FutureResult<Value, Error>) => FutureResult<NewValue, Error> {
+    return then_future(<Error>(r: Result<Value, Error>) => is_ok(r) ? now_future_ok(fn(un_ok(r))) : now_future(r as Result<NewValue, Error>));
 }
 
-export function map_future_err<Value, Error, NewError>(fn: (e: Error) => NewError): (future: FutureResult<Value, Error>) => FutureResult<Value, NewError> {
-    return then_future((r: Result<Value, Error>) => is_ok(r) ? now_future(r as Result<Value, NewError>) : now_future_err(fn(un_err(r))));
+export function map_future_err<Error, NewError>(fn: (e: Error) => NewError): <Value>(future: FutureResult<Value, Error>) => FutureResult<Value, NewError> {
+    return then_future(<Value>(r: Result<Value, Error>) => is_ok(r) ? now_future(r as Result<Value, NewError>) : now_future_err(fn(un_err(r))));
 }
