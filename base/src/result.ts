@@ -90,6 +90,30 @@ export function b_ok<A, B>(res: Result<B, A>): Either<A, B> {
     return res;
 }
 
+export function ok_def<Value>(v: Value | void): Result<Value, void> {
+    return v != undefined ? ok(v) : err(undefined);
+}
+
+export function ok_def_or<Error>(e: Error): <Value>(v: Value | void) => Result<Value, Error> {
+    return <Value>(v: Value | void) => v != undefined ? ok(v) : err(e);
+}
+
+export function ok_def_else<Error>(fn: () => Error): <Value>(v: Value | void) => Result<Value, Error> {
+    return <Value>(v: Value | void) => v != undefined ? ok(v) : err(fn());
+}
+
+export function err_def<Error>(e: Error | void): Result<void, Error> {
+    return e != undefined ? err(e) : ok(undefined);
+}
+
+export function err_def_or<Value>(v: Value): <Error>(e: Error | void) => Result<Value, Error> {
+    return <Error>(e: Error | void) => e != undefined ? err(e) : ok(v);
+}
+
+export function err_def_else<Value>(fn: () => Value): <Error>(e: Error | void) => Result<Value, Error> {
+    return <Error>(e: Error | void) => e != undefined ? err(e) : ok(fn());
+}
+
 export function ok_try<Ret>(fn: () => Ret): () => Result<Ret, Error>;
 export function ok_try<Ret, Arg>(fn: (arg: Arg) => Ret): (arg: Arg) => Result<Ret, Error>;
 export function ok_try<Ret, Arg1, Arg2>(fn: (arg1: Arg1, arg2: Arg2) => Ret): (arg1: Arg1, arg2: Arg2) => Result<Ret, Error>;
