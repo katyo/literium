@@ -13,6 +13,15 @@ export function future<Type>(val: Type): Future<Type> {
     };
 }
 
+export function timeout(msec: number): <Type>(val: Type) => Future<Type> {
+    return <Type>(val: Type) => {
+        return (send: Send<Type>) => {
+            const timer = setTimeout(() => send(val), msec);
+            return () => { clearTimeout(timer); };
+        };
+    };
+}
+
 export function then_future<Type, NewType>(fn: (data: Type) => Future<NewType>): (future: Future<Type>) => Future<NewType> {
     return (future: Future<Type>) => {
         return (send: Send<NewType>) => {
