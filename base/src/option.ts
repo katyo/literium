@@ -44,6 +44,10 @@ export function and_some<NewValue>(v: NewValue): <Value>(o: Option<Value>) => Op
     return map_some(() => v);
 }
 
+export function or_none<Value>(v: Value): (o: Option<Value>) => Option<Value> {
+    return then_none(() => some(v));
+}
+
 export function un_some<Value>(opt: Option<Value>): Value {
     if (opt.$) return opt._;
     throw "option none";
