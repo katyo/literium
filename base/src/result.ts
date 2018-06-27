@@ -94,20 +94,20 @@ export function ok_def<Value>(v: Value | void): Result<Value, void> {
     return v != undefined ? ok(v) : err(undefined);
 }
 
-export function ok_def_or<Error>(e: Error): <Value>(v: Value | void) => Result<Value, Error> {
-    return <Value>(v: Value | void) => v != undefined ? ok(v) : err(e);
-}
-
-export function ok_def_else<Error>(fn: () => Error): <Value>(v: Value | void) => Result<Value, Error> {
-    return <Value>(v: Value | void) => v != undefined ? ok(v) : err(fn());
-}
-
 export function err_def<Error>(e: Error | void): Result<void, Error> {
     return e != undefined ? err(e) : ok(undefined);
 }
 
+export function ok_def_or<Error>(e: Error): <Value>(v: Value | void) => Result<Value, Error> {
+    return <Value>(v: Value | void) => v != undefined ? ok(v) : err(e);
+}
+
 export function err_def_or<Value>(v: Value): <Error>(e: Error | void) => Result<Value, Error> {
     return <Error>(e: Error | void) => e != undefined ? err(e) : ok(v);
+}
+
+export function ok_def_else<Error>(fn: () => Error): <Value>(v: Value | void) => Result<Value, Error> {
+    return <Value>(v: Value | void) => v != undefined ? ok(v) : err(fn());
 }
 
 export function err_def_else<Value>(fn: () => Value): <Error>(e: Error | void) => Result<Value, Error> {
