@@ -1,6 +1,6 @@
 {
   "name": "literium-json",
-  "version": "0.2.0",
+  "version": "0.2.5",
   "description": "Type-safe JSON module for Literium web-framework.",
   "main": "json.js",
   "typings": "json.d.ts",
@@ -40,17 +40,17 @@
     "url": "https://github.com/katyo/literium/issues"
   },
   "devDependencies": {
-    "@types/mocha": "^5.2.0",
-    "@types/node": "^9.6.7",
-    "browserify": "^16.2.0",
-    "mocha": "^5.1.1",
-    "testem": "^2.4.0",
-    "ts-node": "^6.0.1",
+    "@types/mocha": "^5.0.0",
+    "@types/node": "^8.0.0",
+    "browserify": "^16.0.0",
+    "mocha": "^5.0.0",
+    "testem": "^2.0.0",
+    "ts-node": "^7.0.0",
     "tsify": "^4.0.0",
-    "typescript": "^2.9.1"
+    "typescript": "^2.9.0"
   },
   "dependencies": {
-    "tslib": "^1.9.2",
-    "literium-base": "^0.2.0"
+    "literium-base": "^0.2.0",
+    "tslib": "^1.9.0"
   }
 }

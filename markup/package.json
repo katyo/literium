@@ -27,7 +27,10 @@
     "client",
     "server",
     "literium",
-    "framework"
+    "framework",
+    "typescript",
+    "es6",
+    "es2015"
   ],
   "author": "K. <kayo@illumium.org>",
   "license": "MIT",
@@ -35,10 +38,10 @@
     "url": "https://github.com/katyo/literium/issues"
   },
   "devDependencies": {
-    "@types/node": "^9.4.6",
-    "typescript": "^2.8.1"
+    "@types/node": "^8.0.0",
+    "typescript": "^2.9.0"
   },
   "peerDependencies": {
-    "literium": "^0.1.0"
+    "literium": "^0.2.0"
   }
 }

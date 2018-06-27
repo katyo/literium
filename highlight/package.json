@@ -1,6 +1,6 @@
 {
   "name": "literium-highlight",
-  "version": "0.2.0",
+  "version": "0.2.5",
   "description": "Syntax highlighter module for Literium web-framework.",
   "main": "index.js",
   "typings": "index.d.ts",
@@ -38,8 +38,8 @@
     "url": "https://github.com/katyo/literium/issues"
   },
   "devDependencies": {
-    "@types/node": "^9.4.6",
-    "typescript": "^2.9.1"
+    "@types/node": "^8.0.0",
+    "typescript": "^2.9.0"
   },
   "peerDependencies": {
     "literium": "^0.2.0"
