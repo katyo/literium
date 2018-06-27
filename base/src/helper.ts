@@ -33,25 +33,32 @@ export function do_seq<S>(this: S, _: any, ...fs: ((this: S, _: any) => any)[]):
     return mk_seq.apply(this, fs).call(this, _);
 }
 
-export function flat_map<Arg, Res>(list: Arg[], fn: (arg: Arg, idx: number) => Res | Res[]): Res[] {
-    const res: Res[] = [];
-    for (let i = 0; i < list.length; i++) {
-        const val = fn(list[i], i);
-        if (Array.isArray(val)) {
-            for (const elm of val) {
-                res.push(elm);
+export function flat_map<Arg, Res>(fn: (arg: Arg, idx: number) => Res | Res[]): (list: (Arg | Arg[])[]) => Res[] {
+    return (list: (Arg | Arg[])[]) => {
+        const res: Res[] = [];
+        let n = 0;
+        for (let i = 0; i < list.length; i++) op(list[i]);
+        return res;
+
+        function op(item: Arg | Arg[]) {
+            if (Array.isArray(item)) {
+                for (const sub of item) op(sub);
+            } else {
+                const val = fn(item, n++);
+                if (Array.isArray(val)) {
+                    for (const elm of val) {
+                        res.push(elm);
+                    }
+                } else {
+                    res.push(val);
+                }
             }
-        } else {
-            res.push(val);
         }
-    }
-    return res;
+    };
 }
 
-export function flat_list<Type>(list: (Type | Type[])[]): Type[] {
-    return flat_map(list, a => a);
-}
+export const flat_list: <Type>(list: (Type | Type[])[]) => Type[] = flat_map(identity);
 
 export function flat_all<Type>(...args: (Type | Type[])[]): Type[] {
-    return flat_map(args, a => a);
+    return flat_list(args);
 }
