@@ -1,0 +1,11 @@
+{
+  "links": {
+    "literium-base": "base",
+    "literium-core": "core",
+    "literium-json": "json",
+    "literium-router": "router",
+    "literium-request": "request",
+    "literium-runner": "runner",
+    "literium-highlight": "highlight"
+  }
+}

@@ -8,3 +8,5 @@ es/
 *.d.ts
 .rpt2*/
 cache/
+deprecated/
+package-lock.json

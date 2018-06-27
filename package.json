@@ -1,0 +1,36 @@
+{
+  "name": "literium",
+  "version": "0.0.0",
+  "description": "Literium Web-framework",
+  "main": "index.js",
+  "directories": {
+    "example": "examples"
+  },
+  "scripts": {
+    "install": "npm-workspace install",
+    "test": "for pkg in base json router request; do cd $pkg && npm test && cd -; done"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/katyo/literium"
+  },
+  "keywords": [
+    "virtual-dom",
+    "client",
+    "server",
+    "literium",
+    "framework",
+    "typescript",
+    "es6",
+    "es2015"
+  ],
+  "author": "K. <kayo@illumium.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/katyo/literium/issues"
+  },
+  "homepage": "https://github.com/katyo/literium#readme",
+  "devDependencies": {
+    "npm-workspace": "^0.7.0"
+  }
+}

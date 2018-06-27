@@ -1,16 +1,7 @@
 language: node_js
 node_js:
-  - "6"
+  - "8"
 before_script:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
   - sleep 5
-script:
-  - mkdir node_modules
-  - for pkg in base core router json request runner highlight; do ln -s ../node_modules ./$pkg/; done
-  - cd base && npm install && cd - && npm install ./base
-  - cd core && npm install && cd - && npm install ./core
-  - cd router && npm install && npm test && cd - && npm install ./router
-  - cd json && npm install && npm test && cd - && npm install ./json
-  - cd request && npm install && npm test && cd - && npm install ./request
-  - cd runner && npm install && cd - && npm install ./runner
