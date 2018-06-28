@@ -7,8 +7,9 @@
     "example": "examples"
   },
   "scripts": {
-    "install": "npm-workspace install",
-    "test": "for pkg in base json router request; do cd $pkg && npm test && cd -; done"
+    "install": "yamat run npm install",
+    "clean": "yamat run npm run clean",
+    "test": "yamat run npm test"
   },
   "repository": {
     "type": "git",
@@ -31,6 +32,6 @@
   },
   "homepage": "https://github.com/katyo/literium#readme",
   "devDependencies": {
-    "npm-workspace": "^0.7.0"
+    "yamat": "0.0.14"
   }
 }

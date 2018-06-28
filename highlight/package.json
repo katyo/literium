@@ -12,7 +12,7 @@
     "clean-es": "rm -rf es",
     "compile-js": "tsc --outDir .",
     "clean-js": "rm -rf *.d.ts *.js *.js.map",
-    "prepublish": "npm run compile",
+    "prepare": "npm run compile",
     "test": "ts-node test/index"
   },
   "repository": {
@@ -38,13 +38,11 @@
     "url": "https://github.com/katyo/literium/issues"
   },
   "devDependencies": {
-    "@types/node": "^8.0.0",
-    "typescript": "^2.9.0"
-  },
-  "peerDependencies": {
-    "literium": "^0.2.0"
+    "@types/node": "^8",
+    "typescript": "^2.9"
   },
   "dependencies": {
-    "highlight-ts": "^9.12.0"
+    "literium": "^0.2",
+    "highlight-ts": "^9.12"
   }
 }

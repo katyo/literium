@@ -45,13 +45,13 @@
     "rollup-plugin-visualizer": "^0.4.0"
   },
   "dependencies": {
-    "cutestrap": "^1.3.1",
-    "literium": "^0.2.0",
-    "literium-highlight": "^0.2.0",
-    "literium-markup": "^0.2.0",
-    "literium-runner": "^0.2.0",
-    "raf-polyfill": "^1.0.0",
-    "ts-node": "^5.0.1",
-    "typescript": "^2.8.1"
+    "cutestrap": "^1.3",
+    "literium": "^0.2",
+    "literium-highlight": "^0.2",
+    "literium-markup": "^0.2",
+    "literium-runner": "^0.2",
+    "raf-polyfill": "^1",
+    "ts-node": "^5",
+    "typescript": "^2.9"
   }
 }

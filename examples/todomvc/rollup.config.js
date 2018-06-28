@@ -30,13 +30,6 @@ export default {
         include: 'src/**',
     },
     plugins: [
-        typescript({
-            tsconfigOverride: {
-                compilerOptions: {
-                    module: 'es6'
-                }
-            }
-        }),
         postcss({
             extract: true,
             minimize: true,
@@ -46,6 +39,13 @@ export default {
                     path: ['node_modules']
                 })
             ]
+        }),
+        typescript({
+            tsconfigOverride: {
+                compilerOptions: {
+                    module: 'es6'
+                }
+            }
         }),
         replace({
             'process.env.npm_package_version': stringify(version),
@@ -59,6 +59,7 @@ export default {
             ie8: true,
             mangle: {
                 toplevel: true,
+                //properties: true,
                 //safari10: true,
                 keep_fnames: false,
             },
