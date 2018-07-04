@@ -254,7 +254,9 @@ export function build_js<Type>(parser: JsonType<Type>): (data: Type) => JsonResu
 export function build<Type>(builder: JsonType<Type>): (data: Type) => JsonResult<string> {
     return mk_seq(
         builder.b,
-        ok_try(JSON.stringify),
-        map_err(err_to_str)
+        then_ok(mk_seq(
+            ok_try(JSON.stringify),
+            map_err(err_to_str)
+        ))
     );
 }
