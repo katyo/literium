@@ -1,4 +1,4 @@
-import { Result, ok, err, map_ok, map_err, then_ok } from 'literium-base';
+import { Result, ok, err, map_ok, map_err, then_ok, mk_seq, ok_try, err_to_str } from 'literium-base';
 
 export type JsonResult<Type> = Result<Type, string>;
 
@@ -235,25 +235,26 @@ export function alt(...ts: JsonType<any>[]): JsonType<any> {
 
 // Conversion API
 
-export function parse<Type>(parser: JsonType<Type>, str: string): JsonResult<Type> {
-    let json: any;
-    try {
-        json = JSON.parse(str);
-    } catch (e) {
-        return err(e.message);
-    }
-    return parser.p(json);
+export function parse_js<Type>(parser: JsonType<Type>): (raw: any) => JsonResult<Type> {
+    return parser.p;
 }
 
-// The trick with ActualType type parameter makes passed arguments to be the same as route expects.
-// Without it the compiler leads the type of the route to the type of arguments.
-// Also it is important the arguments must be of the type 'ActualType & Type', because we cannot set type condition 'ActualType = Type'.
-export function build<Type, ActualType extends Type>(builder: JsonType<Type>, data: ActualType & Type): JsonResult<string> {
-    const res = builder.b(data);
-    if (!res.$) return res;
-    try {
-        return ok(JSON.stringify(res._));
-    } catch (e) {
-        return err(e.message);
-    }
+export function parse<Type>(parser: JsonType<Type>): (str: string) => JsonResult<Type> {
+    return mk_seq(
+        ok_try(JSON.parse),
+        map_err(err_to_str),
+        then_ok(parser.p),
+    );
+}
+
+export function build_js<Type>(parser: JsonType<Type>): (data: Type) => JsonResult<any> {
+    return parser.b;
+}
+
+export function build<Type>(builder: JsonType<Type>): (data: Type) => JsonResult<string> {
+    return mk_seq(
+        builder.b,
+        ok_try(JSON.stringify),
+        map_err(err_to_str)
+    );
 }

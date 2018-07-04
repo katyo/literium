@@ -51,7 +51,7 @@ function load_<Type>(s: StoreCell<Type>) {
     const raw = sess || pers;
     if (raw) {
         s.t = !sess && !!pers ? StoreType.Persist : StoreType.Session;
-        const res = parse(s.j, raw);
+        const res = parse(s.j)(raw);
         if (is_ok(res)) {
             s._ = un_ok(res);
             return;
@@ -63,7 +63,7 @@ function save_<Type>(s: StoreCell<Type>) {
     sessionStorage.removeItem(s.$);
     localStorage.removeItem(s.$);
     if (s._ != undefined) {
-        const res = build(s.j, s._);
+        const res = build(s.j)(s._);
         if (is_ok(res)) (s.t == StoreType.Persist ? localStorage : sessionStorage).setItem(s.$, un_ok(res));
     }
 }
