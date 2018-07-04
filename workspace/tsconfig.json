@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "declaration": true,
+    "removeComments": false,
+    "noUnusedLocals": true,
+    "importHelpers": false,
+    "lib": [
+      "es5",
+      "es2015.core"
+    ]
+  },
+  "files": [
+    "src/workspace.ts"
+  ]
+}

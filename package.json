@@ -7,9 +7,11 @@
     "example": "examples"
   },
   "scripts": {
-    "install": "yamat run npm install",
-    "clean": "yamat run npm run clean",
-    "test": "yamat run npm test"
+    "preinstall": "cd workspace && test -f workspace.js || npm install",
+    "show": "lws show",
+    "install": "lws install",
+    "clean": "lws purge",
+    "test": "lws test"
   },
   "repository": {
     "type": "git",
@@ -32,6 +34,18 @@
   },
   "homepage": "https://github.com/katyo/literium#readme",
   "devDependencies": {
-    "yamat": "0.0.14"
-  }
+    "literium-workspace": "file:workspace"
+  },
+  "dependencies": {},
+  "packages": [
+    "base",
+    "json",
+    "router",
+    "request",
+    "core",
+    "runner",
+    "highlight",
+    "workspace",
+    "examples/todomvc"
+  ]
 }

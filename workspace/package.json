@@ -1,0 +1,51 @@
+{
+  "name": "literium-workspace",
+  "version": "0.2.5",
+  "description": "Project workspace management tool from Literium web-application framework.",
+  "bin": {
+    "lws": "workspace.js"
+  },
+  "scripts": {
+    "compile": "tsc --outDir .",
+    "clean": "rm -rf *.d.ts *.js *.js.map",
+    "prepare": "npm run compile"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/katyo/literium/tree/master/workspace"
+  },
+  "keywords": [
+    "development",
+    "monorepo",
+    "multiple packages",
+    "lerna alternative",
+    "rush alternative",
+    "yamat alternative",
+    "workspace",
+    "project",
+    "management",
+    "tool",
+    "commandline",
+    "console",
+    "terminal",
+    "utility",
+    "literium",
+    "framework",
+    "typescript",
+    "nodejs",
+    "node"
+  ],
+  "author": "K. <kayo@illumium.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/katyo/literium/issues"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^5",
+    "@types/node": "^8",
+    "typescript": "^2.9"
+  },
+  "dependencies": {
+    "fs-extra": "^6"
+  }
+}

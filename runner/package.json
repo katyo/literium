@@ -20,7 +20,6 @@
     "prepare": "npm run compile",
     "compile-test": "browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
     "clean-test": "rm -f test-out.js",
-    "test": "exit 0",
     "test-node": "mocha -r ts-node/register test/index.ts -R spec",
     "test-dev": "testem"
   },
