@@ -62,3 +62,11 @@ export const flat_list: <Type>(list: (Type | Type[])[]) => Type[] = flat_map(ide
 export function flat_all<Type>(...args: (Type | Type[])[]): Type[] {
     return flat_list(args);
 }
+
+export function err_to_str(error: Error): string {
+    return error.message;
+}
+
+export function str_to_err(message: string): Error {
+    return new Error(message);
+}
