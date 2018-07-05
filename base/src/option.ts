@@ -76,3 +76,28 @@ export function a_some<B>(b: B): <A>(_: Option<A>) => Either<A, B> {
 export function b_some<A>(a: A): <B>(_: Option<B>) => Either<A, B> {
     return <B>(o: Option<B>) => o.$ ? { $: 1, _: o._ } : { $: 0, _: a };
 }
+
+export function some_def<Value>(v: Value | void): Option<Value> {
+    return v != undefined ? some(v) : none();
+}
+
+export function some_try<Ret>(fn: () => Ret): () => Option<Ret>;
+export function some_try<Ret, Arg>(fn: (arg: Arg) => Ret): (arg: Arg) => Option<Ret>;
+export function some_try<Ret, Arg1, Arg2>(fn: (arg1: Arg1, arg2: Arg2) => Ret): (arg1: Arg1, arg2: Arg2) => Option<Ret>;
+export function some_try<Ret, Arg1, Arg2, Arg3>(fn: (arg1: Arg1, arg2: Arg2, arg3: Arg3) => Ret): (arg1: Arg1, arg2: Arg2, arg3: Arg3) => Option<Ret>;
+export function some_try<Ret, Arg1, Arg2, Arg3, Arg4>(fn: (arg1: Arg1, arg2: Arg2, arg3: Arg3, arg4: Arg4) => Ret): (arg1: Arg1, arg2: Arg2, arg3: Arg3, arg4: Arg4) => Option<Ret>;
+export function some_try<Ret, Arg1, Arg2, Arg3, Arg4, Arg5>(fn: (arg1: Arg1, arg2: Arg2, arg3: Arg3, arg4: Arg4, arg5: Arg5) => Ret): (arg1: Arg1, arg2: Arg2, arg3: Arg3, arg4: Arg4, arg5: Arg5) => Option<Ret>;
+export function some_try<Ret, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6>(fn: (arg1: Arg1, arg2: Arg2, arg3: Arg3, arg4: Arg4, arg5: Arg5, arg6: Arg6) => Ret): (arg1: Arg1, arg2: Arg2, arg3: Arg3, arg4: Arg4, arg5: Arg5, arg6: Arg6) => Option<Ret>;
+export function some_try<Ret, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7>(fn: (arg1: Arg1, arg2: Arg2, arg3: Arg3, arg4: Arg4, arg5: Arg5, arg6: Arg6, arg7: Arg7) => Ret): (arg1: Arg1, arg2: Arg2, arg3: Arg3, arg4: Arg4, arg5: Arg5, arg6: Arg6, arg7: Arg7) => Option<Ret>;
+export function some_try<Ret, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8>(fn: (arg1: Arg1, arg2: Arg2, arg3: Arg3, arg4: Arg4, arg5: Arg5, arg6: Arg6, arg7: Arg7, arg8: Arg8) => Ret): (arg1: Arg1, arg2: Arg2, arg3: Arg3, arg4: Arg4, arg5: Arg5, arg6: Arg6, arg7: Arg7, arg8: Arg8) => Option<Ret>;
+export function some_try<Ret, Arg1, Arg2, Arg3, Arg4, Arg5, Arg6, Arg7, Arg8, Arg9>(fn: (arg1: Arg1, arg2: Arg2, arg3: Arg3, arg4: Arg4, arg5: Arg5, arg6: Arg6, arg7: Arg7, arg8: Arg8, arg9: Arg9) => Ret): (arg1: Arg1, arg2: Arg2, arg3: Arg3, arg4: Arg4, arg5: Arg5, arg6: Arg6, arg7: Arg7, arg8: Arg8, arg9: Arg9) => Option<Ret>;
+
+export function some_try<Ret>(fn: (...args: any[]) => Ret): (...args: any[]) => Option<Ret> {
+    return (...args: any[]) => {
+        try {
+            return some(fn(...args));
+        } catch (error) {
+            return none();
+        }
+    };
+}
