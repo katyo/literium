@@ -1,10 +1,15 @@
+import { JSTypeMap } from './define';
 import { Keyed } from './keyed';
 import { Result } from './result';
 import { Either } from './either';
 
 export type Some<Value> = Keyed<1, Value>;
+
 export type None = Keyed<0, void>;
+
 export type Option<Value> = Some<Value> | None;
+
+export type Optional<Rec> = { [Key in keyof Rec]: Option<Rec[Key]> };
 
 const _none: None = { $: 0, _: undefined };
 
@@ -38,6 +43,30 @@ export function map_some<Value, NewValue>(fn: (_: Value) => NewValue): (_: Optio
 
 export function map_none(fn: () => void): <Value>(o: Option<Value>) => Option<Value> {
     return <Value>(o: Option<Value>) => o.$ ? o : (fn(), _none as Option<Value>);
+}
+
+export function filter_some<Value>(fn: (_: Value) => boolean): (_: Option<Value>) => Option<Value> {
+    return then_some((_: Value) => fn(_) ? some(_) : _none as Option<Value>);
+}
+
+export function seek_some<Value, NewValue>(fn: (_: Value, i: number) => Option<NewValue>): (_: Value[]) => Option<NewValue> {
+    return (_: Value[]) => {
+        for (let i = 0; i < _.length; i++) {
+            const r = fn(_[i], i);
+            if (is_some(r)) return r;
+        }
+        return _none as Option<NewValue>;
+    };
+}
+
+export function seek_some_rec<Rec, Value>(fn: (_: Rec[keyof Rec], k: keyof Rec) => Option<Value>): (_: Rec) => Option<Value> {
+    return (_: Rec) => {
+        for (const k in _) {
+            const r = fn(_[k], k);
+            if (is_some(r)) return r;
+        }
+        return none();
+    };
 }
 
 export function and_some<NewValue>(v: NewValue): <Value>(o: Option<Value>) => Option<NewValue> {
@@ -77,7 +106,27 @@ export function b_some<A>(a: A): <B>(_: Option<B>) => Either<A, B> {
     return <B>(o: Option<B>) => o.$ ? { $: 1, _: o._ } : { $: 0, _: a };
 }
 
-export function some_def<Value>(v: Value | void): Option<Value> {
+export function some_if<Value>(fn: (_: Value) => boolean): (_: Value) => Option<Value> {
+    return (_: Value) => fn(_) ? some(_) : _none as Option<Value>;
+}
+
+export function none_if<Value>(fn: (_: Value) => boolean): (_: Value) => Option<Value> {
+    return (_: Value) => fn(_) ? _none as Option<Value> : some(_);
+}
+
+export function some_is<Value>(d: Value): (_: Value) => Option<Value> {
+    return (_: Value) => _ === d ? some(_) : _none as Option<Value>;
+}
+
+export function none_is<Value>(d: Value): (_: Value) => Option<Value> {
+    return (_: Value) => _ === d ? _none as Option<Value> : some(_);
+}
+
+export function some_type<Type extends keyof JSTypeMap>(t: Type): <Value>(_: Value) => Option<JSTypeMap[Type]> {
+    return <Value>(_: Value) => typeof _ == t ? some(_ as JSTypeMap[Type]) : _none as Option<JSTypeMap[Type]>;
+}
+
+export function some_def<Value>(v: Value | null | undefined | void): Option<Value> {
     return v != undefined ? some(v) : none();
 }
 

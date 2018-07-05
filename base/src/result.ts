@@ -1,5 +1,6 @@
+import { JSTypeMap } from './define';
 import { Keyed } from './keyed';
-import { Option, none } from './option';
+import { Option, none, ok_some, err_some } from './option';
 import { Either } from './either';
 
 export type Ok<Value> = Keyed<1, Value>;
@@ -7,6 +8,8 @@ export type Ok<Value> = Keyed<1, Value>;
 export type Err<Error> = Keyed<0, Error>;
 
 export type Result<Value, Error> = Ok<Value> | Err<Error>;
+
+export type Resultal<Rec, Error> = { [Key in keyof Rec]: Result<Rec[Key], Error> };
 
 export function ok<Value, Error>(val: Value): Result<Value, Error> {
     return { $: 1, _: val };
@@ -38,6 +41,54 @@ export function map_ok<Value, NewValue>(fn: (_: Value) => NewValue): <Error>(res
 
 export function map_err<Error, NewError>(fn: (_: Error) => NewError): <Value>(res: Result<Value, Error>) => Result<Value, NewError> {
     return then_err(e => err(fn(e)));
+}
+
+export function filter_ok<Value, Error>(fn: (_: Value) => Option<Error>): (_: Result<Value, Error>) => Result<Value, Error> {
+    return then_ok((_: Value) => err_some(_)(fn(_)));
+}
+
+export function filter_err<Value, Error>(fn: (_: Error) => Option<Value>): (_: Result<Value, Error>) => Result<Value, Error> {
+    return then_err((_: Error) => ok_some(_)(fn(_)));
+}
+
+export function seek_ok<Value, NewValue, Error>(fn: (_: Value, i: number) => Result<NewValue, Error>, e: Error): (_: Value[]) => Result<NewValue, Error> {
+    return (_: Value[]) => {
+        for (let i = 0; i < _.length; i++) {
+            const r = fn(_[i], i);
+            if (is_ok(r)) return r;
+        }
+        return err(e);
+    };
+}
+
+export function seek_err<Value, NewValue, Error>(fn: (_: Value, i: number) => Result<NewValue, Error>, v: NewValue): (_: Value[]) => Result<NewValue, Error> {
+    return (_: Value[]) => {
+        for (let i = 0; i < _.length; i++) {
+            const r = fn(_[i], i);
+            if (is_err(r)) return r;
+        }
+        return ok(v);
+    };
+}
+
+export function seek_ok_rec<Value, NewValue, Error>(fn: (_: Value, k: string) => Result<NewValue, Error>, e: Error): (_: Record<string, Value>) => Result<NewValue, Error> {
+    return (_: Record<string, Value>) => {
+        for (const k in _) {
+            const r = fn(_[k], k);
+            if (is_ok(r)) return r;
+        }
+        return err(e);
+    };
+}
+
+export function seek_err_rec<Value, NewValue, Error>(fn: (_: Value, k: string) => Result<NewValue, Error>, v: NewValue): (_: Record<string, Value>) => Result<NewValue, Error> {
+    return (_: Record<string, Value>) => {
+        for (const k in _) {
+            const r = fn(_[k], k);
+            if (is_err(r)) return r;
+        }
+        return ok(v);
+    };
 }
 
 export function and_ok<NewValue>(v: NewValue): <Value, Error>(res: Result<Value, Error>) => Result<NewValue, Error> {
@@ -88,6 +139,20 @@ export function a_ok<A, B>(res: Result<A, B>): Either<A, B> {
 
 export function b_ok<A, B>(res: Result<B, A>): Either<A, B> {
     return res;
+}
+
+export function err_if<Value, Error>(fn: (_: Value) => Option<Error>): (_: Value) => Result<Value, Error> {
+    return (_: Value) => err_some(_)(fn(_));
+}
+
+export function ok_type<Type extends keyof JSTypeMap>(t: Type): <Value>(_: Value) => Result<JSTypeMap[Type], string> {
+    const e = err(`!${t}`);
+    return <Value>(_: Value) => typeof _ == t ? ok(_ as JSTypeMap[Type]) : e as Result<JSTypeMap[Type], string>;
+}
+
+export function err_type<Type extends keyof JSTypeMap>(t: Type): (_: any) => Result<any, string> {
+    const e = err(`${t}`);
+    return (_: any) => typeof _ != t ? ok(_) : e as Result<any, string>;
 }
 
 export function ok_def<Value>(v: Value | void): Result<Value, void> {

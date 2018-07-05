@@ -76,6 +76,10 @@ export function flat_all<Type>(...args: (Type | Type[])[]): Type[] {
     return flat_list(args);
 }
 
+export function any_to_str<Value>(value: Value): string {
+    return `${value}`;
+}
+
 export function err_to_str(error: Error): string {
     return error.message;
 }
