@@ -2,6 +2,19 @@ export function identity<Value>(_: Value): Value { return _; }
 
 export function dummy(): void { }
 
+export function tuple<V1>(v1: V1): [V1];
+export function tuple<V1, V2>(v1: V1, v2: V2): [V1, V2];
+export function tuple<V1, V2, V3>(v1: V1, v2: V2, v3: V3): [V1, V2, V3];
+export function tuple<V1, V2, V3, V4>(v1: V1, v2: V2, v3: V3, v4: V4): [V1, V2, V3, V4];
+export function tuple<V1, V2, V3, V4, V5>(v1: V1, v2: V2, v3: V3, v4: V4, v5: V5): [V1, V2, V3, V4, V5];
+export function tuple<V1, V2, V3, V4, V5, V6>(v1: V1, v2: V2, v3: V3, v4: V4, v5: V5, v6: V6): [V1, V2, V3, V4, V5, V6];
+export function tuple<V1, V2, V3, V4, V5, V6, V7>(v1: V1, v2: V2, v3: V3, v4: V4, v5: V5, v6: V6, v7: V7): [V1, V2, V3, V4, V5, V6, V7];
+export function tuple<V1, V2, V3, V4, V5, V6, V7, V8>(v1: V1, v2: V2, v3: V3, v4: V4, v5: V5, v6: V6, v7: V7, v8: V8): [V1, V2, V3, V4, V5, V6, V7, V8];
+export function tuple<V1, V2, V3, V4, V5, V6, V7, V8, V9>(v1: V1, v2: V2, v3: V3, v4: V4, v5: V5, v6: V6, v7: V7, v8: V8, v9: V9): [V1, V2, V3, V4, V5, V6, V7, V8, V9];
+export function tuple(...vs: any[]): any[] {
+    return vs;
+}
+
 export function mk_seq<S, T1>(): (this: S, _: T1) => T1;
 export function mk_seq<S, T1, T2>(f1: (this: S, _: T1) => T2): (this: S, _: T1) => T2;
 export function mk_seq<S, T1, T2, T3>(f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3): (this: S, _: T1) => T3;
