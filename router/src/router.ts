@@ -1,22 +1,22 @@
-import { Option, some, none } from 'literium-base';
+import { Option, some, none, is_some, un_some, then_some, or_none, seek_some, filter_some, some_if, none_is, map_some, some_type, mk_seq, do_seq, tuple, some_def, any_to_str, seek_some_rec } from 'literium-base';
 
 export interface Route<Args> {
     // match path to arguments
-    m(s: string): [Args, string] | void;
+    m(s: string): Option<[Args, string]>;
     // format path with arguments
-    f(v: Args): string | void;
+    f(v: Args): Option<string>;
 }
 
 export interface ArgType<Type> {
     // match regexp
     r: RegExp;
     // parse argument value
-    p(s: string | void): Option<Type>;
+    p(s: Option<string>): Option<Type>;
     // build argument value
-    b(v: Type): string | void;
+    b(v: Type): Option<string>;
 }
 
-export type Routes<State> = { [Id in keyof State]: Route<State[Id]> };
+export type Routes<State> = { [Key in keyof State]: Route<State[Key]> };
 
 const un_def = undefined;
 
@@ -24,19 +24,15 @@ function is_def<Type>(v: Type | void | null): v is Type {
     return v != un_def;
 }
 
-export function match<Args>({ m }: Route<Args>, path: string): Args | void {
-    const r = m(path);
-    if (!r || r[1] != '') return;
-    return r[0];
+export function match<Args>(route: Route<Args>): (path: string) => Option<Args> {
+    return mk_seq(
+        route.m,
+        then_some(([args, rest]) => rest == '' ? some(args) : none())
+    );
 }
 
-// The trick with ActualArgs type parameter makes passed arguments to be the same as route expects.
-// Without it the compiler leads the type of the route to the type of arguments.
-// Also it is important the arguments must be of the type 'ActualArgs & Args', because we cannot set type condition 'ActualArgs = Args'.
-export function build<Args, ActualArgs extends Args>({ f }: Route<Args>, args: ActualArgs & Args): string {
-    const path = f(args);
-    if (!is_def(path)) throw "Cannot build path";
-    return path;
+export function build<Args>(route: Route<Args>): (args: Args) => Option<string> {
+    return route.f;
 }
 
 export function dir(path: string): Route<{}> {
@@ -44,19 +40,19 @@ export function dir(path: string): Route<{}> {
 
     return {
         m: path => path.substr(0, ent.length) == ent ?
-            [{}, path.substr(ent.length)] : un_def,
-        f: () => ent
+            some(tuple({}, path.substr(ent.length))) : none(),
+        f: () => some(ent)
     };
 }
 
 export function ins<Arg>(arg: Arg): Route<Arg> {
     return {
-        m: path => [arg, path],
+        m: path => some(tuple(arg, path)),
         f: args => {
             for (const key in arg) {
-                if (!(key in args) || args[key] !== arg[key]) return;
+                if (!(key in args) || args[key] !== arg[key]) return none();
             }
-            return '';
+            return some('');
         }
     };
 }
@@ -73,20 +69,15 @@ export function arg<TypeMap>(arg: ArgMap<TypeMap>): Route<TypeMap> {
     const { r, p, b } = arg[key];
 
     return {
-        m: path => {
-            const res = r.exec(path);
-            if (!is_def(res)) return;
-            const val = p(res[0]);
-            if (!val.$) return;
-            return [
-                { [key as keyof TypeMap]: val._ } as any as TypeMap,
-                path.slice(res[0].length)
-            ];
-        },
-        f: args => {
-            if (!(key in args)) return;
-            return b(args[key as keyof TypeMap]);
-        }
+        m: path => do_seq(
+            r.exec(path),
+            some_def,
+            then_some(([v,]) => do_seq(
+                p(some(v)),
+                map_some(val => tuple({ [key as keyof TypeMap]: val } as any as TypeMap, path.slice(v.length)))
+            ))
+        ),
+        f: args => key in args ? b(args[key as keyof TypeMap]) : none()
     };
 }
 
@@ -121,7 +112,7 @@ export function query<TypeMap>(arg: ArgMap<TypeMap>, qmark: boolean = true): Rou
 
     return {
         m: path => {
-            if (qmark && path.charAt(0) != '?') return;
+            if (qmark && path.charAt(0) != '?') return none();
             const qargs = query_parse(qmark ? path.substring(1) : path);
             const args = {} as TypeMap;
             for (const key in arg) {
@@ -132,24 +123,24 @@ export function query<TypeMap>(arg: ArgMap<TypeMap>, qmark: boolean = true): Rou
                     const res_ = r.exec(str);
                     if (!is_def(res_) ||
                         res_[0].length != str.length)
-                        return;
+                        return none();
                 }
-                const val = p(str);
-                if (!val.$) return;
+                const val = p(some_def(str));
+                if (!is_some(val)) return none();
                 if (is_def(val._)) args[key] = val._;
             }
-            return [args, ''];
+            return some(tuple(args, ''));
         },
         f: args => {
             const qargs = {} as QueryArgs;
             for (const key in arg) {
-                if (!(key in args)) return;
+                if (!(key in args)) return none();
                 const { b } = arg[key];
                 const val = b(args[key]);
-                if (is_def(val)) qargs[key] = val;
+                if (is_some(val)) qargs[key] = un_some(val);
             }
             const qstr = query_build(qargs);
-            return `${qmark && qstr ? '?' : ''}${qstr}`;
+            return some(`${qmark && qstr ? '?' : ''}${qstr}`);
         }
     };
 }
@@ -178,37 +169,17 @@ export function alt<Type1, Type2, Type3, Type4, Type5, Type6, Type7, Type8, Type
 
 export function alt(...xs: (Route<object> | ArgType<any>)[]): Route<object> | ArgType<any> {
     return (xs as Route<object>[])[0].m ? {
-        m: path => {
-            for (let i = 0; i < xs.length; i++) {
-                const res = (xs as Route<object>[])[i].m(path);
-                if (is_def(res)) return res;
-            }
-        },
-        f: args => {
-            for (let i = 0; i < xs.length; i++) {
-                const path = (xs as Route<object>[])[i].f(args);
-                if (is_def(path)) return path;
-            }
-        }
+        m: path => seek_some((r: Route<object>) => r.m(path))(xs as Route<object>[]),
+        f: args => seek_some((r: Route<object>) => r.f(args))(xs as Route<object>[])
     } : {
             r: new RegExp((xs as ArgType<any>[]).map(({ r }: ArgType<any>) => unwrapRe(r).source).join('|')),
-            p: v => {
-                for (let i = 0; i < xs.length; i++) {
-                    if (is_def(v)) {
-                        const m = (xs as ArgType<any>[])[i].r.exec(v);
-                        if (!is_def(m)) continue;
-                    }
-                    const r = (xs as ArgType<any>[])[i].p(v);
-                    if (r.$) return r;
-                }
-                return none();
-            },
-            b: v => {
-                for (let i = 0; i < xs.length; i++) {
-                    const r = (xs as ArgType<any>[])[i].b(v);
-                    if (is_def(r)) return r;
-                }
-            }
+            p: then_some(v => seek_some((a: ArgType<any>) => do_seq(
+                a.r.exec(v),
+                some_def,
+                map_some(([a,]) => a),
+                a.p
+            ))(xs as ArgType<any>[])),
+            b: v => seek_some((a: ArgType<any>) => a.b(v))(xs as ArgType<any>[])
         };
 }
 
@@ -234,83 +205,87 @@ export function seq(...rs: Route<object>[]): Route<object> {
             let args = {};
             for (let i = 0; i < rs.length; i++) {
                 const res = rs[i].m(path);
-                if (!is_def(res)) return;
-                args = { ...args, ...res[0] };
-                path = res[1];
+                if (!is_some(res)) return none();
+                const [args_, path_] = un_some(res);
+                args = { ...args, ...args_ };
+                path = path_;
             }
-            return [args, path];
+            return some(tuple(args, path));
         },
         f: args => {
             let path = '';
             for (let i = 0; i < rs.length; i++) {
                 const part = rs[i].f(args);
-                if (!is_def(part)) return;
-                path += part;
+                if (!is_some(part)) return none();
+                path += un_some(part);
             }
-            return path;
+            return some(path);
         }
     };
 }
 
 // Router
 
-export function matchs<State>(routes: Routes<State>, path: string): Partial<State> | void {
-    let state: Partial<State> | void;
-    for (const id in routes) {
-        const args = match(routes[id], path);
-        if (args) {
-            if (!state) state = {} as State;
-            state[id] = args;
+export function matchs<State>(routes: Routes<State>): (path: string) => Option<Partial<State>> {
+    return (path: string) => {
+        let state: Partial<State> | void;
+        for (const id in routes) {
+            const args = match(routes[id])(path);
+            if (is_some(args)) {
+                if (!state) state = {} as Partial<State>;
+                state[id] = un_some(args);
+            }
         }
-    }
-    return state;
+        return some_def(state);
+    };
 }
 
-export function builds<State>(routes: Routes<State>, state: Partial<State>): string | void {
-    for (const id in state) {
-        const args = state[id];
-        if (is_def(args)) {
-            return build(routes[id], args as State[Extract<keyof State, string>]);
-        }
-    }
+export function builds<State>(routes: Routes<State>): (state: Partial<State>) => Option<string> {
+    return seek_some_rec<Partial<State>, string>((args, id) =>
+        args ? build(routes[id])(args as State[keyof State]) : none());
 }
 
 // Basic types
 
 export const str: ArgType<string> = {
     r: /^[^\/\?]+/,
-    p: v => is_def(v) ? some(decodeURIComponent(v)) : none(),
-    b: v => typeof v == 'string' ? encodeURIComponent(v) : un_def,
+    p: map_some(decodeURIComponent),
+    b: mk_seq(some_type('string'), map_some(encodeURIComponent)),
 };
+
+const some_if_num = some_type('number');
+const filter_if_fin = then_some(some_if(isFinite));
+const map_to_str = map_some(any_to_str);
 
 export const num: ArgType<number> = {
     r: /^\-?\d+(?:\.\d+)?/,
-    p: v => is_def(v) ? some(parseFloat(v)) : none(),
-    b: v => typeof v ? `${arg}` : un_def,
+    p: mk_seq(map_some(parseFloat), filter_if_fin),
+    b: mk_seq(some_if_num, filter_if_fin, map_to_str),
 };
 
 export const und: ArgType<void> = {
     r: /^/,
     p: () => some(un_def),
-    b: () => ''
+    b: () => some('')
 };
 
 // Numeric types
 
-function is_int(arg: any): boolean {
-    return typeof arg == 'number' && isFinite(arg) && !(arg % 1);
-}
+const map_parse_int = map_some(parseInt);
+const filter_if_int = filter_some((_: number) => !(_ % 1));
 
 export const int: ArgType<number> = {
     r: /^\-?\d+/,
-    p: v => is_def(v) ? some(parseInt(v)) : none(),
-    b: v => is_int(v) ? `${v}` : un_def
+    p: mk_seq(map_parse_int, filter_if_fin, filter_if_int),
+    b: mk_seq(some_if_num, filter_if_fin, filter_if_int, map_to_str)
 };
+
+const filter_if_pos = filter_some((_: number) => _ >= 0);
 
 export const nat: ArgType<number> = {
     r: /^\d+/,
-    p: v => is_def(v) ? some(parseInt(v)) : none(),
-    b: v => is_int(v) && v >= 0 ? `${v}` : un_def
+    p: mk_seq(map_parse_int, filter_if_fin, filter_if_int, filter_if_pos),
+    b: mk_seq(some_if_num, filter_if_fin, filter_if_int, filter_if_pos, map_to_str)
 };
 
 // Type modifiers
@@ -318,16 +293,16 @@ export const nat: ArgType<number> = {
 export function opt<Type>({ r, p, b }: ArgType<Type>): ArgType<Type | void> {
     return {
         r,
-        p: v => is_def(v) ? p(v) : some(un_def),
-        b: v => is_def(v) ? b(v) : un_def,
+        p: mk_seq(p as (_: Option<string>) => Option<Type | void>, or_none(un_def)),
+        b: mk_seq(some_def, then_some(b))
     };
 }
 
 export function def<Type>({ r, p, b }: ArgType<Type>, d: Type): ArgType<Type> {
     return {
         r,
-        p: v => is_def(v) ? p(v) : some(d),
-        b: v => v !== d ? b(v) : un_def,
+        p: mk_seq(p, or_none(d)),
+        b: mk_seq(none_is(d), then_some(b)),
     };
 }
 

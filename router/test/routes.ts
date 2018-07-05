@@ -1,13 +1,14 @@
-import { some, none } from 'literium-base';
+import { some, none, then_some } from 'literium-base';
 import { ArgType, dir, arg, query, alt, seq, str, nat, opt, def } from '../src/router';
 
 export const enum Order { Asc, Desc }
 
 export const ord: ArgType<Order> = {
     r: /^asc|desc/,
-    p: v => v == 'asc' ? some(Order.Asc) : v == 'desc' ? some(Order.Desc) : none(),
+    p: then_some(v =>
+        v == 'asc' ? some(Order.Asc) : v == 'desc' ? some(Order.Desc) : none()),
     b: v => v == Order.Asc || v == Order.Desc ?
-        `${v == Order.Asc ? 'asc' : 'desc'}` : undefined
+        some(`${v == Order.Asc ? 'asc' : 'desc'}`) : none()
 };
 
 const root = dir('/');
