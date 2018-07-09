@@ -7,6 +7,7 @@ import {
 
     select_future,
     join_future,
+    fork_future,
 } from '../src/index';
 
 describe('future', () => {
@@ -45,6 +46,21 @@ describe('future', () => {
         });
         it('case 2', done => {
             dsef(join_future(timeout(100)(100), timeout(40)(40)), [100, 40], done);
+        });
+    });
+
+    describe('fork_future', () => {
+        const f = fork_future(timeout(80)(11));
+        
+        it('case 1 & 2', done => {
+            let n = 2;
+            dsef(f(), 11, () => { if (!--n) done(); });
+            dsef(f(), 11, () => { if (!--n) done(); });
+        });
+        it('case 3', done => {
+            setTimeout(() => {
+                dsef(f(), 11, done);
+            }, 150);
         });
     });
 });

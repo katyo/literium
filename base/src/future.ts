@@ -1,6 +1,7 @@
 import { Send, map_send } from './send';
 import { Done } from './fork';
 import { dummy } from './helper';
+import { Option, some, none, is_some, un_some } from './option';
 import { Either, a, b } from './either';
 
 export interface Future<Type> {
@@ -98,5 +99,29 @@ export function join_future(...fs: Future<any>[]): Future<any[]> {
         for (let i = 0; i < fs.length; i++)
             cs[i] = fs[i](s(i));
         return () => { for (const i in cs) cs[i](); };
+    };
+}
+
+export function fork_future<Type>(f: Future<Type>): () => Future<Type> {
+    let result: Option<Type> = none();
+    let cancel: Option<Done> = none();
+    let sends: Send<Type>[] = [];
+    return () => is_some(result) ? future(un_some(result)) : (send: Send<Type>) => {
+        sends.push(send);
+        if (!is_some(cancel)) {
+            cancel = some(f(v => {
+                result = some(v);
+                for (let s of sends) s(v);
+                cancel = none();
+                sends = [];
+            }));
+        }
+        return () => {
+            sends.splice(sends.indexOf(send), 1);
+            if (!sends.length) {
+                un_some(cancel)();
+                cancel = none();
+            }
+        };
     };
 }
