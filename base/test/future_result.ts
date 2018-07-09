@@ -1,28 +1,11 @@
-import { deepStrictEqual as dse } from 'assert';
+import { dsef } from './test';
 import {
-    Result, FutureResult,
-
     future_ok, future_err,
     then_future_ok, then_future_err,
     map_future_ok, map_future_err,
 
     ok, err,
 } from '../src/index';
-
-function dsef<Value, Error>(actual: FutureResult<Value, Error>, expected: Result<Value, Error>, done?: () => void) {
-    if (done) {
-        setTimeout(() => {
-            actual(actual => {
-                dse(actual, expected);
-                done();
-            });
-        }, 0);
-    } else {
-        actual(actual => {
-            dse(actual, expected);
-        });
-    }
-}
 
 describe('future result', () => {
     it('future sync', () => {
