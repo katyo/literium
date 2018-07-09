@@ -7,6 +7,10 @@ export interface Future<Type> {
     (send: Send<Type>): Done;
 }
 
+export interface FutureConv<Type, NewType> {
+    (_: Future<Type>): Future<NewType>;
+}
+
 export function future<Type>(val: Type): Future<Type> {
     return (send: Send<Type>) => {
         send(val);
@@ -37,7 +41,7 @@ export function timeout(msec: number): <Type>(val: Type) => Future<Type> {
     };
 }
 
-export function then_future<Type, NewType>(fn: (data: Type) => Future<NewType>): (future: Future<Type>) => Future<NewType> {
+export function then_future<Type, NewType>(fn: (data: Type) => Future<NewType>): FutureConv<Type, NewType> {
     return (future: Future<Type>) => {
         return (send: Send<NewType>) => {
             return future(val => fn(val)(send));
@@ -45,7 +49,7 @@ export function then_future<Type, NewType>(fn: (data: Type) => Future<NewType>):
     };
 }
 
-export function map_future<Type, NewType>(fn: (data: Type) => NewType): (future: Future<Type>) => Future<NewType> {
+export function map_future<Type, NewType>(fn: (data: Type) => NewType): FutureConv<Type, NewType> {
     const send_map = map_send(fn);
     return (future: Future<Type>) => {
         return (send: Send<NewType>) => {
