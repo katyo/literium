@@ -1,4 +1,4 @@
-import { Option, some, none, is_some, un_some, then_some, or_none, seek_some, filter_some, some_if, none_is, map_some, some_type, mk_seq, do_seq, tuple, some_def, any_to_str, seek_some_rec } from 'literium-base';
+import { Option, some, none, is_some, un_some, then_some, or_none, seek_some, filter_some, some_if, none_is, map_some, some_type, mk_seq, do_seq, tuple, some_def, any_to_str, seek_some_rec, Paired, PairedAsKeyed, paired_to_keyed, keyed_to_paired } from 'literium-base';
 
 export interface Route<Args> {
     // match path to arguments
@@ -226,13 +226,13 @@ export function seq(...rs: Route<object>[]): Route<object> {
 
 // Router
 
-export function matchs<State>(routes: Routes<State>): (path: string) => Option<Partial<State>> {
+export function match_paired<State>(routes: Routes<State>): (path: string) => Option<Paired<State>> {
     return (path: string) => {
-        let state: Partial<State> | void;
+        let state: Paired<State> | void;
         for (const id in routes) {
             const args = match(routes[id])(path);
             if (is_some(args)) {
-                if (!state) state = {} as Partial<State>;
+                if (!state) state = {} as Paired<State>;
                 state[id] = un_some(args);
             }
         }
@@ -240,9 +240,23 @@ export function matchs<State>(routes: Routes<State>): (path: string) => Option<P
     };
 }
 
-export function builds<State>(routes: Routes<State>): (state: Partial<State>) => Option<string> {
-    return seek_some_rec<Partial<State>, string>((args, id) =>
+export function build_paired<State>(routes: Routes<State>): (state: Paired<State>) => Option<string> {
+    return seek_some_rec<Paired<State>, string>((args, id) =>
         args ? build(routes[id])(args as State[keyof State]) : none());
+}
+
+export function match_keyed<State>(routes: Routes<State>): (path: string) => Option<PairedAsKeyed<State>> {
+    return mk_seq(
+        match_paired(routes),
+        map_some(paired_to_keyed)
+    );
+}
+
+export function build_keyed<State>(routes: Routes<State>): (state: PairedAsKeyed<State>) => Option<string> {
+    return mk_seq(
+        keyed_to_paired,
+        build_paired(routes)
+    );
 }
 
 // Basic types

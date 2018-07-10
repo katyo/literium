@@ -185,14 +185,14 @@ build(blogs_by_date, {sort:'asc'})        // error (type mismatch of 'sort' prop
 ### Router
 
 Usually in real-life applications we don't like to operate with routes separately.
-One of ways to works with all defined routes together is using of the methods `matchs()` and `builds()`.
+One of the ways to works with all defined routes together is using of the methods `match_paired()` and `build_paired()`.
 
-This methods gets the object with routes names as keys and routes itself as values.
-It operates with the complex state which represents object with routes names as keys and corresponding route arguments objects as values.
+This methods gets the dictionary with route's names as keys and routes itself as values.
+It operates with the complex state which represents object with route's names as keys and corresponding route arguments as values.
 
 ```typescript
 import { some, none } from 'literium-base';
-import { num, str, dir, arg, seq, matchs, builds } from 'literium-router';
+import { num, str, dir, arg, seq, match_paired, build_paired } from 'literium-router';
 
 const root = dir('/');
 const blog_by_id = seq(root, dir('blog/'), arg({id:num}));
@@ -200,13 +200,35 @@ const blogs_by_tag = seq(root, dir('blog/tag-'), arg({tag:str}));
 
 const routes = { root, blogs_by_tag, blog_by_id };
 
-matchs(routes, '/')              // => some({root:{}})
-matchs(routes, '/blog/2')        // => some({blog_by_id:{id:2}})
-matchs(routes, '/blog/tag-es6')  // => some({blogs_by_tag:{tag:"es6"}})
+match_paired(routes, '/')              // => some({root:{}})
+match_paired(routes, '/blog/2')        // => some({blog_by_id:{id:2}})
+match_paired(routes, '/blog/tag-es6')  // => some({blogs_by_tag:{tag:"es6"}})
 
-builds(routes, {root:{}})                   // => some('/')
-builds(routes, {blog_by_id:{id:2}})         // => some('/blog/2')
-builds(routes, {blogs_by_tag:{tag:"es6"}})  // => some('/blog/tag-es6')
+build_paired(routes, {root:{}})                   // => some('/')
+build_paired(routes, {blog_by_id:{id:2}})         // => some('/blog/2')
+build_paired(routes, {blogs_by_tag:{tag:"es6"}})  // => some('/blog/tag-es6')
+```
+
+The another way to implement router is using the methods `match_keyed()` and `build_keyed()`.
+In this case you deal with keyed (or tagged) values instead of single-key-value-pair (paired) dictionaries.
+
+```typescript
+import { some, none } from 'literium-base';
+import { num, str, dir, arg, seq, match_keyed, build_keyed } from 'literium-router';
+
+const root = dir('/');
+const blog_by_id = seq(root, dir('blog/'), arg({id:num}));
+const blogs_by_tag = seq(root, dir('blog/tag-'), arg({tag:str}));
+
+const routes = { root, blogs_by_tag, blog_by_id };
+
+match_keyed(routes, '/')              // => some(keyed('root' as 'root', {}))
+match_keyed(routes, '/blog/2')        // => some(keyed('blog_by_id' as 'blog_by_id', {id:2}))
+match_keyed(routes, '/blog/tag-es6')  // => some(keyed('blogs_by_tag' as 'blogs_by_tag', {tag:"es6"}))
+
+build_keyed(routes, keyed('root' as 'root', {}))                           // => some('/')
+build_keyed(routes, keyed('blog_by_id' as 'blog_by_id', {id:2}))           // => some('/blog/2')
+build_keyed(routes, keyed('blogs_by_tag' as 'blogs_by_tag', {tag:"es6"}))  // => some('/blog/tag-es6')
 ```
 
 ## TypeScript 2.7 issue

@@ -1,6 +1,6 @@
 import { deepStrictEqual as dse } from 'assert';
-import { some, none } from 'literium-base';
-import { match, build, matchs, builds } from '../src/router';
+import { some, none, keyed } from 'literium-base';
+import { match, build, match_paired, build_paired, match_keyed, build_keyed } from '../src/router';
 import { Order, routes } from './routes';
 
 const {
@@ -191,15 +191,27 @@ describe('route', () => {
 });
 
 describe('routes', () => {
-    describe('matchs', () => {
-        dse(matchs(routes)('/'), some({ root: {} }));
-        dse(matchs(routes)('/blog/123'), some({ post_by_id: { id: 123 } }));
-        dse(matchs(routes)('/blog/search?phrase=3D%20modeling'), some({ blog_search: { phrase: "3D modeling" } }));
+    describe('match_paired', () => {
+        dse(match_paired(routes)('/'), some({ root: {} }));
+        dse(match_paired(routes)('/blog/123'), some({ post_by_id: { id: 123 } }));
+        dse(match_paired(routes)('/blog/search?phrase=3D%20modeling'), some({ blog_search: { phrase: "3D modeling" } }));
     });
 
-    describe('builds', () => {
-        dse(builds(routes)({ root: {} }), some('/'));
-        dse(builds(routes)({ post_by_id: { id: 123 } }), some('/blog/123'));
-        dse(builds(routes)({ blog_search: { phrase: "3D modeling" } }), some('/blog/search?phrase=3D%20modeling'));
+    describe('build_paired', () => {
+        dse(build_paired(routes)({ root: {} }), some('/'));
+        dse(build_paired(routes)({ post_by_id: { id: 123 } }), some('/blog/123'));
+        dse(build_paired(routes)({ blog_search: { phrase: "3D modeling" } }), some('/blog/search?phrase=3D%20modeling'));
+    });
+
+    describe('match_keyed', () => {
+        dse(match_keyed(routes)('/'), some(keyed('root' as 'root', {})));
+        dse(match_keyed(routes)('/blog/123'), some(keyed('post_by_id' as 'post_by_id', { id: 123 })));
+        dse(match_keyed(routes)('/blog/search?phrase=3D%20modeling'), some(keyed('blog_search' as 'blog_search', { phrase: "3D modeling" })));
+    });
+
+    describe('build_keyed', () => {
+        dse(build_keyed(routes)(keyed('root' as 'root', {})), some('/'));
+        dse(build_keyed(routes)(keyed('post_by_id' as 'post_by_id', { id: 123 })), some('/blog/123'));
+        dse(build_keyed(routes)(keyed('blog_search' as 'blog_search', { phrase: "3D modeling" })), some('/blog/search?phrase=3D%20modeling'));
     });
 });
