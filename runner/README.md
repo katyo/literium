@@ -74,7 +74,7 @@ const run = init();
 const app = main();
 
 // run app using runner to get html
-run(app, html => {
+run(app, (html, state) => {
     // respond with html
     res.writeHead(200, "OK", { "Content-Type": "text/html" });
     res.end(html);
@@ -173,4 +173,67 @@ Initializing navigation on server:
 import { initNav } from 'literium-runner/server';
 
 const nav = initNav(request); // => Nav<Signal extends SetPath>
+```
+
+#### HTTP Status
+
+When your application runs on server it generated HTML pages to provide HTTP responses.
+In this case you can make your app able to send an actual HTTP status.
+
+```typescript
+import { Status, HasStatus, set_status } from 'literium-runner';
+
+interface State extends HasStatus {
+  // ...
+}
+
+// initialize status
+state = set_status(state, Status.Ok, "OK");
+
+// update status
+state = set_status(state, Status.NotFound, "Resource not found");
+state = set_status(state, Status.Forbidden, "Access denied");
+```
+
+#### Fast responding for JS-aware clients
+
+When your clients is browsers you don't need to bootstrap page on server.
+
+To determine javascript support we can run some js code on client which makes the hint to the server.
+
+This solution uses `js=1` cookie, which sets using simple script like this:
+
+```javascript
+var _ = new Date();
+_.setTime(_.getTime() + 1e11);
+document.cookie = 'js=1;path=/;expires=' + _.toUTCString();
+```
+
+To use fast server-side page rendering in your application do that:
+
+```typescript
+import { HasJs, hasJsScript } from 'literium-runner';
+
+interface State extends HasJs {
+  // ...
+}
+
+// check `js` field of state in our application
+if (state.js) {
+  // do fast bootstrap
+} else {
+  // do page rendering
+}
+```
+
+And on server:
+
+```typescript
+import { hasJs } from 'literium-server';
+
+// check javascript support cookie
+const js = hasJs(request);
+
+// initialize app
+main(js);
 ```
