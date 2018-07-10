@@ -22,7 +22,7 @@
     "src/result.ts",
     "src/either.ts",
     "src/helper.ts",
-    "src/send.ts",
+    "src/emit.ts",
     "src/fork.ts",
     "src/future.ts",
     "src/future_result.ts",

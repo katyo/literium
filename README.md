@@ -29,42 +29,46 @@ The _event_ objects is used to modify the state of the _component_ or _applicati
 
 ## Functions
 
-### Send\<Event>
+### Emit\<Signal>
 
-The _send_ function allows to send events to _component_ in order to modify its state.
+The _emit_ function allows to send events to _component_ in order to modify its state.
 
 ```typescript
-export interface Send<Event> {
-    (event: Event): void;
+export interface Emit<Signal> {
+    (signal: Signal): void;
 }
 ```
 
-To deal with sub-components you can change the type of `Event` using `Send.map` function, like so:
+To deal with sub-components you can change the type of `Signal` using `map_emit()` function, like so:
 
 ```typescript
-import { Send } from 'literium';
+import { Emit } from 'literium';
 
-interface SubEvent { }
+interface SubSignal { }
 
-interface Event { _: SubEvent; }
+interface Signal {
+  _: SubSignal;
+}
 
-const send: Send<Event>;
+const emit: Emit<Signal>;
 
-const sub_send: Send<SubEvent> = Send.map(send, (sub_event: SubEvent) => ({ _: sub_event }));
+const sub_emit: Emit<SubSignal> =
+  map_emit((sub_signal: SubSignal) => ({ _: sub_signal }))
+  (emit);
 ```
 
-When the `Keyed` container is used to wrap events you can do it much simpler:
+When the `Keyed` container is used to wrap signals you can do it much simpler:
 
 ```typescript
-import { Keyed, Send } from 'literium';
+import { Keyed, Emit } from 'literium';
 
-interface SubEvent { }
+interface SubSignal { }
 
-type Event = Keyed<'sub-event', SubEvent>;
+type Signal = Keyed<'sub-signal', SubSignal>;
 
-const send: Send<Event>;
+const emit: Emit<Signal>;
 
-const sub_send: Send<SubEvent> = Send.wrap(send, 'sub-event');
+const sub_emit: Emit<SubSignal> = Emit.wrap(emit, 'sub-signal');
 ```
 
 ### Done
@@ -77,13 +81,13 @@ export interface Done {
 }
 ```
 
-### Fork\<Event>
+### Fork\<Signal>
 
-The _fork_ function can be used to start some asynchronous operation which may send events to the component.
+The _fork_ function can be used to start some asynchronous operation which may send signals to the component.
 
 ```typescript
-export interface Fork<Event> {
-    (): [Send<Event>, Done];
+export interface Fork<Signal> {
+    (): [Emit<Signal>, Done];
 }
 ```
 
@@ -91,10 +95,12 @@ You may use it like so:
 
 ```typescript
 /* start task */
-const [send, done] = fork();
+const [emit, done] = fork();
 
-/* send event */
-send({ $: 'my-event' });
+/* emit events */
+emit({ $: 'some-signal' });
+...
+emit({ $: 'other-signal' });
 
 /* end task */
 done();
@@ -102,22 +108,22 @@ done();
 
 This way simplifies asynchronous code handling both on client and server.
 
-To deal with sub-components you can change the type of `Event` using `Fork.map` function, like so:
+To deal with sub-components you can change the type of `Signal` using `map_fork` function, like so:
 
 ```typescript
 import { Fork } from 'literium';
 
-interface SubEvent { }
+interface SubSignal { }
 
-interface Event { _: SubEvent; }
+interface Signal { _: SubSignal; }
 
-function wrapSubEvent(sub_event: SubEvent): Event {
-    return { _: sub_event };
+function wrapSubSignal(sub_signal: SubSignal): Signal {
+    return { _: sub_signal };
 }
 
-const fork: Fork<Event>;
+const fork: Fork<Signal>;
 
-const sub_fork: Fork<SubEvent> = Fork.map(fork, wrapSubEvent);
+const sub_fork: Fork<SubSignal> = map_fork(wrapSubSignal)(fork);
 ```
 
 When the `Keyed` container is used to wrap events you can do it much simpler:
@@ -125,58 +131,58 @@ When the `Keyed` container is used to wrap events you can do it much simpler:
 ```typescript
 import { Keyed, Fork } from 'literium';
 
-interface SubEvent { }
+interface SubSignal { }
 
-type Event = Keyed<'sub-event', SubEvent>;
+type Signal = Keyed<'sub-signal', SubSignal>;
 
-const send: Fork<Event>;
+const fork: Fork<Signal>;
 
-const sub_fork: Fork<SubEvent> = Fork.wrap(fork, 'sub-event');
+const sub_fork: Fork<SubSignal> = wrap_fork(fork, 'sub-signal');
 ```
 
-### Create\<State, Event>
+### Create\<State, Signal>
 
 The function _create_ is purposed to get initial state of the component.
 
 ```typescript
-export interface Create<State, Event> {
-    (fork: Fork<Event>): State;
+export interface Create<State, Signal> {
+    (fork: Fork<Signal>): State;
 }
 ```
 
 The component can start asynchronous operations on initializing using _fork_.
 
-### Update\<State, Event>
+### Update\<State, Signal>
 
 The function _update_ is purposed to change current state of the component.
 
 ```typescript
-export interface Update<State, Event> {
-    (state: Readonly<State>, event: Event, fork: Fork<Event>): State;
+export interface Update<State, Signal> {
+    (state: Readonly<State>, signal: Signal, fork: Fork<Signal>): State;
 }
 ```
 
 Also the component can start asynchronous operations on updating.
 
-### Render\<State, Event>
+### Render\<State, Signal>
 
 The function _render_ is used to render the component in current state.
 
 ```typescript
-export interface Render<State, Event> {
-    (state: Readonly<State>, send: Send<Event>): VNode;
+export interface Render<State, Signal> {
+    (state: Readonly<State>, emit: Emit<Signal>): VNode;
 }
 ```
 
-## Component\<State, Event>
+## Component\<State, Signal>
 
 By default the components have a state so it must implements all three methods.
 
 ```typescript
-export interface Component<State, Event> {
-    create: Create<State, Event>;
-    update: Update<State, Event>;
-    render: Render<State, Event>;
+export interface Component<State, Signal> {
+    create: Create<State, Signal>;
+    update: Update<State, Signal>;
+    render: Render<State, Signal>;
 }
 ```
 

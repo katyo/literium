@@ -11,11 +11,11 @@ import {
 import { VNode, VData, Component } from 'literium';
 import { fork_pool } from '../sched';
 
-export interface Run<State, Event> {
-    (app: Component<State, Event>, elm?: Node): void;
+export interface Run<State, Signal> {
+    (app: Component<State, Signal>, elm?: Node): void;
 }
 
-export function init<State, Event>(doc: Document = document): Run<State, Event> {
+export function init<State, Signal>(doc: Document = document): Run<State, Signal> {
     const { read, patch } = init_<VData>([
         classModule(classApi),
         styleModule(styleApi),
@@ -29,17 +29,17 @@ export function init<State, Event>(doc: Document = document): Run<State, Event> 
         const view = () => {
             frame = undefined;
             const vnode_ = vnode;
-            vnode = render(state, send) as VNode;
+            vnode = render(state, emit) as VNode;
             patch(vnode_, vnode);
         };
-        const send = (event: Event) => {
-            //console.log('send:', event);
-            state = update(state, event, fork);
+        const emit = (signal: Signal) => {
+            //console.log('emit:', signal);
+            state = update(state, signal, fork);
             //console.log('state:', state);
             if (frame) cancelAnimationFrame(frame);
             frame = requestAnimationFrame(view);
         };
-        const [fork, run] = fork_pool(send, () => {
+        const [fork, run] = fork_pool(emit, () => {
             //console.log('done');
         });
         let vnode = read(elm);

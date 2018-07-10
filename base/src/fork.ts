@@ -1,21 +1,21 @@
 import { Keyed, to_keyed } from './keyed';
-import { Send, map_send } from './send';
+import { Emit, map_emit } from './emit';
 
 export interface Done {
     (): void;
 }
 
-export interface Fork<Event> {
-    (): [Send<Event>, Done];
+export interface Fork<Signal> {
+    (): [Emit<Signal>, Done];
 }
 
-export function map_fork<Event, OtherEvent>(fn: (event: OtherEvent) => Event): (fork: Fork<Event>) => Fork<OtherEvent> {
-    return (fork: Fork<Event>) => () => {
-        const [send, done] = fork();
-        return [map_send(fn)(send), done];
+export function map_fork<Signal, OtherSignal>(fn: (signal: OtherSignal) => Signal): (fork: Fork<Signal>) => Fork<OtherSignal> {
+    return (fork: Fork<Signal>) => () => {
+        const [emit, done] = fork();
+        return [map_emit(fn)(emit), done];
     };
 }
 
-export function keyed_fork<Key>(key: Key): <OtherEvent>(fork: Fork<Keyed<Key, OtherEvent>>) => Fork<OtherEvent> {
+export function keyed_fork<Key>(key: Key): <OtherSignal>(fork: Fork<Keyed<Key, OtherSignal>>) => Fork<OtherSignal> {
     return map_fork(to_keyed(key));
 }

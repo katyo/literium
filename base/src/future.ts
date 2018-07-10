@@ -1,11 +1,11 @@
-import { Send, map_send } from './send';
+import { Emit, map_emit } from './emit';
 import { Done } from './fork';
 import { dummy } from './helper';
 import { Option, some, none, is_some, un_some } from './option';
 import { Either, a, b } from './either';
 
 export interface Future<Type> {
-    (send: Send<Type>): Done;
+    (emit: Emit<Type>): Done;
 }
 
 export interface FutureConv<Type, NewType> {
@@ -13,8 +13,8 @@ export interface FutureConv<Type, NewType> {
 }
 
 export function future<Type>(val: Type): Future<Type> {
-    return (send: Send<Type>) => {
-        send(val);
+    return (emit: Emit<Type>) => {
+        emit(val);
         return dummy;
     };
 }
@@ -35,8 +35,8 @@ export function wrap_future(fn: (...args: any[]) => any): (...args: any[]) => Fu
 
 export function timeout(msec: number): <Type>(val: Type) => Future<Type> {
     return <Type>(val: Type) => {
-        return (send: Send<Type>) => {
-            const timer = setTimeout(() => send(val), msec);
+        return (emit: Emit<Type>) => {
+            const timer = setTimeout(() => emit(val), msec);
             return () => { clearTimeout(timer); };
         };
     };
@@ -44,30 +44,30 @@ export function timeout(msec: number): <Type>(val: Type) => Future<Type> {
 
 export function then_future<Type, NewType>(fn: (data: Type) => Future<NewType>): FutureConv<Type, NewType> {
     return (future: Future<Type>) => {
-        return (send: Send<NewType>) => {
-            return future(val => fn(val)(send));
+        return (emit: Emit<NewType>) => {
+            return future(val => fn(val)(emit));
         };
     };
 }
 
 export function map_future<Type, NewType>(fn: (data: Type) => NewType): FutureConv<Type, NewType> {
-    const send_map = map_send(fn);
+    const emit_map = map_emit(fn);
     return (future: Future<Type>) => {
-        return (send: Send<NewType>) => {
-            return future(send_map(send));
+        return (emit: Emit<NewType>) => {
+            return future(emit_map(emit));
         };
     };
 }
 
 export function select_future<Type>(...fs: Future<Type>[]): Future<Type> {
-    return (send: Send<Type>) => {
+    return (emit: Emit<Type>) => {
         const u = () => { for (const i in cs) cs[i](); };
         const s = (i: number) => (t: Type) => {
             delete cs[i];
             u();
-            send(t);
+            emit(t);
         };
-        const cs: Record<number, Done> = {};
+        const cs: Record<string, Done> = {};
         for (let i = 0; i < fs.length; i++)
             cs[i] = fs[i](s(i));
         return u;
@@ -87,15 +87,15 @@ export function join_future<T1, T2, T3, T4, T5, T6, T7>(f1: Future<T1>, f2: Futu
 export function join_future<T1, T2, T3, T4, T5, T6, T7, T8>(f1: Future<T1>, f2: Future<T2>, f3: Future<T3>, f4: Future<T4>, f5: Future<T5>, f6: Future<T6>, f7: Future<T7>, f8: Future<T8>): Future<[T1, T2, T3, T4, T5, T6, T7, T8]>;
 export function join_future<T1, T2, T3, T4, T5, T6, T7, T8, T9>(f1: Future<T1>, f2: Future<T2>, f3: Future<T3>, f4: Future<T4>, f5: Future<T5>, f6: Future<T6>, f7: Future<T7>, f8: Future<T8>, f9: Future<T9>): Future<[T1, T2, T3, T4, T5, T6, T7, T8, T9]>;
 export function join_future(...fs: Future<any>[]): Future<any[]> {
-    return (send: Send<any>) => {
+    return (emit: Emit<any>) => {
         const r: any[] = new Array(fs.length);
         let n = fs.length;
         const s = (i: number) => (t: any) => {
             r[i] = t;
             delete cs[i];
-            if (!--n) send(r);
+            if (!--n) emit(r);
         };
-        const cs: Record<number, Done> = {};
+        const cs: Record<string, Done> = {};
         for (let i = 0; i < fs.length; i++)
             cs[i] = fs[i](s(i));
         return () => { for (const i in cs) cs[i](); };
@@ -105,20 +105,20 @@ export function join_future(...fs: Future<any>[]): Future<any[]> {
 export function fork_future<Type>(f: Future<Type>): () => Future<Type> {
     let result: Option<Type> = none();
     let cancel: Option<Done> = none();
-    let sends: Send<Type>[] = [];
-    return () => is_some(result) ? future(un_some(result)) : (send: Send<Type>) => {
-        sends.push(send);
+    let emits: Emit<Type>[] = [];
+    return () => is_some(result) ? future(un_some(result)) : (emit: Emit<Type>) => {
+        emits.push(emit);
         if (!is_some(cancel)) {
             cancel = some(f(v => {
                 result = some(v);
-                for (let s of sends) s(v);
+                for (let s of emits) s(v);
                 cancel = none();
-                sends = [];
+                emits = [];
             }));
         }
         return () => {
-            sends.splice(sends.indexOf(send), 1);
-            if (!sends.length) {
+            emits.splice(emits.indexOf(emit), 1);
+            if (!emits.length) {
                 un_some(cancel)();
                 cancel = none();
             }

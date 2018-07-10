@@ -1,5 +1,5 @@
 export * from './types';
-import { Send, FutureResult, ok, err } from 'literium-base';
+import { Emit, FutureResult, ok, err } from 'literium-base';
 import { Method, Status, Error, DataType, GenericBody, Headers } from './types';
 import { request as backend } from './server';
 
@@ -14,7 +14,7 @@ export interface RequestWithoutBody<TMethod extends Method> {
     url: string;
     headers?: Headers;
     timeout?: number;
-    progress?: Send<Progress>;
+    progress?: Emit<Progress>;
 }
 
 export interface RequestWithBody<TMethod extends Method> extends RequestWithoutBody<TMethod> {
@@ -71,7 +71,7 @@ export function request(req: RequestWithBody<MethodWithRequestBody> & WithRespon
 export function request(req: RequestWithBody<MethodWithRequestBody> & WithResponseBody<DataType.Binary>): FutureResponseWithBody<ArrayBuffer>;
 
 export function request(req: GenericRequest): GenericFutureResponse {
-    return send => {
+    return emit => {
         let final = false;
         let timer: any;
         const abort = backend(req.method, req.url, req.headers || {}, uploadable(req.method) ? (req as RequestWithBody<Method>).body : undefined, downloadable(req.method) ? (req as WithResponseBody<DataType>).response : undefined, (status: number, message: string, headers: Headers, body?: GenericBody) => {
@@ -79,22 +79,22 @@ export function request(req: GenericRequest): GenericFutureResponse {
                 final = true;
                 const res: Response<GenericBody> = { status, message, headers, body };
                 clearTimeout(timer);
-                send(ok(res));
+                emit(ok(res));
             }
         }, (error: Error) => {
             if (!final) {
                 final = true;
                 clearTimeout(timer);
-                send(err(error));
+                emit(err(error));
             }
         }, req.progress ? (left: number, size: number, down: boolean) => {
-            (req.progress as Send<Progress>)({ left, size, down });
+            (req.progress as Emit<Progress>)({ left, size, down });
         } : () => { });
         if (req.timeout) {
             timer = setTimeout(() => {
                 final = true;
                 abort();
-                send(err(Error.Timeout));
+                emit(err(Error.Timeout));
             }, req.timeout);
         }
         return () => {

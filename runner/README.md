@@ -17,11 +17,11 @@ Same components can be run both on client to interact with user or on server to 
 #### Client
 
 ```typescript
-export interface Run<State, Event> {
-    (app: Component<State, Event>, elm?: Node): void;
+interface Run<State, Signal> {
+    (app: Component<State, Signal>, elm?: Node): void;
 }
 
-function init<State, Event>(doc: Document = document): Run<State, Event>;
+function init<State, Signal>(doc: Document = document): Run<State, Signal>;
 ```
 
 The proper way to run your app on client is like so:
@@ -32,7 +32,7 @@ The proper way to run your app on client is like so:
 // import runner parts (initializer)
 import { init } from 'literium-runner/es/client';
 
-// import application component (initializer)
+// import root application component
 import { main } from './main';
 
 // initialize runner
@@ -46,6 +46,39 @@ run(app);
 
 // run app using runner on a body node
 run(app, document.body);
+```
+
+#### Server
+
+```typescript
+interface Run<State, Signal> {
+    (app: Component<State, Signal>, end: (html: string) => void): void;
+}
+
+function init<State, Signal>(doctype: string = 'html', timeout: number = 1000): Run<State, Signal>
+```
+
+The proper way to run your app on client is like so:
+
+```typescript
+// import runner parts (initializer)
+import { init } from 'literium-runner/server';
+
+// import root application component
+import { main } from './main';
+
+// initialize runner
+const run = init();
+
+// initialize app
+const app = main();
+
+// run app using runner to get html
+run(app, html => {
+    // respond with html
+    res.writeHead(200, "OK", { "Content-Type": "text/html" });
+    res.end(html);
+});
 ```
 
 ### Additional parts
@@ -106,15 +139,15 @@ This allows us speed-up our apps by reducing direct client-server interaction (i
 Navigation API provided by literium is simple:
 
 ```typescript
-interface Nav<AppEvent> {
+interface Nav<Signal> {
     // change path events handling
-    on(fork: Fork<AppEvent>): void;
+    on(fork: Fork<Signal>): void;
     // set local path checker
     is(fn: (path: string) => boolean): void;
     // process navigation directly
     go(url: string): void;
     // process click to link event
-    ev(evt: Event): void;
+    ev(evt: Signal): void;
 }
 
 type SetPath = Keyed<'path', string>; /* change path event */
@@ -131,7 +164,7 @@ Initializing navigation on client:
 ```typescript
 import { initNav } from 'literium-runner/es/client';
 
-const nav = initNav(window); // => Nav<Event extends SetPath>
+const nav = initNav(window); // => Nav<Signal extends SetPath>
 ```
 
 Initializing navigation on server:
@@ -139,5 +172,5 @@ Initializing navigation on server:
 ```typescript
 import { initNav } from 'literium-runner/server';
 
-const nav = initNav(request); // => Nav<Event extends SetPath>
+const nav = initNav(request); // => Nav<Signal extends SetPath>
 ```

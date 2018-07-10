@@ -1,4 +1,4 @@
-import { VNode, Send, Component, Keyed, h, page, keyed_send } from 'literium';
+import { VNode, Emit, Component, Keyed, h, page, keyed_emit } from 'literium';
 import * as Todo from './todo';
 import * as Json from 'literium-json';
 import { StoreType, initStore, loadStore, moveStore, saveStore } from 'literium-runner';
@@ -9,7 +9,7 @@ const settings = {
     viewport: "width=device-width, initial-scale=1"
 };
 
-export type Event = Keyed<'todo', Todo.Event>;
+export type Signal = Keyed<'todo', Todo.Signal>;
 
 export interface State {
     todo: Todo.State;
@@ -28,10 +28,10 @@ function create() {
     return { todo };
 }
 
-function update(state: State, event: Event) {
-    switch (event.$) {
+function update(state: State, signal: Signal) {
+    switch (signal.$) {
         case 'todo':
-            const todo = Todo.update(state.todo, event._);
+            const todo = Todo.update(state.todo, signal._);
             moveStore(store, StoreType.Persist);
             saveStore(store, Todo.save(todo));
             return { ...state, todo };
@@ -39,9 +39,9 @@ function update(state: State, event: Event) {
     return state;
 }
 
-const send_todo = keyed_send('todo');
+const emit_todo = keyed_emit('todo');
 
-function render(state: State, send: Send<Event>) {
+function render(state: State, emit: Emit<Signal>) {
     return page({
         styles,
         scripts,
@@ -50,12 +50,12 @@ function render(state: State, send: Send<Event>) {
         body: { class: { 'learn-bar': true } },
     }, [
             learn(),
-            Todo.render(state.todo, send_todo(send)),
+            Todo.render(state.todo, emit_todo(emit)),
             footer(),
         ]);
 }
 
-export const main: Component<State, Event> = { create, update, render };
+export const main: Component<State, Signal> = { create, update, render };
 
 interface SourceLink {
     title: string;

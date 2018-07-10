@@ -1,4 +1,4 @@
-import { VNode, Send, h, KeyCode } from 'literium';
+import { VNode, Emit, h, KeyCode, Keyed, keyed } from 'literium';
 
 export interface Data {
     content: string;
@@ -9,26 +9,11 @@ export interface State extends Data {
     editing: boolean;
 }
 
-export interface SetEditing {
-    $: 'edit';
-    state: boolean;
-}
-
-export interface EditContent {
-    $: 'change';
-    content: string;
-}
-
-export interface SetCompleted {
-    $: 'complete';
-    state: boolean;
-}
-
-export interface Remove {
-    $: 'remove';
-}
-
-export type Event = SetEditing | EditContent | SetCompleted | Remove;
+export type Signal
+    = Keyed<'edit', boolean>
+    | Keyed<'change', string>
+    | Keyed<'complete', boolean>
+    | Keyed<'remove', void>;
 
 export function create() {
     return {
@@ -46,29 +31,29 @@ export function save({ content, completed }: State): Data {
     return { content, completed };
 }
 
-export function update(state: State, event: Event) {
-    switch (event.$) {
+export function update(state: State, signal: Signal) {
+    switch (signal.$) {
         case 'edit':
             return {
                 ...state,
-                editing: event.state
+                editing: signal._
             };
         case 'change':
             return {
                 ...state,
-                content: event.content
+                content: signal._
             };
         case 'complete':
             return {
                 ...state,
-                completed: event.state
+                completed: signal._
             };
         default:
             return state;
     }
 }
 
-export function render(state: State, send: Send<Event>): VNode {
+export function render(state: State, emit: Emit<Signal>): VNode {
     const { content, completed, editing } = state;
     return h('li', {
         class: {
@@ -86,11 +71,11 @@ export function render(state: State, send: Send<Event>): VNode {
                         checked: completed,
                     },
                     on: {
-                        change: () => { send({ $: 'complete', state: !completed }); },
+                        change: () => { emit(keyed('complete' as 'complete', !completed)); },
                     },
                 }),
-                h('label', { on: { dblclick: () => { send({ $: 'edit', state: true }); } } }, content),
-                h('button.destroy', { on: { click: () => { send({ $: 'remove' }); } } }),
+                h('label', { on: { dblclick: () => { emit(keyed('edit' as 'edit', true)); } } }, content),
+                h('button.destroy', { on: { click: () => { emit(keyed('remove' as 'remove', undefined)); } } }),
             ]),
             h('input.edit', {
                 attrs: { value: content },
@@ -104,13 +89,13 @@ export function render(state: State, send: Send<Event>): VNode {
                     }
                 },
                 on: {
-                    blur: () => { send({ $: 'edit', state: false }); },
-                    change: e => { send({ $: 'change', content: (e.target as HTMLInputElement).value }); },
+                    blur: () => { emit(keyed('edit' as 'edit', false)); },
+                    change: e => { emit(keyed('change' as 'change', (e.target as HTMLInputElement).value)); },
                     keydown: e => {
                         if (e.keyCode == KeyCode.Enter || e.keyCode == KeyCode.Escape) {
-                            send({ $: 'edit', state: false });
+                            emit(keyed('edit' as 'edit', false));
                         } else {
-                            send({ $: 'change', content: (e.target as HTMLInputElement).value });
+                            emit(keyed('change' as 'change', (e.target as HTMLInputElement).value));
                         }
                     },
                 }

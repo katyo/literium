@@ -1,22 +1,22 @@
-import { Send, Done, Fork } from 'literium';
+import { Emit, Done, Fork } from 'literium';
 
-export function fork_pool<Event>(send: Send<Event>, done: Done): [Fork<Event>, Done] {
+export function fork_pool<Signal>(emit: Emit<Signal>, done: Done): [Fork<Signal>, Done] {
     let state = false; /* suspended by default */
     let forks = 0;
-    const events: Event[] = [];
+    const signals: Signal[] = [];
     const deque = () => {
-        for (; events.length;) {
+        for (; signals.length;) {
             state = false;
-            send(events.shift() as Event);
+            emit(signals.shift() as Signal);
             state = true;
         }
         if (!forks) {
             done();
         }
     };
-    const fork: [Send<Event>, Done] = [
-        (event) => { /* send */
-            events.push(event);
+    const fork: [Emit<Signal>, Done] = [
+        (signal) => { /* emit */
+            signals.push(signal);
             if (state) {
                 deque();
             }
