@@ -2,10 +2,12 @@ bin/
 dist/
 node_modules/
 es/
+.lws/
 *.js
 !rollup.config.js
 *.js.map
 *.d.ts
+*.tgz
 .rpt2*/
 cache/
 deprecated/

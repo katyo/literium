@@ -12,7 +12,8 @@
     "clean-es": "rm -rf es",
     "compile-js": "tsc --outDir ./",
     "clean-js": "rm -rf *.d.ts *.js *.js.map",
-    "prepare": "npm run compile",
+    "prepack": "npm run compile",
+    "postpack": "npm run clean",
     "compile-test": "browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
     "clean-test": "rm -f test-out.js",
     "test": "testem ci",
@@ -50,7 +51,6 @@
     "typescript": "^2.9"
   },
   "dependencies": {
-    "literium-base": "^0.2",
-    "tslib": "^1.9"
+    "literium-base": "^0.2"
   }
 }

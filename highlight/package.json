@@ -12,7 +12,8 @@
     "clean-es": "rm -rf es",
     "compile-js": "tsc --outDir .",
     "clean-js": "rm -rf *.d.ts *.js *.js.map",
-    "prepare": "npm run compile"
+    "prepack": "npm run compile",
+    "postpack": "npm run clean"
   },
   "repository": {
     "type": "git",

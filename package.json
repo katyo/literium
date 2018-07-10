@@ -7,10 +7,11 @@
     "example": "examples"
   },
   "scripts": {
-    "preinstall": "cd workspace && test -f workspace.js || npm install",
+    "preinstall": "cd workspace && test -f workspace.js || npm install && npm run compile",
     "show": "lws show",
     "install": "lws install",
     "clean": "lws purge",
+    "unlock": "lws unlock",
     "test": "lws test"
   },
   "repository": {
@@ -36,7 +37,6 @@
   "devDependencies": {
     "literium-workspace": "file:workspace"
   },
-  "dependencies": {},
   "packages": [
     "base",
     "json",
@@ -45,7 +45,6 @@
     "core",
     "runner",
     "highlight",
-    "workspace",
     "examples/todomvc"
   ]
 }

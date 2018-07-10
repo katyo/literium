@@ -3,7 +3,7 @@
 import { join } from 'path';
 import { readFileSync } from 'fs';
 import { spawnSync } from 'child_process';
-import { removeSync } from 'fs-extra';
+import { moveSync, removeSync, mkdirpSync } from 'fs-extra';
 
 const args = process.argv.slice(2);
 
@@ -45,6 +45,13 @@ const commands: Record<string, Command> = {
         run: (packages: PackagesInfo, pkg?: string) => {
             for_packages(packages, purge_package, pkg);
             if (!pkg) purge_package_path('.');
+        }
+    },
+    unlock: {
+        args: '[package]', help: 'Remove package(s) lock file (package-lock.json)',
+        run: (packages: PackagesInfo, pkg?: string) => {
+            for_packages(packages, unlock_package, pkg);
+            if (!pkg) remove_package_lock('.');
         }
     },
 };
@@ -119,7 +126,8 @@ function for_packages<R>(packages: PackagesInfo, operation: (packages: PackagesI
     const res: Record<string, R> = {};
 
     for (const name in packages) {
-        if (!names || names.indexOf(name) != -1) {
+        if (!names || names.indexOf(name) != -1 ||
+            names.indexOf(packages[name].path) != -1) {
             operation(packages, name);
         }
     }
@@ -153,15 +161,29 @@ function install_package(packages: PackagesInfo, name: string) {
 
     const { path } = packages[name];
     invoke_npm(path, 'install');
+    pack_package(packages, name);
 }
 
 function install_dependencies(packages: PackagesInfo, name: string) {
     const { path, deps } = packages[name];
 
     for (const dep of deps) {
-        const { path: dep_path } = packages[dep];
-        invoke_npm(path, 'install', join(process.cwd(), dep_path), '--no-save');
+        const dep_pack = pack_archive(packages, dep);
+        invoke_npm(path, 'install', dep_pack, '--no-save');
     }
+}
+
+function pack_archive(packages: PackagesInfo, name: string, local: boolean = false) {
+    const { path, vers } = packages[name];
+    return join(process.cwd(), local ? path : '.lws', `${name}-${vers}.tgz`);
+}
+
+function pack_package(packages: PackagesInfo, name: string) {
+    const { path } = packages[name];
+    invoke_npm(path, 'pack');
+    mkdirpSync(join(process.cwd(), '.lws'));
+    removeSync(pack_archive(packages, name));
+    moveSync(pack_archive(packages, name, true), pack_archive(packages, name));
 }
 
 function purge_package(packages: PackagesInfo, name: string) {
@@ -176,7 +198,17 @@ function purge_package_path(path: string) {
     removeSync(join(process.cwd(), path, 'node_modules'));
 }
 
+function unlock_package(packages: PackagesInfo, name: string) {
+    const { path } = packages[name];
+    remove_package_lock(path);
+}
+
+function remove_package_lock(path: string) {
+    removeSync(join(process.cwd(), path, 'package-lock.json'));
+}
+
 function invoke_npm(path: string, ...args: string[]) {
+    console.log(`$ npm ${args.join(' ')}`);
     spawnSync('npm', args, {
         cwd: join(process.cwd(), path),
         stdio: 'inherit',

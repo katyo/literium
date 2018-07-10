@@ -12,7 +12,8 @@
     "clean-es": "rm -rf es",
     "compile-js": "tsc --outDir .",
     "clean-js": "rm -rf *.d.ts *.js *.js.map",
-    "prepare": "npm run compile",
+    "prepack": "npm run compile",
+    "postpack": "npm run clean",
     "compile-test": "browserify -d test/index.ts -p [ tsify --noImplicitAny ] -o test-out.js",
     "clean-test": "rm -f test-out.js",
     "test-node": "mocha -r ts-node/register test/index.ts -R spec",
@@ -49,7 +50,6 @@
   },
   "dependencies": {
     "literium-base": "^0.2",
-    "snabbdom-ng": "^0.7.1-ng.10",
-    "tslib": "^1.9"
+    "snabbdom-ng": "^0.7.1-ng.10"
   }
 }
