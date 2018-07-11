@@ -1,6 +1,6 @@
 import { deepStrictEqual as dse } from 'assert';
 import { ok, err } from 'literium-base';
-import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, tup, alt, opt, def, val, map, then, parse, build, JsonType } from '../src/json';
+import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, tup, alt, opt, def, val, map, then, parse, build, Type } from '../src/json';
 
 // custom type
 
@@ -8,7 +8,7 @@ import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, tup, alt, opt,
 export const enum Order { Asc, Desc }
 
 // The implementation of TypeApi
-export const ord: JsonType<Order> = {
+export const ord: Type<Order> = {
     // The parser function
     p(v) {
         const s = str.p(v);
@@ -24,7 +24,7 @@ export const ord: JsonType<Order> = {
 
 export interface Pair<Key, Value> { $: Key, _: Value }
 
-export function pair<Key, Value>(tk: JsonType<Key>, tv: JsonType<Value>): JsonType<Pair<Key, Value>> {
+export function pair<Key, Value>(tk: Type<Key>, tv: Type<Value>): Type<Pair<Key, Value>> {
     return {
         p(x) {
             if (typeof x != 'object' ||
