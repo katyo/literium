@@ -1,4 +1,4 @@
-import { Method, Headers, GenericBody, DataType, Error, ResFn, ErrFn, AbrFn, StaFn } from './types';
+import { Method, Headers, GenericBody, DataType, ResFn, ErrFn, AbrFn, StaFn } from './types';
 
 export function request(method: Method, url: string, headers: Headers, body: GenericBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn, sta_fn: StaFn): AbrFn {
     let xhr = new XMLHttpRequest();
@@ -8,8 +8,8 @@ export function request(method: Method, url: string, headers: Headers, body: Gen
         xhr.setRequestHeader(name, headers[name]);
     }
 
-    xhr.onerror = () => {
-        err_fn(Error.Broken);
+    xhr.onerror = ({ error }) => {
+        err_fn(error);
     };
 
     xhr.onprogress = ({ loaded, total }) => {
@@ -28,8 +28,8 @@ export function request(method: Method, url: string, headers: Headers, body: Gen
         if (body) {
             const { upload } = xhr;
             if (upload) {
-                upload.onerror = () => {
-                    err_fn(Error.Broken);
+                upload.onerror = ({ error }) => {
+                    err_fn(error);
                 };
                 upload.onprogress = ({ loaded, total }) => {
                     sta_fn(loaded, total, false);
@@ -42,7 +42,7 @@ export function request(method: Method, url: string, headers: Headers, body: Gen
         }
     } catch (error) {
         delete xhr.onreadystatechange;
-        err_fn(Error.Broken);
+        err_fn(error);
         return () => { };
     }
 
@@ -67,7 +67,7 @@ function xhr_on(xhr: XMLHttpRequest, res_fn: ResFn, res_type: DataType | void, e
         case 4: { // done
             delete xhr.onreadystatechange;
             if (xhr.status == 0) {
-                err_fn(Error.Broken);
+                err_fn(new Error('invalid status'));
             } else {
                 res_fn(xhr.status, xhr.statusText, parseHeaders(xhr.getAllResponseHeaders()), res_type != undefined ? download_done(xhr, res_type) : undefined);
             }

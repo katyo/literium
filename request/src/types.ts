@@ -85,11 +85,6 @@ export const enum Status {
     InvalidSSLCertificate = 526,
 }
 
-export const enum Error {
-    Timeout,
-    Broken,
-};
-
 export type Headers = Record<string, string>;
 
 export const enum DataType {

@@ -1,7 +1,7 @@
 import { strictEqual as se, deepStrictEqual as dse } from 'assert';
 import * as is from 'assert';
-import { is_ok, un_ok, un_err } from 'literium-base';
-import { Method, Status, DataType, Error, request } from '../'; //'../src/request';
+import { is_ok, un_ok, un_err, err, timeout_future } from 'literium-base';
+import { Method, Status, DataType, request } from '../'; //'../src/request';
 
 const base = typeof window != 'undefined' ? '' : 'http://localhost:8182';
 
@@ -181,14 +181,14 @@ describe('request', () => {
     });
 
     it('timeout error', done => {
-        request({
+        const timeout_error = new Error('timeout');
+        timeout_future(1000)(err(timeout_error))(request({
             method: Method.Post,
             url: `${base}/xhr/long`,
             body: '',
-            timeout: 1000,
-        })(res => {
+        }))(res => {
             is(!is_ok(res));
-            se(un_err(res), Error.Timeout);
+            se(un_err(res), timeout_error);
             done();
         });
     });

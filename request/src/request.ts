@@ -1,6 +1,6 @@
 export * from './types';
 import { Emit, FutureResult, ok, err } from 'literium-base';
-import { Method, Status, Error, DataType, GenericBody, Headers } from './types';
+import { Method, Status, DataType, GenericBody, Headers } from './types';
 import { request as backend } from './server';
 
 export interface Progress {
@@ -13,7 +13,6 @@ export interface RequestWithoutBody<TMethod extends Method> {
     method: TMethod;
     url: string;
     headers?: Headers;
-    timeout?: number;
     progress?: Emit<Progress>;
 }
 
@@ -73,30 +72,20 @@ export function request(req: RequestWithBody<MethodWithRequestBody> & WithRespon
 export function request(req: GenericRequest): GenericFutureResponse {
     return emit => {
         let final = false;
-        let timer: any;
         const abort = backend(req.method, req.url, req.headers || {}, uploadable(req.method) ? (req as RequestWithBody<Method>).body : undefined, downloadable(req.method) ? (req as WithResponseBody<DataType>).response : undefined, (status: number, message: string, headers: Headers, body?: GenericBody) => {
             if (!final) {
                 final = true;
                 const res: Response<GenericBody> = { status, message, headers, body };
-                clearTimeout(timer);
                 emit(ok(res));
             }
         }, (error: Error) => {
             if (!final) {
                 final = true;
-                clearTimeout(timer);
                 emit(err(error));
             }
         }, req.progress ? (left: number, size: number, down: boolean) => {
             (req.progress as Emit<Progress>)({ left, size, down });
         } : () => { });
-        if (req.timeout) {
-            timer = setTimeout(() => {
-                final = true;
-                abort();
-                emit(err(Error.Timeout));
-            }, req.timeout);
-        }
         return () => {
             if (!final) {
                 final = true;

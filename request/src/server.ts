@@ -1,7 +1,7 @@
 import { parse } from 'url';
 import { Readable } from 'stream';
 import { request as node_request, IncomingHttpHeaders } from 'http';
-import { Method, Headers, GenericBody, DataType, Error, ResFn, ErrFn, AbrFn, StaFn } from './types';
+import { Method, Headers, GenericBody, DataType, ResFn, ErrFn, AbrFn, StaFn } from './types';
 
 function parseHeaders(h: IncomingHttpHeaders | undefined): Headers {
     const hs: Headers = {};
@@ -50,13 +50,13 @@ export function request(method: Method, url: string, headers: Headers, body: Gen
                         body.toString('utf8') :
                         body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength));
             });
-            res.on('error', (e) => {
-                err_fn(Error.Broken);
+            res.on('error', error => {
+                err_fn(error);
             });
         }
     });
-    req.on('error', (e) => {
-        err_fn(Error.Broken);
+    req.on('error', error => {
+        err_fn(error);
     });
     if (data) {
         let left = 0;
