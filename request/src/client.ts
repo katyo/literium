@@ -1,6 +1,6 @@
-import { Method, Headers, GenericBody, DataType, ResFn, ErrFn, AbrFn, StaFn } from './types';
+import { Method, Headers, NativeBody, DataType, ResFn, ErrFn, AbrFn, StaFn } from './types';
 
-export function request(method: Method, url: string, headers: Headers, body: GenericBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn, sta_fn: StaFn): AbrFn {
+export function request(method: Method, url: string, headers: Headers, body: NativeBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn, sta_fn: StaFn): AbrFn {
     let xhr = new XMLHttpRequest();
 
     xhr.open(method, url, true);
@@ -77,11 +77,11 @@ function xhr_on(xhr: XMLHttpRequest, res_fn: ResFn, res_type: DataType | void, e
 
 type XHRAPI = [
     // upload send
-    (xhr: XMLHttpRequest, body: GenericBody) => void,
+    (xhr: XMLHttpRequest, body: NativeBody) => void,
     // download init
     (xhr: XMLHttpRequest, res_type: DataType | void) => void,
     // download done
-    (xhr: XMLHttpRequest, res_type: DataType | void) => GenericBody
+    (xhr: XMLHttpRequest, res_type: DataType | void) => NativeBody
 ];
 
 const [upload_send, download_init, download_done] = xhrapi();
@@ -91,8 +91,8 @@ interface MozXMLHttpRequest {
 }
 
 function xhrapi(): XHRAPI {
-    const body_from: (data: GenericBody, res_type: DataType) => GenericBody =
-        typeof Uint8Array == 'function' ? (data: GenericBody, res_type: DataType) => {
+    const body_from: (data: NativeBody, res_type: DataType) => NativeBody =
+        typeof Uint8Array == 'function' ? (data: NativeBody, res_type: DataType) => {
             if (typeof data == 'string' && res_type == DataType.Binary) {
                 var buf = new ArrayBuffer(data.length);
                 var bufView = new Uint8Array(buf);
@@ -102,7 +102,7 @@ function xhrapi(): XHRAPI {
                 return buf;
             }
             return data;
-        } : (data: GenericBody, res_type: DataType) => {
+        } : (data: NativeBody, res_type: DataType) => {
             if (typeof data == 'string' && res_type == DataType.Binary) {
                 var buf: number[] = new Array(data.length);
                 for (var i = 0; i < data.length; i++) {
@@ -116,17 +116,17 @@ function xhrapi(): XHRAPI {
     const xhr = new XMLHttpRequest();
     xhr.open('get', '/', true);
 
-    const upload_send = typeof (xhr as any as MozXMLHttpRequest).sendAsBinary == 'function' ? (xhr: XMLHttpRequest, body: GenericBody) => {
+    const upload_send = typeof (xhr as any as MozXMLHttpRequest).sendAsBinary == 'function' ? (xhr: XMLHttpRequest, body: NativeBody) => {
         // upload binary string using Mozilla-specific sendAsBinary method
         if (typeof body == 'string') {
             xhr.send(body);
         } else {
             (xhr as any as MozXMLHttpRequest).sendAsBinary(body);
         }
-    } : typeof Uint8Array == 'function' ? (xhr: XMLHttpRequest, body: GenericBody) => {
+    } : typeof Uint8Array == 'function' ? (xhr: XMLHttpRequest, body: NativeBody) => {
         // upload array buffer using XHR send method
         xhr.send(body);
-    } : (xhr: XMLHttpRequest, body: GenericBody) => {
+    } : (xhr: XMLHttpRequest, body: NativeBody) => {
         // upload as binary DOMString (fallback)
         xhr.send(typeof body == 'string' ? body : String.fromCharCode.apply(null, body));
     };

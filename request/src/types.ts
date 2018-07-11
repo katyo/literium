@@ -1,3 +1,5 @@
+import { Result } from 'literium-base';
+
 export const enum Method {
     Get = 'GET',
     Post = 'POST',
@@ -92,10 +94,21 @@ export const enum DataType {
     Binary,
 }
 
-export type GenericBody = string | ArrayBuffer;
+export interface NativeType {
+    [DataType.String]: string;
+    [DataType.Binary]: ArrayBuffer;
+}
 
-export type ResFn = (status: number, message: string, headers: Headers, body: GenericBody | void) => void;
+export type NativeBody = NativeType[keyof NativeType];
+
+export interface BodyType<T, N extends DataType> {
+    t: N; // native type
+    p: (d: NativeType[N]) => Result<T, Error>; // parse (native to user type)
+    b: (d: T) => Result<NativeType[N], Error>; // build (user type to native)
+}
+
+export type ResFn = (status: number, message: string, headers: Headers, body: NativeBody | void) => void;
 export type ErrFn = (error: Error) => void;
 export type AbrFn = () => void;
 export type StaFn = (left: number, size: number, down: boolean) => void;
-export type ReqFn = (method: Method, url: string, headers: Headers, body: GenericBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn, sta_fn: StaFn) => AbrFn;
+export type ReqFn = (method: Method, url: string, headers: Headers, body: NativeBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn, sta_fn: StaFn) => AbrFn;

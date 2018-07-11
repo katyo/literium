@@ -20,6 +20,7 @@
     "src/types.ts",
     "src/request.ts",
     "src/client.ts",
-    "src/server.ts"
+    "src/server.ts",
+    "src/json.ts"
   ]
 }

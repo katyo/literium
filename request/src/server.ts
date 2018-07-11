@@ -1,7 +1,7 @@
 import { parse } from 'url';
 import { Readable } from 'stream';
 import { request as node_request, IncomingHttpHeaders } from 'http';
-import { Method, Headers, GenericBody, DataType, ResFn, ErrFn, AbrFn, StaFn } from './types';
+import { Method, Headers, NativeBody, DataType, ResFn, ErrFn, AbrFn, StaFn } from './types';
 
 function parseHeaders(h: IncomingHttpHeaders | undefined): Headers {
     const hs: Headers = {};
@@ -18,7 +18,7 @@ function parseHeaders(h: IncomingHttpHeaders | undefined): Headers {
     return hs;
 }
 
-export function request(method: Method, url: string, headers: Headers, body: GenericBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn, sta_fn: StaFn): AbrFn {
+export function request(method: Method, url: string, headers: Headers, body: NativeBody | void, res_type: DataType | void, res_fn: ResFn, err_fn: ErrFn, sta_fn: StaFn): AbrFn {
     const { protocol, hostname, port, path } = parse(url);
     const data = body ? Buffer.from(body) : undefined;
     if (data) {

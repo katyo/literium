@@ -1,7 +1,25 @@
-export * from './types';
-import { Emit, FutureResult, ok, err } from 'literium-base';
-import { Method, Status, DataType, GenericBody, Headers } from './types';
+export { Method, Status, Headers, DataType, BodyType, NativeBody, NativeType } from './types';
+export { JsonBody } from './json';
+
+import { Emit, FutureResult, Result, ok, err, do_seq, map_ok, then_future_ok, future, dummy, deferred } from 'literium-base';
+import { Method, Status, DataType, BodyType, NativeBody, Headers } from './types';
 import { request as backend } from './server';
+
+export const StrBody: BodyType<string, DataType.String> = {
+    t: DataType.String,
+    p: d => ok(d),
+    b: d => ok(d),
+};
+
+export const BinBody: BodyType<ArrayBuffer, DataType.Binary> = {
+    t: DataType.Binary,
+    p: d => ok(d),
+    b: d => ok(d),
+};
+
+export type MethodWithRequestBody = Method.Post | Method.Put | Method.Patch;
+
+export type MethodWithoutResponseBody = Method.Head | Method.Delete | Method.Options;
 
 export interface Progress {
     left: number;
@@ -16,17 +34,14 @@ export interface RequestWithoutBody<TMethod extends Method> {
     progress?: Emit<Progress>;
 }
 
-export interface RequestWithBody<TMethod extends Method> extends RequestWithoutBody<TMethod> {
-    body: GenericBody;
+export interface RequestWithBody<TMethod extends Method, TBody, TData extends BodyType<TBody, DataType>> extends RequestWithoutBody<TMethod> {
+    request: TData;
+    body: TBody;
 }
 
-export interface WithResponseBody<TData extends DataType> {
+export interface WithResponseBody<TBody, TData extends BodyType<TBody, DataType>> {
     response: TData;
 }
-
-export type Request<TMethod extends Method, TResData extends DataType> = RequestWithoutBody<TMethod> | RequestWithBody<TMethod> | RequestWithoutBody<TMethod> & WithResponseBody<TResData> | RequestWithBody<TMethod> & WithResponseBody<TResData>;
-
-export type GenericRequest = Request<Method, DataType>;
 
 export interface ResponseWithoutBody {
     status: Status;
@@ -34,21 +49,86 @@ export interface ResponseWithoutBody {
     headers: Headers;
 }
 
-export interface ResponseWithBody<Body extends GenericBody> extends ResponseWithoutBody {
-    body: Body;
+export interface ResponseWithBody<TBody> extends ResponseWithoutBody {
+    body: TBody;
 }
-
-export type Response<Body extends GenericBody> = ResponseWithoutBody | ResponseWithBody<Body>;
-
-export type FutureResponse<Body extends GenericBody> = FutureResult<Response<Body>, Error>;
 
 export type FutureResponseWithoutBody = FutureResult<ResponseWithoutBody, Error>;
 
-export type FutureResponseWithBody<Body extends GenericBody> = FutureResult<ResponseWithBody<Body>, Error>;
+export type FutureResponseWithBody<TBody> = FutureResult<ResponseWithBody<TBody>, Error>;
 
-export type GenericResponse = Response<GenericBody>;
+export interface RequestApi {
+    // request and response without bodies
+    (request: RequestWithoutBody<MethodWithoutResponseBody>): FutureResponseWithoutBody;
+    // request without body and with response body
+    <ResBody, ResNType extends DataType, ResData extends BodyType<ResBody, ResNType>>(request: RequestWithoutBody<Method.Get> & WithResponseBody<ResBody, ResData>): FutureResponseWithBody<ResBody>;
+    // request with body and response without
+    <ReqBody, ReqNType extends DataType, ReqData extends BodyType<ReqBody, ReqNType>>(request: RequestWithBody<MethodWithRequestBody, ReqBody, ReqData>): FutureResponseWithoutBody;
+    // both request and response with bodies
+    <ReqBody, ReqNType extends DataType, ReqData extends BodyType<ReqBody, ReqNType>, ResBody, ResNType extends DataType, ResData extends BodyType<ResBody, ResNType>>(request: RequestWithBody<MethodWithRequestBody, ReqBody, ReqData> & WithResponseBody<ResBody, ResData>): FutureResponseWithBody<ResBody>;
+}
 
-export type GenericFutureResponse = FutureResponse<GenericBody>;
+type NativeBodyType = BodyType<any, DataType>;
+
+interface GenericRequest {
+    method: Method;
+    url: string;
+    headers?: Headers;
+    progress?: Emit<Progress>;
+    request?: NativeBodyType;
+    body?: any;
+    response?: NativeBodyType;
+}
+
+interface GenericResponse {
+    status: Status;
+    message: string;
+    headers: Headers;
+    body?: any;
+}
+
+export type GenericFutureResponse = FutureResult<GenericResponse, Error>;
+
+export const request = ((req: GenericRequest) =>
+    do_seq(
+        // parse request body
+        future((uploadable(req.method) && req.request ? req.request.b(req.body) :
+            ok(undefined)) as Result<NativeBody | void, Error>),
+        // run request
+        then_future_ok(req_body => <GenericFutureResponse>(emit => {
+            let final = false;
+            const abort = backend(req.method, req.url, req.headers || {}, req_body, downloadable(req.method) && req.response ? req.response!.t : undefined, (status: number, message: string, headers: Headers, body?: NativeBody) => {
+                if (!final) {
+                    final = true;
+                    const res: GenericResponse = { status, message, headers, body };
+                    emit(ok(res));
+                }
+            }, (error: Error) => {
+                if (!final) {
+                    final = true;
+                    if (abort) {
+                        emit(err(error));
+                    } else { // defer sync error
+                        deferred(emit)(err(error));
+                    }
+                }
+            }, req.progress ? (left: number, size: number, down: boolean) => {
+                (req.progress as Emit<Progress>)({ left, size, down });
+            } : dummy);
+            return () => {
+                if (!final) {
+                    final = true;
+                    abort();
+                }
+            };
+        })),
+        // build response data
+        then_future_ok(res => future(downloadable(req.method) && req.response ?
+            do_seq(
+                req.response.p(res.body),
+                map_ok(body => (res.body = body, res))
+            ) : ok(res)))
+    )) as RequestApi;
 
 function uploadable(method: Method): boolean {
     return method == Method.Post || method == Method.Put || method == Method.Patch;
@@ -56,41 +136,4 @@ function uploadable(method: Method): boolean {
 
 function downloadable(method: Method): boolean {
     return method != Method.Head && method != Method.Delete && method != Method.Options;
-}
-
-export type MethodWithoutResponseBody = Method.Head | Method.Delete | Method.Options;
-
-export type MethodWithRequestBody = Method.Post | Method.Put | Method.Patch;
-
-export function request(req: RequestWithoutBody<MethodWithoutResponseBody>): FutureResponseWithoutBody;
-export function request(req: RequestWithoutBody<Method.Get> & WithResponseBody<DataType.String>): FutureResponseWithBody<string>;
-export function request(req: RequestWithoutBody<Method.Get> & WithResponseBody<DataType.Binary>): FutureResponseWithBody<ArrayBuffer>;
-export function request(req: RequestWithBody<MethodWithRequestBody>): FutureResponseWithoutBody;
-export function request(req: RequestWithBody<MethodWithRequestBody> & WithResponseBody<DataType.String>): FutureResponseWithBody<string>;
-export function request(req: RequestWithBody<MethodWithRequestBody> & WithResponseBody<DataType.Binary>): FutureResponseWithBody<ArrayBuffer>;
-
-export function request(req: GenericRequest): GenericFutureResponse {
-    return emit => {
-        let final = false;
-        const abort = backend(req.method, req.url, req.headers || {}, uploadable(req.method) ? (req as RequestWithBody<Method>).body : undefined, downloadable(req.method) ? (req as WithResponseBody<DataType>).response : undefined, (status: number, message: string, headers: Headers, body?: GenericBody) => {
-            if (!final) {
-                final = true;
-                const res: Response<GenericBody> = { status, message, headers, body };
-                emit(ok(res));
-            }
-        }, (error: Error) => {
-            if (!final) {
-                final = true;
-                emit(err(error));
-            }
-        }, req.progress ? (left: number, size: number, down: boolean) => {
-            (req.progress as Emit<Progress>)({ left, size, down });
-        } : () => { });
-        return () => {
-            if (!final) {
-                final = true;
-                abort();
-            }
-        };
-    };
 }

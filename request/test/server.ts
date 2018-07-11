@@ -65,6 +65,15 @@ function handler(req: IncomingMessage, res: ServerResponse) {
                         res.end();
                     }
                     return;
+                case '/xhr/json':
+                    if (req.headers['accept'] == 'application/json') {
+                        res.writeHead(200, "OK", { "Content-Type": "application/json" });
+                        res.end(JSON.stringify({ a: -1, b: 2, c: [1, 2], d: { a: "b", b: true } }));
+                    } else {
+                        res.writeHead(400, "Invalid");
+                        res.end();
+                    }
+                    return;
                 case '/xhr/error':
                     res.writeHead(403, "Forbidden");
                     res.end();
@@ -106,6 +115,17 @@ function handler(req: IncomingMessage, res: ServerResponse) {
                     with_body(req, body => {
                         if (req.headers['content-type'] == 'application/octet-stream'
                             && body.equals(Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]))) {
+                            res.writeHead(200, "OK");
+                        } else {
+                            res.writeHead(400, "Invalid");
+                        }
+                        res.end();
+                    });
+                    return;
+                case '/xhr/json':
+                    with_body(req, body => {
+                        if (req.headers['content-type'] == 'application/json'
+                            && body.equals(Buffer.from(JSON.stringify({ a: -1, b: 2, c: [1, 2], d: { a: "b", b: true } }), 'utf8'))) {
                             res.writeHead(200, "OK");
                         } else {
                             res.writeHead(400, "Invalid");

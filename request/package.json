@@ -50,12 +50,14 @@
     "@types/node": "^8",
     "browserify": "^16",
     "mocha": "^5",
+    "setimmediate": "^1.0.5",
     "testem": "^2",
     "ts-node": "^7",
     "tsify": "^4",
     "typescript": "^2.9"
   },
   "dependencies": {
-    "literium-base": "^0.2"
+    "literium-base": "^0.2",
+    "literium-json": "^0.2"
   }
 }
