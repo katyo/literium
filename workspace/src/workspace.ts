@@ -160,7 +160,7 @@ function install_package(packages: PackagesInfo, name: string) {
     install_dependencies(packages, name);
 
     const { path } = packages[name];
-    invoke_npm(path, 'install');
+    invoke_npm(path, 'install', '--no-package-lock');
     pack_package(packages, name);
 }
 
@@ -169,7 +169,7 @@ function install_dependencies(packages: PackagesInfo, name: string) {
 
     for (const dep of deps) {
         const dep_pack = pack_archive(packages, dep);
-        invoke_npm(path, 'install', dep_pack, '--no-save');
+        invoke_npm(path, 'install', dep_pack, '--no-save', '--no-package-lock');
     }
 }
 
