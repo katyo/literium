@@ -13,7 +13,7 @@ export interface FutureConv<Type, NewType> {
 }
 
 export function future<Type>(val: Type): Future<Type> {
-    return (emit: Emit<Type>) => deferred(emit).call(this, val);
+    return (emit: Emit<Type>) => deferred(emit)(val);
 }
 
 export function wrap_future<R>(fn: () => R): () => Future<R>;

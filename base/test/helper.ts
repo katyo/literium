@@ -32,7 +32,7 @@ describe('helper', () => {
             deferred((a: number, b: number) => {
                 s.push(a);
                 s.push(b);
-            }).call(this, 1, 2);
+            })(1, 2);
             setTimeout(() => {
                 dse(s, [1, 2]);
                 done();
@@ -43,7 +43,7 @@ describe('helper', () => {
             const u = deferred((a: number, b: number) => {
                 s.push(a);
                 s.push(b);
-            }).call(this, 1, 2);
+            })(1, 2);
             setTimeout(() => {
                 dse(s, []);
                 done();

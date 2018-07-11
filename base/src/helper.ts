@@ -19,51 +19,51 @@ export function tuple(...vs: any[]): any[] {
     return vs;
 }
 
-export function mk_seq<S, T1>(): (this: S, _: T1) => T1;
-export function mk_seq<S, T1, T2>(f1: (this: S, _: T1) => T2): (this: S, _: T1) => T2;
-export function mk_seq<S, T1, T2, T3>(f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3): (this: S, _: T1) => T3;
-export function mk_seq<S, T1, T2, T3, T4>(f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3, f3: (this: S, _: T3) => T4): (this: S, _: T1) => T4;
-export function mk_seq<S, T1, T2, T3, T4, T5>(f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3, f3: (this: S, _: T3) => T4, f4: (this: S, _: T4) => T5): (this: S, _: T1) => T5;
-export function mk_seq<S, T1, T2, T3, T4, T5, T6>(f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3, f3: (this: S, _: T3) => T4, f4: (this: S, _: T4) => T5, f5: (this: S, _: T5) => T6): (this: S, _: T1) => T6;
-export function mk_seq<S, T1, T2, T3, T4, T5, T6, T7>(f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3, f3: (this: S, _: T3) => T4, f4: (this: S, _: T4) => T5, f5: (this: S, _: T5) => T6, f6: (this: S, _: T6) => T7): (this: S, _: T1) => T7;
-export function mk_seq<S, T1, T2, T3, T4, T5, T6, T7, T8>(f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3, f3: (this: S, _: T3) => T4, f4: (this: S, _: T4) => T5, f5: (this: S, _: T5) => T6, f6: (this: S, _: T6) => T7, f7: (this: S, _: T7) => T8): (this: S, _: T1) => T8;
-export function mk_seq<S, T1, T2, T3, T4, T5, T6, T7, T8, T9>(f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3, f3: (this: S, _: T3) => T4, f4: (this: S, _: T4) => T5, f5: (this: S, _: T5) => T6, f6: (this: S, _: T6) => T7, f7: (this: S, _: T7) => T8, f8: (this: S, _: T8) => T9): (this: S, _: T1) => T9;
-export function mk_seq<S>(...fs: ((this: S, _: any) => any)[]): (this: S, _: any) => any {
-    return function(_: any): any {
+export function mk_seq<T1>(): (_: T1) => T1;
+export function mk_seq<T1, T2>(f1: (_: T1) => T2): (_: T1) => T2;
+export function mk_seq<T1, T2, T3>(f1: (_: T1) => T2, f2: (_: T2) => T3): (_: T1) => T3;
+export function mk_seq<T1, T2, T3, T4>(f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4): (_: T1) => T4;
+export function mk_seq<T1, T2, T3, T4, T5>(f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5): (_: T1) => T5;
+export function mk_seq<T1, T2, T3, T4, T5, T6>(f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6): (_: T1) => T6;
+export function mk_seq<T1, T2, T3, T4, T5, T6, T7>(f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6, f6: (_: T6) => T7): (_: T1) => T7;
+export function mk_seq<T1, T2, T3, T4, T5, T6, T7, T8>(f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6, f6: (_: T6) => T7, f7: (_: T7) => T8): (_: T1) => T8;
+export function mk_seq<T1, T2, T3, T4, T5, T6, T7, T8, T9>(f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6, f6: (_: T6) => T7, f7: (_: T7) => T8, f8: (_: T8) => T9): (_: T1) => T9;
+export function mk_seq<S>(...fs: ((_: any) => any)[]): (_: any) => any {
+    return _ => {
         for (const f of fs) {
-            _ = f.call(this, _);
+            _ = f(_);
         }
         return _;
     };
 }
 
-export function do_seq<S, T1>(this: S, _: T1): T1;
-export function do_seq<S, T1, T2>(this: S, _: T1, f1: (this: S, _: T1) => T2): T2;
-export function do_seq<S, T1, T2, T3>(this: S, _: T1, f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3): T3;
-export function do_seq<S, T1, T2, T3, T4>(this: S, _: T1, f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3, f3: (this: S, _: T3) => T4): T4;
-export function do_seq<S, T1, T2, T3, T4, T5>(this: S, _: T1, f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3, f3: (this: S, _: T3) => T4, f4: (this: S, _: T4) => T5): T5;
-export function do_seq<S, T1, T2, T3, T4, T5, T6>(this: S, _: T1, f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3, f3: (this: S, _: T3) => T4, f4: (this: S, _: T4) => T5, f5: (this: S, _: T5) => T6): T6;
-export function do_seq<S, T1, T2, T3, T4, T5, T6, T7>(this: S, _: T1, f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3, f3: (this: S, _: T3) => T4, f4: (this: S, _: T4) => T5, f5: (this: S, _: T5) => T6, f6: (this: S, _: T6) => T7): T7;
-export function do_seq<S, T1, T2, T3, T4, T5, T6, T7, T8>(this: S, _: T1, f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3, f3: (this: S, _: T3) => T4, f4: (this: S, _: T4) => T5, f5: (this: S, _: T5) => T6, f6: (this: S, _: T6) => T7, f7: (this: S, _: T7) => T8): T8;
-export function do_seq<S, T1, T2, T3, T4, T5, T6, T7, T8, T9>(this: S, _: T1, f1: (this: S, _: T1) => T2, f2: (this: S, _: T2) => T3, f3: (this: S, _: T3) => T4, f4: (this: S, _: T4) => T5, f5: (this: S, _: T5) => T6, f6: (this: S, _: T6) => T7, f7: (this: S, _: T7) => T8, f8: (this: S, _: T8) => T9): T9;
-export function do_seq<S>(this: S, _: any, ...fs: ((this: S, _: any) => any)[]): any {
-    return mk_seq.apply(this, fs).call(this, _);
+export function do_seq<T1>(_: T1): T1;
+export function do_seq<T1, T2>(_: T1, f1: (_: T1) => T2): T2;
+export function do_seq<T1, T2, T3>(_: T1, f1: (_: T1) => T2, f2: (_: T2) => T3): T3;
+export function do_seq<T1, T2, T3, T4>(_: T1, f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4): T4;
+export function do_seq<T1, T2, T3, T4, T5>(_: T1, f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5): T5;
+export function do_seq<T1, T2, T3, T4, T5, T6>(_: T1, f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6): T6;
+export function do_seq<T1, T2, T3, T4, T5, T6, T7>(_: T1, f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6, f6: (_: T6) => T7): T7;
+export function do_seq<T1, T2, T3, T4, T5, T6, T7, T8>(_: T1, f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6, f6: (_: T6) => T7, f7: (_: T7) => T8): T8;
+export function do_seq<T1, T2, T3, T4, T5, T6, T7, T8, T9>(_: T1, f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6, f6: (_: T6) => T7, f7: (_: T7) => T8, f8: (_: T8) => T9): T9;
+export function do_seq<S>(_: any, ...fs: ((_: any) => any)[]): any {
+    return mk_seq.apply(undefined, fs)(_);
 }
 
-export function deferred<S>(fn: (this: S) => void): (this: S) => () => void;
-export function deferred<S, T1>(fn: (this: S, a1: T1) => void): (this: S, a1: T1) => () => void;
-export function deferred<S, T1, T2>(fn: (this: S, a1: T1, a2: T2) => void): (this: S, a1: T1, a2: T2) => () => void;
-export function deferred<S, T1, T2, T3>(fn: (this: S, a1: T1, a2: T2, a3: T3) => void): (this: S, a1: T1, a2: T2, a3: T3) => () => void;
-export function deferred<S, T1, T2, T3, T4>(fn: (this: S, a1: T1, a2: T2, a3: T3, a4: T4) => void): (this: S, a1: T1, a2: T2, a3: T3, a4: T4) => () => void;
-export function deferred<S, T1, T2, T3, T4, T5>(fn: (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5) => void): (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5) => () => void;
-export function deferred<S, T1, T2, T3, T4, T5, T6>(fn: (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6) => void): (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6) => () => void;
-export function deferred<S, T1, T2, T3, T4, T5, T6, T7>(fn: (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7) => void): (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7) => () => void;
-export function deferred<S, T1, T2, T3, T4, T5, T6, T7, T8>(fn: (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8) => void): (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8) => () => void;
-export function deferred<S, T1, T2, T3, T4, T5, T6, T7, T8, T9>(fn: (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9) => void): (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9) => () => void;
-export function deferred<S>(fn: (this: S, ...an: any[]) => void): (this: S, ...an: any[]) => () => void {
-    return function(...an: any[]) {
+export function deferred(fn: () => void): () => () => void;
+export function deferred<T1>(fn: (a1: T1) => void): (a1: T1) => () => void;
+export function deferred<T1, T2>(fn: (a1: T1, a2: T2) => void): (a1: T1, a2: T2) => () => void;
+export function deferred<T1, T2, T3>(fn: (a1: T1, a2: T2, a3: T3) => void): (a1: T1, a2: T2, a3: T3) => () => void;
+export function deferred<T1, T2, T3, T4>(fn: (a1: T1, a2: T2, a3: T3, a4: T4) => void): (a1: T1, a2: T2, a3: T3, a4: T4) => () => void;
+export function deferred<T1, T2, T3, T4, T5>(fn: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5) => void): (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5) => () => void;
+export function deferred<T1, T2, T3, T4, T5, T6>(fn: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6) => void): (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6) => () => void;
+export function deferred<T1, T2, T3, T4, T5, T6, T7>(fn: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7) => void): (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7) => () => void;
+export function deferred<T1, T2, T3, T4, T5, T6, T7, T8>(fn: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8) => void): (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8) => () => void;
+export function deferred<T1, T2, T3, T4, T5, T6, T7, T8, T9>(fn: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9) => void): (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9) => () => void;
+export function deferred(fn: (...args: any[]) => void): (...args: any[]) => () => void {
+    return function(...args: any[]) {
         const timer = setImmediate(() => {
-            fn.apply(this, an);
+            fn(...args);
         });
         return () => {
             clearImmediate(timer);
