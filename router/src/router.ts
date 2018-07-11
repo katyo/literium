@@ -11,7 +11,7 @@ import {
     mk_seq, do_seq,
     tuple, any_to_str,
 
-    Paired, PairedAsKeyed,
+    Paired, Keyed, PairedAsKeyed,
     paired_to_keyed, keyed_to_paired
 } from 'literium-base';
 
@@ -21,6 +21,8 @@ export interface Route<Args> {
     // format path with arguments
     f(v: Args): Option<string>;
 }
+
+export type RouteArgs<R> = R extends Route<infer Args> ? Args : never;
 
 export interface ArgType<Type> {
     // match regexp
@@ -32,6 +34,8 @@ export interface ArgType<Type> {
 }
 
 export type Routes<State> = { [Key in keyof State]: Route<State[Key]> };
+
+export type KeyedRoutesArgs<Router> = { [Key in keyof Router]: Keyed<Key, RouteArgs<Router[Key]>> }[keyof Router];
 
 const un_def = undefined;
 
