@@ -1,6 +1,6 @@
 import { Emit, map_emit } from './emit';
 import { Done } from './fork';
-import { dummy } from './helper';
+import { constant, dummy } from './helper';
 import { Option, some, none, is_some, un_some } from './option';
 import { Either, a, b } from './either';
 
@@ -33,41 +33,40 @@ export function wrap_future(fn: (...args: any[]) => any): (...args: any[]) => Fu
     return (...args: any[]) => future(fn(...args));
 }
 
-export function timeout(msec: number): <Type>(val: Type) => Future<Type> {
-    return <Type>(val: Type) => {
-        return (emit: Emit<Type>) => {
-            const timer = setTimeout(() => emit(val), msec);
-            return () => { clearTimeout(timer); };
-        };
+export function timeout(msec: number): Future<number> {
+    return emit => {
+        const timer = setTimeout(() => emit(msec), msec);
+        return () => { clearTimeout(timer); };
     };
 }
 
 export function then_future<Type, NewType>(fn: (data: Type) => Future<NewType>): FutureConv<Type, NewType> {
-    return (future: Future<Type>) => {
+    return (fu: Future<Type>) => {
         return (emit: Emit<NewType>) => {
-            return future(val => fn(val)(emit));
+            let u: Done = fu(val => { u = fn(val)(emit); });
+            return () => { u(); };
         };
     };
 }
 
 export function map_future<Type, NewType>(fn: (data: Type) => NewType): FutureConv<Type, NewType> {
     const emit_map = map_emit(fn);
-    return (future: Future<Type>) => {
+    return (fu: Future<Type>) => {
         return (emit: Emit<NewType>) => {
-            return future(emit_map(emit));
+            return fu(emit_map(emit));
         };
     };
 }
 
 export function select_future<Type>(...fs: Future<Type>[]): Future<Type> {
     return (emit: Emit<Type>) => {
+        const cs: Record<string, Done> = {};
         const u = () => { for (const i in cs) cs[i](); };
         const s = (i: number) => (t: Type) => {
             delete cs[i];
             u();
             emit(t);
         };
-        const cs: Record<string, Done> = {};
         for (let i = 0; i < fs.length; i++)
             cs[i] = fs[i](s(i));
         return u;
@@ -75,7 +74,7 @@ export function select_future<Type>(...fs: Future<Type>[]): Future<Type> {
 }
 
 export function timeout_future(msec: number): <Type>(val: Type) => FutureConv<Type, Type> {
-    return val => f => select_future(timeout(msec)(val), f);
+    return val => fut => select_future(map_future(constant(val))(timeout(msec)), fut);
 }
 
 export function either_future<A, B>(fa: Future<A>, fb: Future<B>): Future<Either<A, B>> {
@@ -92,14 +91,14 @@ export function join_future<T1, T2, T3, T4, T5, T6, T7, T8>(f1: Future<T1>, f2: 
 export function join_future<T1, T2, T3, T4, T5, T6, T7, T8, T9>(f1: Future<T1>, f2: Future<T2>, f3: Future<T3>, f4: Future<T4>, f5: Future<T5>, f6: Future<T6>, f7: Future<T7>, f8: Future<T8>, f9: Future<T9>): Future<[T1, T2, T3, T4, T5, T6, T7, T8, T9]>;
 export function join_future(...fs: Future<any>[]): Future<any[]> {
     return (emit: Emit<any>) => {
-        const r: any[] = new Array(fs.length);
+        const cs: Record<string, Done> = {};
         let n = fs.length;
+        const r: any[] = new Array(n);
         const s = (i: number) => (t: any) => {
             r[i] = t;
             delete cs[i];
             if (!--n) emit(r);
         };
-        const cs: Record<string, Done> = {};
         for (let i = 0; i < fs.length; i++)
             cs[i] = fs[i](s(i));
         return () => { for (const i in cs) cs[i](); };
