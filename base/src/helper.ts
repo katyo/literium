@@ -1,4 +1,8 @@
-export function identity<Value>(_: Value): Value { return _; }
+export function identity<V>(_: V): V { return _; }
+
+export function constant<V>(_: V): () => V {
+    return () => _;
+}
 
 export function dummy(): void { }
 
