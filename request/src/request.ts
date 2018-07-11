@@ -2,7 +2,7 @@ export { Method, Status, Headers, DataType, BodyType, NativeBody, NativeType } f
 export { JsonBody } from './json';
 
 import { Emit, FutureResult, Result, ok, err, do_seq, map_ok, then_future_ok, future, dummy, deferred } from 'literium-base';
-import { Method, Status, DataType, BodyType, NativeBody, Headers } from './types';
+import { Method, Status, DataType, BodyType, NativeBody, Headers, FromBodyType } from './types';
 import { request as backend } from './server';
 
 export const StrBody: BodyType<string, DataType.String> = {
@@ -61,11 +61,11 @@ export interface RequestApi {
     // request and response without bodies
     (request: RequestWithoutBody<MethodWithoutResponseBody>): FutureResponseWithoutBody;
     // request without body and with response body
-    <ResBody, ResNType extends DataType, ResData extends BodyType<ResBody, ResNType>>(request: RequestWithoutBody<Method.Get> & WithResponseBody<ResBody, ResData>): FutureResponseWithBody<ResBody>;
+    <ResBody, ResNType extends DataType, ResData extends BodyType<ResBody, ResNType>>(request: RequestWithoutBody<Method.Get> & WithResponseBody<ResBody, ResData>): FutureResponseWithBody<FromBodyType<ResData>>;
     // request with body and response without
     <ReqBody, ReqNType extends DataType, ReqData extends BodyType<ReqBody, ReqNType>>(request: RequestWithBody<MethodWithRequestBody, ReqBody, ReqData>): FutureResponseWithoutBody;
     // both request and response with bodies
-    <ReqBody, ReqNType extends DataType, ReqData extends BodyType<ReqBody, ReqNType>, ResBody, ResNType extends DataType, ResData extends BodyType<ResBody, ResNType>>(request: RequestWithBody<MethodWithRequestBody, ReqBody, ReqData> & WithResponseBody<ResBody, ResData>): FutureResponseWithBody<ResBody>;
+    <ReqBody, ReqNType extends DataType, ReqData extends BodyType<ReqBody, ReqNType>, ResBody, ResNType extends DataType, ResData extends BodyType<ResBody, ResNType>>(request: RequestWithBody<MethodWithRequestBody, ReqBody, ReqData> & WithResponseBody<ResBody, ResData>): FutureResponseWithBody<FromBodyType<ResData>>;
 }
 
 type NativeBodyType = BodyType<any, DataType>;

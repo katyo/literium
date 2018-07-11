@@ -107,6 +107,8 @@ export interface BodyType<T, N extends DataType> {
     b: (d: T) => Result<NativeType[N], Error>; // build (user type to native)
 }
 
+export type FromBodyType<B> = B extends BodyType<infer T, infer N> ? T : never;
+
 export type ResFn = (status: number, message: string, headers: Headers, body: NativeBody | void) => void;
 export type ErrFn = (error: Error) => void;
 export type AbrFn = () => void;
