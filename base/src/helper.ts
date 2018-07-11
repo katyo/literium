@@ -50,6 +50,27 @@ export function do_seq<S>(this: S, _: any, ...fs: ((this: S, _: any) => any)[]):
     return mk_seq.apply(this, fs).call(this, _);
 }
 
+export function deferred<S>(fn: (this: S) => void): (this: S) => () => void;
+export function deferred<S, T1>(fn: (this: S, a1: T1) => void): (this: S, a1: T1) => () => void;
+export function deferred<S, T1, T2>(fn: (this: S, a1: T1, a2: T2) => void): (this: S, a1: T1, a2: T2) => () => void;
+export function deferred<S, T1, T2, T3>(fn: (this: S, a1: T1, a2: T2, a3: T3) => void): (this: S, a1: T1, a2: T2, a3: T3) => () => void;
+export function deferred<S, T1, T2, T3, T4>(fn: (this: S, a1: T1, a2: T2, a3: T3, a4: T4) => void): (this: S, a1: T1, a2: T2, a3: T3, a4: T4) => () => void;
+export function deferred<S, T1, T2, T3, T4, T5>(fn: (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5) => void): (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5) => () => void;
+export function deferred<S, T1, T2, T3, T4, T5, T6>(fn: (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6) => void): (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6) => () => void;
+export function deferred<S, T1, T2, T3, T4, T5, T6, T7>(fn: (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7) => void): (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7) => () => void;
+export function deferred<S, T1, T2, T3, T4, T5, T6, T7, T8>(fn: (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8) => void): (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8) => () => void;
+export function deferred<S, T1, T2, T3, T4, T5, T6, T7, T8, T9>(fn: (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9) => void): (this: S, a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9) => () => void;
+export function deferred<S>(fn: (this: S, ...an: any[]) => void): (this: S, ...an: any[]) => () => void {
+    return function(...an: any[]) {
+        const timer = setImmediate(() => {
+            fn.apply(this, an);
+        });
+        return () => {
+            clearImmediate(timer);
+        };
+    };
+}
+
 export function flat_map<Arg, Res>(fn: (arg: Arg, idx: number) => Res | Res[]): (list: (Arg | Arg[])[]) => Res[] {
     return (list: (Arg | Arg[])[]) => {
         const res: Res[] = [];

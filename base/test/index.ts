@@ -1,3 +1,5 @@
+import 'setimmediate';
+
 import './keyed';
 import './option';
 import './result';

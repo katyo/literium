@@ -5,6 +5,7 @@ import {
     flat_map,
     flat_list,
     flat_all,
+    deferred,
 } from '../src/index';
 
 describe('helper', () => {
@@ -23,6 +24,32 @@ describe('helper', () => {
             (v: number) => `value=${v}`,
             (v: string) => `${v};`
         ), 'value=124;');
+    });
+
+    describe('deferred', () => {
+        it('execute', done => {
+            const s: number[] = [];
+            deferred((a: number, b: number) => {
+                s.push(a);
+                s.push(b);
+            }).call(this, 1, 2);
+            setTimeout(() => {
+                dse(s, [1, 2]);
+                done();
+            }, 0);
+        });
+        it('cancel', done => {
+            const s: number[] = [];
+            const u = deferred((a: number, b: number) => {
+                s.push(a);
+                s.push(b);
+            }).call(this, 1, 2);
+            setTimeout(() => {
+                dse(s, []);
+                done();
+            }, 0);
+            u();
+        });
     });
 
     it('flat_map', () => {

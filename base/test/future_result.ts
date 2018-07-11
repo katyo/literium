@@ -8,11 +8,6 @@ import {
 } from '../src/index';
 
 describe('future result', () => {
-    it('future sync', () => {
-        dsef(future_ok(123), ok(123));
-        dsef(future_err('unknown'), err('unknown'));
-    });
-
     it('future async ok', done => {
         dsef(future_ok(123), ok(123), done);
     });
@@ -21,25 +16,45 @@ describe('future result', () => {
         dsef(future_err('unknown'), err('unknown'), done);
     });
 
-    it('then_future_ok', () => {
-        dsef(then_future_ok((v: string) => future_ok(`then ${v}`))(future_ok('abc')), ok('then abc'));
-        dsef(then_future_ok((v: string) => future_ok(`then ${v}`))(future_err(false)), err(false));
-        dsef(then_future_ok((v: string) => future_err(v.length > 0))(future_ok('abc')), err(true));
-        dsef(then_future_ok((v: string) => future_err(v.length > 0))(future_err(false)), err(false));
+    describe('then_future_ok', () => {
+        it('case 1', done => {
+            dsef(then_future_ok((v: string) => future_ok(`then ${v}`))(future_ok('abc')), ok('then abc'), done);
+        });
+        it('case 2', done => {
+            dsef(then_future_ok((v: string) => future_ok(`then ${v}`))(future_err(false)), err(false), done);
+        });
+        it('case 3', done => {
+            dsef(then_future_ok((v: string) => future_err(v.length > 0))(future_ok('abc')), err(true), done);
+        });
+        it('case 1', done => {
+            dsef(then_future_ok((v: string) => future_err(v.length > 0))(future_err(false)), err(false), done);
+        });
     });
 
-    it('then_future_err', () => {
-        dsef(then_future_err((e: string) => future_err(`oh ${e}`))(future_ok(123)), ok(123));
-        dsef(then_future_err((e: string) => future_err(`oh ${e}`))(future_err('error')), err('oh error'));
+    describe('then_future_err', () => {
+        it('case 1', done => {
+            dsef(then_future_err((e: string) => future_err(`oh ${e}`))(future_ok(123)), ok(123), done);
+        });
+        it('case 2', done => {
+            dsef(then_future_err((e: string) => future_err(`oh ${e}`))(future_err('error')), err('oh error'), done);
+        });
     });
 
-    it('map_future_ok', () => {
-        dsef(map_future_ok((v: string) => v.length)(future_ok('abc')), ok(3));
-        dsef(map_future_ok((v: string) => v.length)(future_err(true)), err(true));
+    describe('map_future_ok', () => {
+        it('case 1', done => {
+            dsef(map_future_ok((v: string) => v.length)(future_ok('abc')), ok(3), done);
+        });
+        it('case 2', done => {
+            dsef(map_future_ok((v: string) => v.length)(future_err(true)), err(true), done);
+        });
     });
 
-    it('map_future_err', () => {
-        dsef(map_future_err((e: string) => `oh ${e}`)(future_ok(123)), ok(123));
-        dsef(map_future_err((e: string) => `oh ${e}`)(future_err('error')), err('oh error'));
+    describe('map_future_err', () => {
+        it('case 1', done => {
+            dsef(map_future_err((e: string) => `oh ${e}`)(future_ok(123)), ok(123), done);
+        });
+        it('case 2', done => {
+            dsef(map_future_err((e: string) => `oh ${e}`)(future_err('error')), err('oh error'), done);
+        });
     });
 });

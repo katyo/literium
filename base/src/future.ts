@@ -1,6 +1,6 @@
 import { Emit, map_emit } from './emit';
 import { Done } from './fork';
-import { constant, dummy } from './helper';
+import { constant, deferred } from './helper';
 import { Option, some, none, is_some, un_some } from './option';
 import { Either, a, b } from './either';
 
@@ -13,10 +13,7 @@ export interface FutureConv<Type, NewType> {
 }
 
 export function future<Type>(val: Type): Future<Type> {
-    return (emit: Emit<Type>) => {
-        emit(val);
-        return dummy;
-    };
+    return (emit: Emit<Type>) => deferred(emit).call(this, val);
 }
 
 export function wrap_future<R>(fn: () => R): () => Future<R>;
@@ -43,8 +40,8 @@ export function timeout(msec: number): Future<number> {
 export function then_future<Type, NewType>(fn: (data: Type) => Future<NewType>): FutureConv<Type, NewType> {
     return (fu: Future<Type>) => {
         return (emit: Emit<NewType>) => {
-            let u: Done = fu(val => { u = fn(val)(emit); });
-            return () => { u(); };
+            let u = fu(val => { u = fn(val)(emit); });
+            return () => { (u as Done)(); };
         };
     };
 }

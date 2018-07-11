@@ -15,10 +15,6 @@ import {
 } from '../src/index';
 
 describe('future', () => {
-    it('future sync', () => {
-        dsef(future(123), 123);
-    });
-
     it('future async', done => {
         dsef(future(123), 123, done);
     });
@@ -27,12 +23,12 @@ describe('future', () => {
         dsef(map_future(() => 123)(timeout(100)), 123, done);
     });
 
-    it('then_future', () => {
-        dsef(then_future((v: string) => future(`then ${v}`))(future('abc')), 'then abc');
+    it('then_future', done => {
+        dsef(then_future((v: string) => future(`then ${v}`))(future('abc')), 'then abc', done);
     });
 
-    it('map_future', () => {
-        dsef(map_future((v: string) => v.length)(future('abc')), 3);
+    it('map_future', done => {
+        dsef(map_future((v: string) => v.length)(future('abc')), 3, done);
     });
 
     describe('then_future', () => {
