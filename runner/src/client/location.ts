@@ -1,44 +1,33 @@
-import { keyed } from 'literium';
-import { Nav, SetPath } from '../location';
-
-const urlRegExp = /^([^:]+:)?(\/\/)?(?:([^@:\/\?#]*)@)?(([^:\/\?#]+)(?:\:(\d+))?)?(([\/]?[^\?#]*)?(\?[^#]*)?)?(#.*)?$/;
-
-function parse(url: string) {
-    const [href, protocol, slashes, auth, host, hostname, port, path, pathname, search, hash] =
-        url.match(urlRegExp) as (string | undefined)[];
-    return { href: href + (pathname ? '' : '/'), protocol, slashes: !!slashes, auth, host, hostname, port, path: path || '/', pathname: pathname || '/', search, hash };
-}
+import { Option, some, none, is_some, un_some, ok, err, tuple, keyed } from 'literium';
+import { RouterApi, SetRoute, NavApi, NavInit } from '../location';
 
 export function getBase({ location: { protocol, host } }: Window): string {
     return `${protocol}//${host}`;
 }
 
-export function initNav<Event extends SetPath>(win: Window = window): Nav<Event> {
+export function initNav(win: Window = window): NavInit {
     const { location, history } = win;
 
-    const push_state = history && history.pushState;
+    const pushState = history && history.pushState;
 
-    const get_local = (url: string): string | void => {
-        const { protocol, host, path, hash } = parse(url);
+    function getLocal(url: string): Option<string> {
+        const { protocol, host, path, hash } = parseUrl(url);
 
-        if ((!protocol || protocol == location.protocol) &&
+        return ((!protocol || protocol == location.protocol) &&
             (!host || host == location.host) &&
-            (push_state || path == `${location.pathname}${location.search}`)) {
-            return `${path}${hash || ''}`;
-        }
-    };
+            (pushState || path == `${location.pathname}${location.search}`)) ?
+            some(`${path}${hash || ''}`) : none();
+    }
 
-    const get_url = (): string => {
+    function getUrl(): string {
         return `${location.pathname}${location.search}${location.hash}`;
-    };
+    }
 
-    const set_url = (url: string) => {
+    function setUrl(url: string) {
         location.href = url;
-    };
+    }
 
-    let set_path: (path: string) => void;
-
-    const go_path = push_state ? (path: string) => {
+    const goPath = pushState ? (path: string) => {
         // fast local navigation using html5 History API
         history.pushState(null, '', path);
     } : (path: string) => {
@@ -46,55 +35,75 @@ export function initNav<Event extends SetPath>(win: Window = window): Nav<Event>
         location.href = path;
     };
 
-    // local path checker
-    let check_path: (path: string) => boolean;
+    return <Args, Signal extends SetRoute<Args>>({ match, build }: RouterApi<Args>) => {
+        let setRoute: (args: Option<Args>, path: string) => void;
 
-    return {
-        on: (fork) => {
-            const [send,] = fork();
-
-            set_path = (path: string) => {
-                send(keyed('path' as 'path', path) as Event);
-            };
-
-            // send initial url
-            set_path(get_url());
-
-            if (push_state) {
-                // handle browser history navigation events
-                win.addEventListener("popstate", () => {
-                    set_path(get_url());
-                }, false);
+        function setPath(path: string): boolean {
+            const args = match(path);
+            if (is_some(args)) {
+                setRoute(args, path);
+                return true;
             }
-        },
-        go: (url: string) => {
-            const path = get_local(url);
-            if (path && (!check_path || check_path(path))) {
-                go_path(path);
-                set_path(path);
-            } else {
-                set_url(url);
-            }
-        },
-        ev: e => {
-            const elm = e.target as HTMLElement;
-            if (elm.tagName == 'A') {
-                const url = elm.getAttribute('href');
-                const target = elm.getAttribute('target');
-                if (url && !target) {
-                    const path = get_local(url);
-                    if (path && (!check_path || check_path(path))) {
-                        e.preventDefault();
-                        e.stopPropagation();
+            return false;
+        }
 
-                        go_path(path);
-                        set_path(path);
+        function goUrl(url: string) {
+            const path = getLocal(url);
+            if (is_some(path)) {
+                if (setPath(un_some(path))) {
+                    goPath(un_some(path));
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        return <NavApi<Signal>>{
+            create(fork) {
+                const [emit,] = fork();
+
+                setRoute = (args, path) => {
+                    emit(keyed('route' as 'route', is_some(args) ? ok(tuple(un_some(args), path)) : err(path)) as Signal);
+                };
+
+                // send initial url
+                setPath(getUrl());
+
+                if (pushState) {
+                    // handle browser history navigation events
+                    win.addEventListener("popstate", () => {
+                        setPath(getUrl());
+                    }, false);
+                }
+            },
+
+            direct(url) {
+                if (!goUrl(url)) {
+                    setUrl(url);
+                }
+            },
+
+            handle(evt) {
+                const elm = evt.target as HTMLElement;
+                if (evt.type == 'click' && elm.tagName == 'A') {
+                    const url = elm.getAttribute('href');
+                    const target = elm.getAttribute('target');
+                    if (url && !target) {
+                        if (goUrl(url)) {
+                            evt.preventDefault();
+                            evt.stopPropagation();
+                        }
                     }
                 }
-            };
-        },
-        is: (fn) => {
-            check_path = fn;
-        },
+            }
+        }
     };
+}
+
+const urlRegExp = /^([^:]+:)?(\/\/)?(?:([^@:\/\?#]*)@)?(([^:\/\?#]+)(?:\:(\d+))?)?(([\/]?[^\?#]*)?(\?[^#]*)?)?(#.*)?$/;
+
+function parseUrl(url: string) {
+    const [href, protocol, slashes, auth, host, hostname, port, path, pathname, search, hash] =
+        url.match(urlRegExp) as (string | undefined)[];
+    return { href: href + (pathname ? '' : '/'), protocol, slashes: !!slashes, auth, host, hostname, port, path: path || '/', pathname: pathname || '/', search, hash };
 }

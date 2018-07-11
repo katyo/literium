@@ -1,23 +1,26 @@
-import { keyed } from 'literium';
-import { Nav, SetPath } from '../location';
+import { is_some, un_some, ok, err, keyed, tuple, dummy } from 'literium';
+import { RouterApi, SetRoute, NavApi, NavInit } from '../location';
 import { IncomingMessage, ServerResponse } from 'http';
 
 export function getBase({ headers: { host } }: IncomingMessage): string {
     return `http://${host}`;
 }
 
-export function initNav<Event extends SetPath>(req: IncomingMessage, res: ServerResponse): Nav<Event> {
-    return {
-        on: (fork) => {
-            const [send, done] = fork();
-            send(keyed('path' as 'path', req.url || '') as Event);
-            done();
-        },
-        go: (url: string) => {
-            res.writeHead(302, 'Permanent Redirect', { 'location': url });
-            res.end();
-        },
-        ev: (e) => { },
-        is: (fn) => { },
+export function initNav(req: IncomingMessage, res: ServerResponse): NavInit {
+    return <Args, Signal extends SetRoute<Args>>({ match, build }: RouterApi<Args>) => {
+        return <NavApi<Signal>>{
+            create: fork => {
+                const [emit, done] = fork();
+                const path = req.url || '';
+                const args = match(path);
+                emit(keyed('route' as 'route', is_some(args) ? ok(tuple(un_some(args), path)) : err(path)) as Signal);
+                done();
+            },
+            direct: url => {
+                res.writeHead(302, 'Permanent Redirect', { 'location': url });
+                res.end();
+            },
+            handle: dummy,
+        };
     };
 }
