@@ -1,11 +1,10 @@
 import { JSTypeMap } from './define';
-import { Keyed } from './keyed';
 import { Option, none, ok_some, err_some } from './option';
 import { Either } from './either';
 
-export type Ok<Value> = Keyed<1, Value>;
+export interface Ok<Value> { $: 1, _: Value }
 
-export type Err<Error> = Keyed<0, Error>;
+export interface Err<Error> { $: 0, _: Error }
 
 export type Result<Value, Error> = Ok<Value> | Err<Error>;
 

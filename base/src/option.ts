@@ -1,17 +1,16 @@
 import { JSTypeMap } from './define';
-import { Keyed } from './keyed';
 import { Result } from './result';
 import { Either } from './either';
 
-export type Some<Value> = Keyed<1, Value>;
+export interface Some<Value> { $: 1, _: Value }
 
-export type None = Keyed<0, void>;
+export interface None { $: 0 }
 
 export type Option<Value> = Some<Value> | None;
 
 export type Optional<Rec> = { [Key in keyof Rec]: Option<Rec[Key]> };
 
-const _none: None = { $: 0, _: undefined };
+const _none: None = { $: 0 };
 
 export function some<Value>(_: Value): Option<Value> {
     return { $: 1, _ };
