@@ -74,6 +74,10 @@ export function select_future<Type>(...fs: Future<Type>[]): Future<Type> {
     };
 }
 
+export function timeout_future(msec: number): <Type>(val: Type) => FutureConv<Type, Type> {
+    return val => f => select_future(timeout(msec)(val), f);
+}
+
 export function either_future<A, B>(fa: Future<A>, fb: Future<B>): Future<Either<A, B>> {
     return select_future(map_future<A, Either<A, B>>(a)(fa), map_future<B, Either<A, B>>(b)(fb));
 }
