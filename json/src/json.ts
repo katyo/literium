@@ -15,21 +15,21 @@ export interface Type<T> {
 
 // Basic atomic types
 
-const str_check = type_check('string');
+export const str_check = type_check('string');
 
 export const str: Type<string> = {
     p: str_check,
     b: str_check,
 };
 
-const num_check = type_check('number');
+export const num_check = type_check('number');
 
 export const num: Type<number> = {
     p: num_check,
     b: num_check,
 };
 
-const bin_check = type_check('boolean');
+export const bin_check = type_check('boolean');
 
 export const bin: Type<boolean> = {
     p: bin_check,
@@ -43,7 +43,7 @@ export const und: Type<void> = {
 
 // Extra numeric types
 
-const fin_check = mk_seq(
+export const fin_check = mk_seq(
     num_check,
     then_ok<number, string, number>(v => isFinite(v) ? ok(v) : err('infinite'))
 );
@@ -53,9 +53,9 @@ export const fin: Type<number> = {
     b: fin_check,
 };
 
-const then_pos_check = then_ok<number, string, number>(v => v < 0 ? err('negative') : ok(v));
+export const then_pos_check = then_ok<number, string, number>(v => v < 0 ? err('negative') : ok(v));
 
-const pos_check = mk_seq(
+export const pos_check = mk_seq(
     num_check,
     then_pos_check,
 );
@@ -65,7 +65,7 @@ export const pos: Type<number> = {
     b: pos_check,
 };
 
-const neg_check = mk_seq(
+export const neg_check = mk_seq(
     num_check,
     then_ok<number, string, number>(v => v > 0 ? err('positive') : ok(v))
 );
@@ -75,7 +75,7 @@ export const neg: Type<number> = {
     b: neg_check,
 };
 
-const int_check = mk_seq(
+export const int_check = mk_seq(
     fin_check,
     then_ok<number, string, number>(v => v % 1 ? err('!integer') : ok(v))
 );
@@ -85,7 +85,7 @@ export const int: Type<number> = {
     b: int_check,
 };
 
-const nat_check = mk_seq(
+export const nat_check = mk_seq(
     int_check,
     then_pos_check
 );
@@ -105,6 +105,24 @@ export const date_msec: Type<Date> = {
 export const date_unix: Type<Date> = {
     p: mk_seq(nat_check, map_ok(v => new Date(v * 1000))),
     b: v => v instanceof Date ? ok((v.getTime() / 1000) | 0) : err('!date'),
+}
+
+// RegExp matched string
+
+export function re_check(re: RegExp, cause?: string): (v: any) => Result<string> {
+    const e = err<string, string>(cause || `!match ${re}`);
+    return mk_seq(
+        str_check,
+        then_ok(s => re.test(s) ? ok(s) : e)
+    );
+}
+
+export function re_str(re: RegExp, cause?: string): Type<string> {
+    const c = re_check(re, cause);
+    return {
+        p: c,
+        b: c,
+    };
 }
 
 // Container types

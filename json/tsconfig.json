@@ -9,11 +9,15 @@
     "noUnusedLocals": true,
     "importHelpers": true,
     "lib": [
+      "dom",
       "es5",
       "es2015.core"
     ]
   },
   "files": [
-    "src/json.ts"
+    "src/json.ts",
+    "src/server.ts",
+    "src/client.ts",
+    "src/index.ts"
   ]
 }

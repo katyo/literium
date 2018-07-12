@@ -2,9 +2,13 @@
   "name": "literium-json",
   "version": "0.2.5",
   "description": "Type-safe JSON module for Literium web-framework.",
-  "main": "json.js",
-  "typings": "json.d.ts",
-  "module": "es/json.js",
+  "main": "index.js",
+  "typings": "index.d.ts",
+  "module": "es/index.js",
+  "browser": {
+    "./server.js": "./client.js",
+    "./es/server.js": "./es/client.js"
+  },
   "scripts": {
     "compile": "npm run compile-es && npm run compile-js",
     "clean": "npm run clean-es && npm run clean-js",
