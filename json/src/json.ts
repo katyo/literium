@@ -1,8 +1,9 @@
 import {
     Result as _Result,
     ok, err, map_ok, map_err, then_ok,
+    ok_type as type_check,
 
-    mk_seq, ok_try, err_to_str
+    mk_seq, ok_try, err_to_str,
 } from 'literium-base';
 
 export type Result<Type> = _Result<Type, string>;
@@ -14,19 +15,25 @@ export interface Type<T> {
 
 // Basic atomic types
 
+const str_check = type_check('string');
+
 export const str: Type<string> = {
-    p: v => typeof v != 'string' ? err('!string') : ok(v),
-    b: v => typeof v != 'string' ? err('!string') : ok(v),
+    p: str_check,
+    b: str_check,
 };
+
+const num_check = type_check('number');
 
 export const num: Type<number> = {
-    p: v => typeof v != 'number' ? err('!number') : ok(v),
-    b: v => typeof v != 'number' ? err('!number') : ok(v),
+    p: num_check,
+    b: num_check,
 };
 
+const bin_check = type_check('boolean');
+
 export const bin: Type<boolean> = {
-    p: v => typeof v != 'boolean' ? err('!boolean') : ok(v),
-    b: v => typeof v != 'boolean' ? err('!boolean') : ok(v),
+    p: bin_check,
+    b: bin_check,
 };
 
 export const und: Type<void> = {
@@ -36,37 +43,56 @@ export const und: Type<void> = {
 
 // Extra numeric types
 
-const fin_check = then_ok<number, string, number>(v => isFinite(v) ? ok(v) : err('infinite'));
+const fin_check = mk_seq(
+    num_check,
+    then_ok<number, string, number>(v => isFinite(v) ? ok(v) : err('infinite'))
+);
 
 export const fin: Type<number> = {
-    p: v => fin_check(num.p(v)),
-    b: v => fin_check(num.b(v)),
+    p: fin_check,
+    b: fin_check,
 };
 
-const pos_check = then_ok<number, string, number>(v => v < 0 ? err('negative') : ok(v));
+const then_pos_check = then_ok<number, string, number>(v => v < 0 ? err('negative') : ok(v));
+
+const pos_check = mk_seq(
+    num_check,
+    then_pos_check,
+);
 
 export const pos: Type<number> = {
-    p: v => pos_check(num.p(v)),
-    b: v => pos_check(num.b(v)),
+    p: pos_check,
+    b: pos_check,
 };
 
-const neg_check = then_ok<number, string, number>(v => v > 0 ? err('positive') : ok(v));
+const neg_check = mk_seq(
+    num_check,
+    then_ok<number, string, number>(v => v > 0 ? err('positive') : ok(v))
+);
 
 export const neg: Type<number> = {
-    p: v => neg_check(num.p(v)),
-    b: v => neg_check(num.b(v)),
+    p: neg_check,
+    b: neg_check,
 };
 
-const int_check = then_ok<number, string, number>(v => v % 1 ? err('!integer') : ok(v));
+const int_check = mk_seq(
+    fin_check,
+    then_ok<number, string, number>(v => v % 1 ? err('!integer') : ok(v))
+);
 
 export const int: Type<number> = {
-    p: v => int_check(fin.p(v)),
-    b: v => int_check(fin.b(v)),
+    p: int_check,
+    b: int_check,
 };
 
+const nat_check = mk_seq(
+    int_check,
+    then_pos_check
+);
+
 export const nat: Type<number> = {
-    p: v => pos_check(int.p(v)),
-    b: v => pos_check(int.b(v)),
+    p: nat_check,
+    b: nat_check,
 };
 
 // Container types
