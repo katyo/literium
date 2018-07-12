@@ -1,4 +1,4 @@
-import { Option, some, none, is_some, un_some, ok, err, tuple, keyed } from 'literium';
+import { Option, some, none, is_some, un_some, ok, err, tuple, keyed, un_some_or } from 'literium';
 import { RouterApi, SetRoute, NavApi, NavInit } from '../location';
 
 export function getBase({ location: { protocol, host } }: Window): string {
@@ -41,6 +41,11 @@ export function initNav(win: Window = window): NavInit {
         function setPath(path: string): boolean {
             const args = match(path);
             if (is_some(args)) {
+                const new_path = un_some_or(path)(build(un_some(args)));
+                if (new_path != path) {
+                    path = new_path;
+                    goPath(path);
+                }
                 setRoute(args, path);
                 return true;
             }

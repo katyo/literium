@@ -2,25 +2,26 @@ import { Fork, Keyed, Option, Result } from 'literium';
 
 // Smart router API
 export interface RouterApi<Args> {
-    // match path to get state
+    // Match path to get arguments
     match(path: string): Option<Args>;
-    // build path using state
+    // Build path using arguments
     build(args: Args): Option<string>;
 }
 
+// Route change signal
 export type SetRoute<Args> = Keyed<'route', Result<[Args, string], string>>;
 
-// Navigation API init
+// Navigation API initializer
 export interface NavInit {
     <Args, Signal extends SetRoute<Args>>(router: RouterApi<Args>): NavApi<Signal>;
 }
 
 // Smart navigation API
 export interface NavApi<Signal> {
-    // initialize navigation api
+    // Initialize navigation api
     create(fork: Fork<Signal>): void;
-    // process direct navigation
+    // Process direct navigation
     direct(url: string): void;
-    // handle page navigation events
+    // Handle page navigation events
     handle(event: Event): void;
 }

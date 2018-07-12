@@ -136,35 +136,54 @@ getLangs(request) // => ['ru', 'en', ...]
 Modern user-agents provides advanced History API which allows client-side navigation (also known HTML5 History API).
 This allows us speed-up our apps by reducing direct client-server interaction (i.e. from now we won't need requesting html pages itself at all).
 
-Navigation API provided by literium is simple:
+Navigation API provided by literium consist of several simple parts:
 
 ```typescript
-interface Nav<Signal> {
-    // change path events handling
-    on(fork: Fork<Signal>): void;
-    // set local path checker
-    is(fn: (path: string) => boolean): void;
-    // process navigation directly
-    go(url: string): void;
-    // process click to link event
-    ev(evt: Signal): void;
+// Smart router API
+interface RouterApi<Args> {
+    // Match path to get arguments
+    match(path: string): Option<Args>;
+    // Build path using arguments
+    build(args: Args): Option<string>;
 }
 
-type SetPath = Keyed<'path', string>; /* change path event */
+// Route change signal
+type SetRoute<Args> = Keyed<'route', Result<[Args, string], string>>;
+
+// Navigation API initializer
+export interface NavInit {
+    <Args, Signal extends SetRoute<Args>>(router: RouterApi<Args>): NavApi<Signal>;
+}
+
+// Smart navigation API
+export interface NavApi<Signal> {
+    // Initialize navigation api
+    create(fork: Fork<Signal>): void;
+    // Process direct navigation
+    direct(url: string): void;
+    // Handle page navigation events
+    handle(event: Event): void;
+}
 ```
 
-Your application can accept `SetPath` event.
+Your application can accept `SetRoute` signals.
 
-Set navigation event listener using `on()` and local path checker using `is()` on creating your application.
+To get HTML5 path change signals you shall create navigation task using `create()` on bootstrapping your application.
 
-Use `go()` to change current path manually or `ev()` to process clicks on links locally.
+Use `direct()` to change current path manually or `handle()` to process clicks on links locally using HTML5 history API.
 
 Initializing navigation on client:
 
 ```typescript
 import { initNav } from 'literium-runner/es/client';
 
-const nav = initNav(window); // => Nav<Signal extends SetPath>
+const nav = initNav(window); // => NavInit
+
+// In main()
+const navApi = nav({
+    match: router_match(routes),
+    build: router_build(routes),
+}); // => NavApi<Signal extends SetRoute>
 ```
 
 Initializing navigation on server:
@@ -172,7 +191,13 @@ Initializing navigation on server:
 ```typescript
 import { initNav } from 'literium-runner/server';
 
-const nav = initNav(request); // => Nav<Signal extends SetPath>
+const nav = initNav(request); // => NavInit
+
+// In main()
+const navApi = nav({
+    match: router_match(routes),
+    build: router_build(routes),
+}); // => NavApi<Signal extends SetRoute>
 ```
 
 #### HTTP Status
