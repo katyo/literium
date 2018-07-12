@@ -16,7 +16,6 @@
     ]
   },
   "files": [
-    "src/define.ts",
     "src/keyed.ts",
     "src/option.ts",
     "src/result.ts",

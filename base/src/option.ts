@@ -1,4 +1,4 @@
-import { JSTypeMap } from './define';
+import { JSTypeMap } from './helper';
 import { Result } from './result';
 import { Either } from './either';
 

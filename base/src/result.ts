@@ -1,4 +1,4 @@
-import { JSTypeMap } from './define';
+import { JSTypeMap } from './helper';
 import { Option, none, ok_some, err_some } from './option';
 import { Either } from './either';
 
