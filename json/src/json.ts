@@ -152,6 +152,18 @@ export function list<T>(t: Type<T>): Type<T[]> {
     };
 }
 
+export function len_check(n: number): <T>(v: T[]) => Result<T[]> {
+    return v => v.length == n ? ok(v) : err(`length != ${n}`);
+}
+
+export function len<T>(n: number, t: Type<T[]>): Type<T[]> {
+    const c = len_check(n);
+    return {
+        p: mk_seq(t.p, then_ok(c)),
+        b: mk_seq(c, then_ok(t.b)),
+    };
+}
+
 export type Dict<T> = { [Tag in keyof T]: Type<T[Tag]> };
 
 export function dict<T>(t: Dict<T>): Type<T> {
