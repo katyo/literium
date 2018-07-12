@@ -46,5 +46,6 @@
     "runner",
     "highlight",
     "examples/todomvc"
+    "backend",
   ]
 }

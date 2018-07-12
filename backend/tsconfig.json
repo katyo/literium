@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "declaration": true,
+    "removeComments": false,
+    "noUnusedLocals": true,
+    "importHelpers": true,
+    "lib": [
+      "es5",
+      "es2015.core"
+    ]
+  },
+  "files": [
+    "src/stream.ts",
+    "src/http.ts",
+    "src/resource.ts",
+    "src/bind.ts",
+    "src/server.ts",
+    "src/index.ts"
+  ]
+}
