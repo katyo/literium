@@ -95,6 +95,18 @@ export const nat: Type<number> = {
     b: nat_check,
 };
 
+// DateTime types
+
+export const date_msec: Type<Date> = {
+    p: mk_seq(nat_check, map_ok(v => new Date(v))),
+    b: v => v instanceof Date ? ok(v.getTime()) : err('!date'),
+}
+
+export const date_unix: Type<Date> = {
+    p: mk_seq(nat_check, map_ok(v => new Date(v * 1000))),
+    b: v => v instanceof Date ? ok((v.getTime() / 1000) | 0) : err('!date'),
+}
+
 // Container types
 
 export function list<T>(t: Type<T>): Type<T[]> {

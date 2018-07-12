@@ -1,6 +1,6 @@
 import { deepStrictEqual as dse } from 'assert';
 import { ok, err } from 'literium-base';
-import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, tup, alt, opt, def, val, map, then, parse, build, Type } from '../src/json';
+import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, tup, alt, opt, def, val, map, then, parse, build, Type, date_msec, date_unix } from '../src/json';
 
 // custom type
 
@@ -145,6 +145,22 @@ describe('json', () => {
                     dse(parse(nat)(`-123.456`), err("!integer"));
                     dse(parse(nat)(`"abc"`), err("!number"));
                     dse(parse(nat)(`null`), err("!number"));
+                });
+            });
+
+            describe('date', () => {
+                it('msec', () => {
+                    dse(parse(date_msec)(`1531376419000`), ok(new Date(1531376419000)));
+                    dse(parse(date_msec)(`"abc"`), err("!number"));
+                    dse(parse(date_msec)(`123.456`), err("!integer"));
+                    dse(parse(date_msec)(`-123`), err("negative"));
+                });
+
+                it('unix', () => {
+                    dse(parse(date_unix)(`1531376419`), ok(new Date(1531376419000)));
+                    dse(parse(date_unix)(`"abc"`), err("!number"));
+                    dse(parse(date_unix)(`123.456`), err("!integer"));
+                    dse(parse(date_unix)(`-123`), err("negative"));
                 });
             });
 
@@ -392,6 +408,22 @@ describe('json', () => {
                     dse(build(nat)(-123.456), err("!integer"));
                     dse(build(nat)("abc" as any), err("!number"));
                     dse(build(nat)(null as any), err("!number"));
+                });
+            });
+
+            describe('date', () => {
+                it('msec', () => {
+                    dse(build(date_msec)(new Date(1531376419000)), ok(`1531376419000`));
+                    dse(build(date_msec)(123 as any), err("!date"));
+                    dse(build(date_msec)(new Array() as any), err("!date"));
+                    dse(build(date_msec)("abc" as any), err("!date"));
+                });
+
+                it('unix', () => {
+                    dse(build(date_unix)(new Date(1531376419000)), ok(`1531376419`));
+                    dse(build(date_unix)(123 as any), err("!date"));
+                    dse(build(date_unix)(new Array() as any), err("!date"));
+                    dse(build(date_unix)("abc" as any), err("!date"));
                 });
             });
 
