@@ -28,6 +28,10 @@ export function is_none<Value>(o: Option<Value>): o is None {
     return !o.$;
 }
 
+export function then_option<Value, Return>(some_fn: (_: Value) => Return, none_fn: () => Return): (_: Option<Value>) => Return {
+    return (o: Option<Value>) => o.$ ? some_fn(o._) : none_fn();
+}
+
 export function then_some<Value, NewValue>(fn: (_: Value) => Option<NewValue>): (_: Option<Value>) => Option<NewValue> {
     return (o: Option<Value>) => o.$ ? fn(o._) : o as Option<NewValue>;
 }

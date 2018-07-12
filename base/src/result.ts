@@ -26,6 +26,10 @@ export function is_err<Value, Error>(r: Result<Value, Error>): r is Err<Error> {
     return !r.$;
 }
 
+export function then_result<Value, Error, Return>(ok_fn: (_: Value) => Return, err_fn: (_: Error) => Return): (_: Result<Value, Error>) => Return {
+    return (r: Result<Value, Error>) => r.$ ? ok_fn(r._) : err_fn(r._);
+}
+
 export function then_ok<Value, Error, NewValue>(fn: (_: Value) => Result<NewValue, Error>): (res: Result<Value, Error>) => Result<NewValue, Error> {
     return (res: Result<Value, Error>) => res.$ ? fn(res._) : res as Result<NewValue, Error>;
 }
