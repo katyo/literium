@@ -45,7 +45,7 @@
     "core",
     "runner",
     "highlight",
-    "examples/todomvc"
     "backend",
+    "examples/todomvc"
   ]
 }
