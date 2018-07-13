@@ -302,7 +302,7 @@ describe('json', () => {
             });
 
             it('def', () => {
-                const t = def(str, "def");
+                const t = def("def")(str);
                 dse(parse(t)(`"abc"`), ok("abc"));
                 dse(parse(t)(`"def"`), ok("def"));
                 dse(parse(t)(`null`), ok("def"));
@@ -571,7 +571,7 @@ describe('json', () => {
             });
 
             it('def', () => {
-                const t = def(str, "def");
+                const t = def("def")(str);
                 dse(build(t)("abc"), ok(`"abc"`));
                 dse(build(t)("def"), ok(`null`));
                 dse(build(t)(null as any), err("!string"));

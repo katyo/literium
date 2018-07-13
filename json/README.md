@@ -200,14 +200,35 @@ import { str, opt, parse, build } from 'literium-json';
 const so = opt(str);
 
 parse(so)(`"abc"`)    // => ok("abc")
+parse(so)(`null`)     // => ok(undefined)
 parse(so)(`123`)      // => err("!string & defined")
 parse(so)(`true`)     // => err("!string & defined")
 parse(so)(`[]`)       // => err("!string & defined")
 
 build(so)("abc")       // => ok(`"abc"`)
+build(so)(undefined)   // => ok(`null`)
 build(so)(123 as any)  // => err("!string & defined")
 build(so)(true as any) // => err("!string & defined")
 build(so)([] as any)   // => err("!string & defined")
+```
+
+#### Option
+
+The `option()` like the `opt()` but works with literium's `Option<T>` type.
+
+```typescript
+import { str, option, parse, build } from 'literium-json';
+
+const so = option(str);
+
+parse(so)(`"abc"`)    // => ok(some("abc"))
+parse(so)(`null`)     // => ok(none())
+parse(so)(`123`)      // => err("!string & defined")
+parse(so)(`true`)     // => err("!string & defined")
+parse(so)(`[]`)       // => err("!string & defined")
+
+build(so)(some("abc"))       // => ok(`"abc"`)
+build(so)(none())      // => ok(`null`)
 ```
 
 #### Defaults
@@ -217,7 +238,7 @@ Also you can add the optional values with default values using `def()`.
 ```typescript
 import { str, def, parse, build } from 'literium-json';
 
-const sd = def(str, "def");
+const sd = def("def")(str);
 
 parse(sd)(`"abc"`)    // => ok("abc")
 parse(sd)(`null`)     // => ok("def")
@@ -284,6 +305,29 @@ const validate_even = then(
   (v: number) => v % 2 ? err('odd') : ok(v),
 );
 const even = validate_even(int);
+
+parse(even)(`0`) // => ok(0)
+parse(even)(`9`) // => err('odd')
+
+build(even)(0)   // => ok(`0`)
+build(even)(9)   // => err('odd')
+```
+
+#### Type chaining
+
+And of course you can chaining types using `chain()`.
+Let's rewrite the above example using this technique:
+
+```typescript
+import { ok, err } from 'literium';
+import { int, chain, parse, build } from 'literium-json';
+
+const even_t: Type<number> = {
+  (v: number) => v % 2 ? err('odd') : ok(v),
+  (v: number) => v % 2 ? err('odd') : ok(v),
+);
+
+const even = chain(even_t)(int);
 
 parse(even)(`0`) // => ok(0)
 parse(even)(`9`) // => err('odd')

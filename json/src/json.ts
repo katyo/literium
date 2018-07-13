@@ -3,7 +3,7 @@ import {
     ok, err, map_ok, map_err, then_ok,
     ok_type as type_check,
 
-    mk_seq, ok_try, err_to_str,
+    mk_seq, ok_try, err_to_str, Option, some, none, is_some, un_some, do_seq,
 } from 'literium-base';
 
 export type Result<Type> = _Result<Type, string>;
@@ -11,6 +11,10 @@ export type Result<Type> = _Result<Type, string>;
 export interface Type<T> {
     p(v: any): Result<T>; // parse
     b(v: T): Result<any>; // build
+}
+
+export interface TypeConv<T, R> {
+    (t: Type<T>): Type<R>;
 }
 
 // Basic atomic types
@@ -156,12 +160,12 @@ export function len_check(n: number): <T>(v: T[]) => Result<T[]> {
     return v => v.length == n ? ok(v) : err(`length != ${n}`);
 }
 
-export function len<T>(n: number, t: Type<T[]>): Type<T[]> {
+export function len<T>(n: number): TypeConv<T[], T[]> {
     const c = len_check(n);
-    return {
+    return (t: Type<T[]>) => ({
         p: mk_seq(t.p, then_ok(c)),
         b: mk_seq(c, then_ok(t.b)),
-    };
+    });
 }
 
 export type Dict<T> = { [Tag in keyof T]: Type<T[Tag]> };
@@ -231,6 +235,7 @@ export function tup(...ts: Type<any>[]): Type<any[]> {
 }
 
 // Type modifiers
+
 const and_defined = map_err((e: string) => `${e} & defined`);
 
 export function opt<T>(t: Type<T>): Type<T | void> {
@@ -247,14 +252,14 @@ export function val<T>(d: T): Type<T> {
     };
 }
 
-export function def<T>(t: Type<T>, d: T): Type<T> {
-    return {
+export function def<T>(d: T): TypeConv<T, T> {
+    return (t: Type<T>) => ({
         p: v => v != null ? and_defined(t.p(v)) : ok(d),
         b: v => v != d ? t.b(v) : ok(null),
-    };
+    });
 }
 
-export function map<T, R>(p: (v: T) => R, b: (v: R) => T): (t: Type<T>) => Type<R> {
+export function map<T, R>(p: (v: T) => R, b: (v: R) => T): TypeConv<T, R> {
     const map_p = map_ok(p);
     return t => ({
         p: v => map_p(t.p(v)),
@@ -262,7 +267,7 @@ export function map<T, R>(p: (v: T) => R, b: (v: R) => T): (t: Type<T>) => Type<
     });
 }
 
-export function then<T, R>(p: (v: T) => Result<R>, b: (v: R) => Result<T>): (t: Type<T>) => Type<R> {
+export function then<T, R>(p: (v: T) => Result<R>, b: (v: R) => Result<T>): TypeConv<T, R> {
     const then_p = then_ok(p);
     return t => {
         const then_b = then_ok(t.b);
@@ -271,6 +276,24 @@ export function then<T, R>(p: (v: T) => Result<R>, b: (v: R) => Result<T>): (t: 
             b: v => then_b(b(v)),
         };
     };
+}
+
+export function chain<T, R>(t: Type<R>): TypeConv<T, R> {
+    return then(t.p, t.b);
+}
+
+export function option<T>(t: Type<T>): Type<Option<T>> {
+    return {
+        p: v => v != null ? and_defined(do_seq(t.p(v), map_ok(some))) : ok(none()),
+        b: v => is_some(v) ? and_defined(t.b(un_some(v))) : ok(null),
+    };
+}
+
+export function unless<T>(fn: () => Result<T>): TypeConv<T, T> {
+    return (t: Type<T>) => ({
+        p: v => v != null ? and_defined(t.p(v)) : fn(),
+        b: v => v != null ? and_defined(t.b(v)) : fn(),
+    });
 }
 
 // Type alternatives
