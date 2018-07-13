@@ -7,8 +7,8 @@ import postcss from 'rollup-plugin-postcss';
 import { uglify } from 'rollup-plugin-uglify';
 import replace from 'rollup-plugin-replace';
 import gzip from 'rollup-plugin-gzip';
-import postcss_import from 'postcss-import';
 import visualize from 'rollup-plugin-visualizer';
+import postcss_import from 'postcss-import';
 
 const { stringify } = JSON;
 
@@ -20,6 +20,7 @@ const {
 const distdir = outdir || 'dist';
 
 export default {
+    context: 'this',
     input: `src/client.ts`,
     output: {
         file: join(distdir, `client_${version}.min.js`),

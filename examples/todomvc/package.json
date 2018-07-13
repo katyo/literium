@@ -6,8 +6,8 @@
     "compile": "ts-node src/html && rollup -c",
     "watch": "rollup -c -w",
     "clean": "rm -rf dist",
-    "start": "ts-node src/server.ts start 8182",
-    "stop": "ts-node src/server.ts stop 8182",
+    "start": "ts-node src/server.ts start",
+    "stop": "ts-node src/server.ts stop",
     "postinstall": "npm run compile"
   },
   "repository": {
@@ -45,9 +45,11 @@
   },
   "dependencies": {
     "literium": "^0.2",
+    "literium-backend": "^0.2",
     "literium-json": "^0.2",
     "literium-runner": "^0.2",
     "raf-polyfill": "^1",
+    "setimmediate": "^1",
     "todomvc-app-css": "^2",
     "todomvc-common": "^1",
     "ts-node": "^7",
