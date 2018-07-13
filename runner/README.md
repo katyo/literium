@@ -51,8 +51,10 @@ run(app, document.body);
 #### Server
 
 ```typescript
+import { Future } from 'literium-base';
+
 interface Run<State, Signal> {
-    (app: Component<State, Signal>, end: (html: string) => void): void;
+    (app: Component<State, Signal>): Future<[string, State]>;
 }
 
 function init<State, Signal>(doctype: string = 'html', timeout: number = 1000): Run<State, Signal>
@@ -74,7 +76,7 @@ const run = init();
 const app = main();
 
 // run app using runner to get html
-run(app, (html, state) => {
+run(app)(([html, state]) => {
     // respond with html
     res.writeHead(200, "OK", { "Content-Type": "text/html" });
     res.end(html);
