@@ -88,6 +88,10 @@ export function deferred(fn: (...args: any[]) => void): (...args: any[]) => () =
     };
 }
 
+export function bind_method<T, N extends keyof T, F extends T[N] & Function>(self: T, name: N): T[N] {
+    return (self[name] as F).bind(self);
+}
+
 export function flat_map<Arg, Res>(fn: (arg: Arg, idx: number) => Res | Res[]): (list: (Arg | Arg[])[]) => Res[] {
     return (list: (Arg | Arg[])[]) => {
         const res: Res[] = [];
