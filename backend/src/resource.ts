@@ -1,4 +1,4 @@
-import { Option, some, none, some_def, then_some, tuple, mk_seq, do_seq, then_result, future_async, map_future_ok, map_future_err, err_to_str, future_ok } from 'literium-base';
+import { Option, some, none, some_def, then_some, tuple, mk_seq, do_seq, then_result, future_async, map_future_ok, future_ok, then_future_err } from 'literium-base';
 import { extname, resolve, join } from 'path';
 import { open, createReadStream } from 'fs';
 import { ServerRequest } from 'http';
@@ -45,7 +45,7 @@ export function resource_handler(root: string, types: MimeMap = mime_map): (req:
                 okay(),
                 with_body(StreamBody, createReadStream(path, { fd }), mime)
             )),
-            map_future_err(err_to_str)
+            then_future_err(() => future_ok(not_found()))
         ), () => future_ok(not_found()))
     );
 }
