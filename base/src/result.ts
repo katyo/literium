@@ -10,6 +10,10 @@ export type Result<Value, Error> = Ok<Value> | Err<Error>;
 
 export type Resultal<Rec, Error> = { [Key in keyof Rec]: Result<Rec[Key], Error> };
 
+export type OkFn<Error> = <Value>(_: Value) => Result<Value, Error>;
+
+export type ErrFn<Value> = <Error>(_: Error) => Result<Value, Error>;
+
 export function ok<Value, Error>(val: Value): Result<Value, Error> {
     return { $: 1, _: val };
 }

@@ -6,6 +6,10 @@ export type FutureResult<Value, Error> = Future<Result<Value, Error>>;
 
 export type FutureResultConv<Value, Error, RValue, RError> = FutureConv<Result<Value, Error>, Result<RValue, RError>>;
 
+export type FutureOkFn<Error> = <Value>(v: Value) => FutureResult<Value, Error>;
+
+export type FutureErrFn<Value> = <Error>(e: Error) => FutureResult<Value, Error>;
+
 export function future_ok<Value, Error>(v: Value): FutureResult<Value, Error> {
     return future(ok(v));
 }

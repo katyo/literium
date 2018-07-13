@@ -12,6 +12,8 @@ export type Optional<Rec> = { [Key in keyof Rec]: Option<Rec[Key]> };
 
 const _none: None = { $: 0 };
 
+export type NoneFn<Value> = <Value>() => Option<Value>;
+
 export function some<Value>(_: Value): Option<Value> {
     return { $: 1, _ };
 }
