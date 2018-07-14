@@ -20,7 +20,7 @@ stat(distdir, (err, stat) => {
 
 function store() {
     const file = join(distdir, 'client.html');
-    render(main, html => {
+    render(main)(html => {
         writeFile(file, html, err => {
 
         });

@@ -1,8 +1,23 @@
-import { Emit, map_emit } from './emit';
-import { Done } from './fork';
-import { constant, deferred } from './helper';
+import { constant, deferred, dummy } from './helper';
+import { Keyed, to_keyed } from './keyed';
 import { Option, some, none, is_some, un_some } from './option';
 import { Either, a, b } from './either';
+
+export interface Emit<Signal> {
+    (signal: Signal): void;
+}
+
+export function map_emit<Signal, OtherSignal>(fn: (signal: OtherSignal) => Signal): (emit: Emit<Signal>) => Emit<OtherSignal> {
+    return (emit: Emit<Signal>) => (signal: OtherSignal) => { emit(fn(signal)); };
+}
+
+export function keyed_emit<Key>(key: Key): <Signal>(emit: Emit<Keyed<Key, Signal>>) => Emit<Signal> {
+    return map_emit(to_keyed(key));
+}
+
+export interface Done {
+    (): void;
+}
 
 export interface Future<Type> {
     (emit: Emit<Type>): Done;
@@ -14,6 +29,10 @@ export interface FutureConv<Type, NewType> {
 
 export function future<Type>(val: Type): Future<Type> {
     return (emit: Emit<Type>) => deferred(emit)(val);
+}
+
+export function never<Type>(): Future<Type> {
+    return (emit: Emit<Type>) => dummy;
 }
 
 export function wrap_future<R>(fn: () => R): () => Future<R>;
@@ -124,4 +143,30 @@ export function fork_future<Type>(f: Future<Type>): () => Future<Type> {
             }
         };
     };
+}
+
+export interface Spawn {
+    (fut: Future<any>): void;
+}
+
+export function task_pool(done: Done): [Spawn, Done] {
+    let tasks = 0;
+    let index = 0;
+    const drops: Record<number, Done> = {};
+    function emit(index: number): Done {
+        return () => {
+            delete drops[index];
+            if (!--tasks) done();
+        };
+    }
+    function drop() {
+        for (const index in drops) drops[index]();
+    }
+    return [
+        (future: Future<any>) => {
+            ++tasks; ++index;
+            drops[index] = future(emit(index));
+        },
+        drop
+    ];
 }

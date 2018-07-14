@@ -1,5 +1,5 @@
-import { Option, some, none, is_some, un_some, ok, err, tuple, keyed, un_some_or } from 'literium';
-import { RouterApi, SetRoute, NavApi, NavInit } from '../location';
+import { Option, some, none, is_some, un_some, un_some_or, Spawn, never } from 'literium';
+import { RouterApi, SetRoute, NavInit } from '../location';
 
 export function getBase({ location: { protocol, host } }: Window): string {
     return `${protocol}//${host}`;
@@ -35,21 +35,18 @@ export function initNav(win: Window = window): NavInit {
         location.href = path;
     };
 
-    return <Args, Signal extends SetRoute<Args>>({ match, build }: RouterApi<Args>) => {
-        let setRoute: (args: Option<Args>, path: string) => void;
+    return <Args>(spawn: Spawn, setRoute: SetRoute<Args>, { match, build }: RouterApi<Args>) => {
+        spawn(never());
 
         function setPath(path: string): boolean {
-            const args = match(path);
-            if (is_some(args)) {
-                const new_path = un_some_or(path)(build(un_some(args)));
-                if (new_path != path) {
-                    path = new_path;
-                    goPath(path);
-                }
-                setRoute(args, path);
-                return true;
-            }
-            return false;
+            const route = match(path);
+            path = rePath(route, path);
+            setRoute(route, path);
+            return is_some(route);
+        }
+
+        function rePath(route: Option<Args>, path: string): string {
+            return is_some(route) ? un_some_or(path)(build(un_some(route))) : path;
         }
 
         function goUrl(url: string) {
@@ -63,24 +60,21 @@ export function initNav(win: Window = window): NavInit {
             return false;
         }
 
-        return <NavApi<Signal>>{
-            create(fork) {
-                const [emit,] = fork();
-
-                setRoute = (args, path) => {
-                    emit(keyed('route' as 'route', is_some(args) ? ok(tuple(un_some(args), path)) : err(path)) as Signal);
-                };
-
-                // send initial url
+        if (pushState) {
+            // handle browser history navigation events
+            win.addEventListener("popstate", () => {
                 setPath(getUrl());
+            }, false);
+        }
 
-                if (pushState) {
-                    // handle browser history navigation events
-                    win.addEventListener("popstate", () => {
-                        setPath(getUrl());
-                    }, false);
-                }
-            },
+        // get initial url
+        let path = getUrl();
+        const route = match(path);
+        path = rePath(route, path);
+
+        return {
+            route,
+            path,
 
             direct(url) {
                 if (!goUrl(url)) {

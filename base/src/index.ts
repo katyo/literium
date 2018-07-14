@@ -3,7 +3,5 @@ export * from './option';
 export * from './result';
 export * from './either';
 export * from './helper';
-export * from './emit';
-export * from './fork';
 export * from './future';
 export * from './future_result';

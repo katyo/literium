@@ -21,8 +21,6 @@
     "src/result.ts",
     "src/either.ts",
     "src/helper.ts",
-    "src/emit.ts",
-    "src/fork.ts",
     "src/future.ts",
     "src/future_result.ts",
     "src/index.ts"

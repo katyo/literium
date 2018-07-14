@@ -1,6 +1,5 @@
-import { Emit } from './emit';
 import { Result, ok, err, is_ok, un_ok, un_err } from './result';
-import { Future, future, then_future, FutureConv } from './future';
+import { Emit, Future, future, then_future, FutureConv } from './future';
 
 export type FutureResult<Value, Error> = Future<Result<Value, Error>>;
 

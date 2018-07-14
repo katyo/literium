@@ -1,4 +1,4 @@
-import { Fork, Keyed, Option, Result } from 'literium';
+import { Option, Spawn } from 'literium';
 
 // Smart router API
 export interface RouterApi<Args> {
@@ -9,17 +9,21 @@ export interface RouterApi<Args> {
 }
 
 // Route change signal
-export type SetRoute<Args> = Keyed<'route', Result<[Args, string], string>>;
+export interface SetRoute<Args> {
+    (route: Option<Args>, path: string): void;
+}
 
 // Navigation API initializer
 export interface NavInit {
-    <Args, Signal extends SetRoute<Args>>(router: RouterApi<Args>): NavApi<Signal>;
+    <Args>(spawn: Spawn, change: SetRoute<Args>, router: RouterApi<Args>): NavApi<Args>;
 }
 
 // Smart navigation API
-export interface NavApi<Signal> {
-    // Initialize navigation api
-    create(fork: Fork<Signal>): void;
+export interface NavApi<Args> {
+    // Initial route
+    route: Option<Args>;
+    // Initial path
+    path: string;
     // Process direct navigation
     direct(url: string): void;
     // Handle page navigation events

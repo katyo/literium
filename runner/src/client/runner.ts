@@ -8,11 +8,10 @@ import {
     attributesApi as attrsApi, classApi, styleApi, propsApi, eventListenersApi as eventApi
 } from 'snabbdom-ng/es/client';
 
-import { VNode, VData, Component } from 'literium';
-import { fork_pool } from '../sched';
+import { VData, Create, task_pool, patcher } from 'literium';
 
 export interface Run<State, Signal> {
-    (app: Component<State, Signal>, elm?: Node): void;
+    (app: Create, elm?: Node): void;
 }
 
 export function init<State, Signal>(doc: Document = document): Run<State, Signal> {
@@ -24,27 +23,24 @@ export function init<State, Signal>(doc: Document = document): Run<State, Signal
         eventModule(eventApi),
     ], htmlDomApi(doc));
 
-    return ({ create, update, render }, elm = doc.documentElement) => {
+    return (create: Create, elm = doc.documentElement) => {
         let frame: any;
-        const view = () => {
+        function draw() {
+            //console.log('draw');
             frame = undefined;
             const vnode_ = vnode;
-            vnode = render(state, emit) as VNode;
+            vnode = render();
             patch(vnode_, vnode);
         };
-        const emit = (signal: Signal) => {
-            //console.log('emit:', signal);
-            state = update(state, signal, fork);
-            //console.log('state:', state);
-            if (frame) cancelAnimationFrame(frame);
-            frame = requestAnimationFrame(view);
+        function redraw() {
+            if (!frame) frame = requestAnimationFrame(draw);
         };
-        const [fork, run] = fork_pool(emit, () => {
+        const [spawn,] = task_pool(() => {
             //console.log('done');
+            if (frame) cancelAnimationFrame(frame);
         });
         let vnode = read(elm);
-        let state = create(fork);
-        view();
-        run();
+        let render = create(patcher(redraw), spawn);
+        draw();
     };
 }
