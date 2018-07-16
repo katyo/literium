@@ -1,6 +1,6 @@
 import { deepStrictEqual as dse } from 'assert';
 import { ok, err } from 'literium-base';
-import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, tup, alt, opt, def, val, map, then, parse, build, Type, date_msec, date_unix, re_str } from '../src/index';
+import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, mix, tup, alt, opt, def, val, map, then, parse, build, Type, date_msec, date_unix, re_str } from '../src/index';
 
 // custom type
 
@@ -234,6 +234,22 @@ describe('json', () => {
                     dse(parse(t)(`{"a":"abc","b":{"a":123}}`), ok({ a: "abc", b: { a: 123 } }));
                     dse(parse(t)(`{"a":"abc","b":{}}`), err(".b .a missing"));
                     dse(parse(t)(`{"a":"abc","b":{"a":-1}}`), err(".b .a negative"));
+                });
+            });
+
+            describe('mix', () => {
+                it('single', () => {
+                    const t = mix(dict({ a: str }));
+                    dse(parse(t)(`{"a":"abc"}`), ok({ a: "abc" }));
+                    dse(parse(t)(`{"a":123}`), err(".a !string"));
+                    dse(parse(t)(`{}`), err(".a missing"));
+                });
+
+                it('multi', () => {
+                    const t = mix(dict({ a: str }), dict({ b: fin }));
+                    dse(parse(t)(`{"a":"abc","b":123}`), ok({ a: "abc", b: 123 }));
+                    dse(parse(t)(`{"a":"abc"}`), err(".b missing"));
+                    dse(parse(t)(`{"a":"abc","b":null}`), err(".b !number"));
                 });
             });
 
@@ -503,6 +519,22 @@ describe('json', () => {
                     dse(build(t)({ a: "abc", b: { a: 123 } }), ok(`{"a":"abc","b":{"a":123}}`));
                     dse(build(t)({ a: "abc", b: {} } as any), err(".b .a missing"));
                     dse(build(t)({ a: "abc", b: { a: -1 } }), err(".b .a negative"));
+                });
+            });
+
+            describe('mix', () => {
+                it('single', () => {
+                    const t = mix(dict({ a: str }));
+                    dse(build(t)({ a: "abc" }), ok(`{"a":"abc"}`));
+                    dse(build(t)([] as any), err("!object"));
+                    dse(build(t)({ a: 123 } as any), err(".a !string"));
+                });
+
+                it('multi', () => {
+                    const t = mix(dict({ a: str }), dict({ b: fin }));
+                    dse(build(t)({ a: "abc", b: 123 }), ok(`{"a":"abc","b":123}`));
+                    dse(build(t)({ a: "abc" } as any), err(".b missing"));
+                    dse(build(t)({ a: "abc", b: undefined } as any), err(".b !number"));
                 });
             });
 

@@ -1,39 +1,25 @@
 import {
-    Result as _Result,
     ok, err, map_ok, map_err, then_ok,
-    ok_type as type_check,
 
-    mk_seq, ok_try, err_to_str, Option, some, none, is_some, un_some, do_seq,
+    mk_seq, ok_try, err_to_str, Option, some, none, is_some, un_some, do_seq, un_some_or,
 } from 'literium-base';
-
-export type Result<Type> = _Result<Type, string>;
-
-export interface Type<T> {
-    p(v: any): Result<T>; // parse
-    b(v: T): Result<any>; // build
-}
-
-export interface TypeConv<T, R> {
-    (t: Type<T>): Type<R>;
-}
+import { Type, TypeConv, Result } from './types';
+import {
+    str_check, num_check, bin_check, re_check, len_check,
+    fin_check, pos_check, neg_check, int_check, nat_check
+} from './check';
 
 // Basic atomic types
-
-export const str_check = type_check('string');
 
 export const str: Type<string> = {
     p: str_check,
     b: str_check,
 };
 
-export const num_check = type_check('number');
-
 export const num: Type<number> = {
     p: num_check,
     b: num_check,
 };
-
-export const bin_check = type_check('boolean');
 
 export const bin: Type<boolean> = {
     p: bin_check,
@@ -47,52 +33,25 @@ export const und: Type<void> = {
 
 // Extra numeric types
 
-export const fin_check = mk_seq(
-    num_check,
-    then_ok<number, string, number>(v => isFinite(v) ? ok(v) : err('infinite'))
-);
-
 export const fin: Type<number> = {
     p: fin_check,
     b: fin_check,
 };
-
-export const then_pos_check = then_ok<number, string, number>(v => v < 0 ? err('negative') : ok(v));
-
-export const pos_check = mk_seq(
-    num_check,
-    then_pos_check,
-);
 
 export const pos: Type<number> = {
     p: pos_check,
     b: pos_check,
 };
 
-export const neg_check = mk_seq(
-    num_check,
-    then_ok<number, string, number>(v => v > 0 ? err('positive') : ok(v))
-);
-
 export const neg: Type<number> = {
     p: neg_check,
     b: neg_check,
 };
 
-export const int_check = mk_seq(
-    fin_check,
-    then_ok<number, string, number>(v => v % 1 ? err('!integer') : ok(v))
-);
-
 export const int: Type<number> = {
     p: int_check,
     b: int_check,
 };
-
-export const nat_check = mk_seq(
-    int_check,
-    then_pos_check
-);
 
 export const nat: Type<number> = {
     p: nat_check,
@@ -113,20 +72,9 @@ export const date_unix: Type<Date> = {
 
 // RegExp matched string
 
-export function re_check(re: RegExp, cause?: string): (v: any) => Result<string> {
-    const e = err<string, string>(cause || `!match ${re}`);
-    return mk_seq(
-        str_check,
-        then_ok(s => re.test(s) ? ok(s) : e)
-    );
-}
-
-export function re_str(re: RegExp, cause?: string): Type<string> {
+export function regex(re: RegExp, cause?: string): TypeConv<string, string> {
     const c = re_check(re, cause);
-    return {
-        p: c,
-        b: c,
-    };
+    return then(c, c);
 }
 
 // Container types
@@ -156,21 +104,19 @@ export function list<T>(t: Type<T>): Type<T[]> {
     };
 }
 
-export function len_check(n: number): <T>(v: T[]) => Result<T[]> {
-    return v => v.length == n ? ok(v) : err(`length != ${n}`);
-}
-
-export function len<T>(n: number): TypeConv<T[], T[]> {
-    const c = len_check(n);
-    return (t: Type<T[]>) => ({
+export function len<T extends ArrayLike<any>>(min: Option<number>, max: Option<number>): TypeConv<T, T> {
+    const min_ = un_some_or(-Infinity)(min);
+    const max_ = un_some_or(Infinity)(max);
+    const c = len_check(min_, max_);
+    return (t: Type<T>) => ({
         p: mk_seq(t.p, then_ok(c)),
         b: mk_seq(c, then_ok(t.b)),
     });
 }
 
-export type Dict<T> = { [Tag in keyof T]: Type<T[Tag]> };
+export type Dict<T extends Object> = { [Tag in keyof T]: Type<T[Tag]> };
 
-export function dict<T>(t: Dict<T>): Type<T> {
+export function dict<T extends Object>(t: Dict<T>): Type<T> {
     return {
         p(v) {
             if (typeof v != 'object' ||
@@ -197,6 +143,40 @@ export function dict<T>(t: Dict<T>): Type<T> {
     };
 }
 
+export function mix<T1 extends Object>(t1: Type<T1>): Type<T1>;
+export function mix<T1 extends Object, T2 extends Object>(t1: Type<T1>, t2: Type<T2>): Type<T1 & T2>;
+export function mix<T1 extends Object, T2 extends Object, T3 extends Object>(t1: Type<T1>, t2: Type<T2>, t3: Type<T3>): Type<T1 & T2 & T3>;
+export function mix<T1 extends Object, T2 extends Object, T3 extends Object, T4 extends Object>(t1: Type<T1>, t2: Type<T2>, t3: Type<T3>, t4: Type<T4>): Type<T1 & T2 & T3 & T4>;
+export function mix<T1 extends Object, T2 extends Object, T3 extends Object, T4 extends Object, T5 extends Object>(t1: Type<T1>, t2: Type<T2>, t3: Type<T3>, t4: Type<T4>, t5: Type<T5>): Type<T1 & T2 & T3 & T4 & T5>;
+export function mix<T1 extends Object, T2 extends Object, T3 extends Object, T4 extends Object, T5 extends Object, T6 extends Object>(t1: Type<T1>, t2: Type<T2>, t3: Type<T3>, t4: Type<T4>, t5: Type<T5>, t6: Type<T6>): Type<T1 & T2 & T3 & T4 & T5 & T6>;
+export function mix<T1 extends Object, T2 extends Object, T3 extends Object, T4 extends Object, T5 extends Object, T6 extends Object, T7 extends Object>(t1: Type<T1>, t2: Type<T2>, t3: Type<T3>, t4: Type<T4>, t5: Type<T5>, t6: Type<T6>, t7: Type<T7>): Type<T1 & T2 & T3 & T4 & T5 & T6 & T7>;
+export function mix<T1 extends Object, T2 extends Object, T3 extends Object, T4 extends Object, T5 extends Object, T6 extends Object, T7 extends Object, T8 extends Object>(t1: Type<T1>, t2: Type<T2>, t3: Type<T3>, t4: Type<T4>, t5: Type<T5>, t6: Type<T6>, t7: Type<T7>, t8: Type<T8>): Type<T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8>;
+export function mix<T1 extends Object, T2 extends Object, T3 extends Object, T4 extends Object, T5 extends Object, T6 extends Object, T7 extends Object, T8 extends Object, T9 extends Object>(t1: Type<T1>, t2: Type<T2>, t3: Type<T3>, t4: Type<T4>, t5: Type<T5>, t6: Type<T6>, t7: Type<T7>, t8: Type<T8>, t9: Type<T9>): Type<T1 & T2 & T3 & T4 & T5 & T6 & T7 & T9>;
+
+export function mix(...ts: Type<Object>[]): Type<Object> {
+    return {
+        p(v) {
+            let r = {};
+            for (const t of ts) {
+                const x = t.p(v);
+                if (!x.$) return x;
+                r = { ...r, ...x._ };
+            }
+            return ok(r);
+        },
+        b(v) {
+            let r = {};
+            for (const t of ts) {
+                const x = t.b(v);
+                if (!x.$) return x;
+                r = { ...r, ...x._ };
+            }
+            return ok(r);
+        }
+    };
+}
+
+export function tup<T1>(t1: Type<T1>): Type<[T1]>;
 export function tup<T1, T2>(t1: Type<T1>, t2: Type<T2>): Type<[T1, T2]>;
 export function tup<T1, T2, T3>(t1: Type<T1>, t2: Type<T2>, t3: Type<T3>): Type<[T1, T2, T3]>;
 export function tup<T1, T2, T3, T4>(t1: Type<T1>, t2: Type<T2>, t3: Type<T3>, t4: Type<T4>): Type<[T1, T2, T3, T4]>;

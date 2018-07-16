@@ -153,13 +153,11 @@ export function err_if<Value, Error>(fn: (_: Value) => Option<Error>): (_: Value
 }
 
 export function ok_type<Type extends keyof JSTypeMap>(t: Type): <Value>(_: Value) => Result<JSTypeMap[Type], string> {
-    const e = err(`!${t}`);
-    return <Value>(_: Value) => typeof _ == t ? ok(_ as JSTypeMap[Type]) : e as Result<JSTypeMap[Type], string>;
+    return <Value>(_: Value) => typeof _ == t ? ok(_ as JSTypeMap[Type]) : err(`!${t}`);
 }
 
 export function err_type<Type extends keyof JSTypeMap>(t: Type): (_: any) => Result<any, string> {
-    const e = err(`${t}`);
-    return (_: any) => typeof _ != t ? ok(_) : e as Result<any, string>;
+    return (_: any) => typeof _ != t ? ok(_) : err(`${t}`);
 }
 
 export function ok_def<Value>(v: Value | void): Result<Value, void> {

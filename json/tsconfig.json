@@ -15,6 +15,8 @@
     ]
   },
   "files": [
+    "src/types.ts",
+    "src/check.ts",
     "src/json.ts",
     "src/server.ts",
     "src/client.ts",

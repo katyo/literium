@@ -1,13 +1,12 @@
-import { then_ok, map_err, ok_try, mk_seq, err_to_str } from 'literium-base';
-import { Type, str_check, re_check } from './json';
+import { then_ok, map_err, ok_try, mk_seq, err_to_str, identity } from 'literium-base';
+import { Type } from './types';
+import { str_check, re_check } from './check';
 
 const map_error = map_err(err_to_str);
 
-const { fromCharCode } = String;
-
 export const utf8 = raw_type('utf8', undefined,
     (s: string) => {
-        const d = unescape(encodeURIComponent(s)), b = new Uint8Array(d.length);
+        const d = unescape(encodeURIComponent(s)), b = u8_arr(d.length);
 
         for (let i = 0; i < d.length; i++) {
             b[i] = d.charCodeAt(i);
@@ -16,7 +15,7 @@ export const utf8 = raw_type('utf8', undefined,
         return b.buffer;
     },
     (b: ArrayBuffer) =>
-        decodeURIComponent(escape(fromCharCode.apply(undefined, new Uint8Array(b))))
+        decodeURIComponent(escape(to_str(u8_arr(b))))
 );
 
 function put_hb(h: number): number {
@@ -30,7 +29,7 @@ function get_hb(s: string, i: number): number {
 
 export const hex = raw_type('hex', /^(?:[A-Fa-f0-9]{2})+$/,
     (s: string) => {
-        const a = new Uint8Array(s.length >> 1);
+        const a = u8_arr(s.length >> 1);
 
         for (let i = 0; i < a.length; i += 2) {
             a[i] = (get_hb(s, i) << 8) | get_hb(s, i + 1);
@@ -38,9 +37,9 @@ export const hex = raw_type('hex', /^(?:[A-Fa-f0-9]{2})+$/,
 
         return a;
     },
-    (a_: ArrayBuffer) => {
-        const a = new Uint8Array(a_);
-        const b = new Uint8Array(a.length << 1);
+    (a_: ArrayBuffer) => /**@__PURE__*/ {
+        const a = u8_arr(a_);
+        const b = u8_arr(a.length << 1);
 
         for (let i = 0, j; i < a.length; i++) {
             j = i << 1;
@@ -48,13 +47,13 @@ export const hex = raw_type('hex', /^(?:[A-Fa-f0-9]{2})+$/,
             b[j + 1] = put_hb(a[i] & 0xf);
         }
 
-        return fromCharCode.apply(undefined, b);
+        return to_str(b);
     }
 );
 
 export const base64 = raw_type('base64', /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
     (s: string) => {
-        const d = atob(s), b = new Uint8Array(d.length);
+        const d = atob(s), b = u8_arr(d.length);
 
         for (let i = 0; i < d.length; i++) {
             b[i] = d.charCodeAt(i);
@@ -62,13 +61,15 @@ export const base64 = raw_type('base64', /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]
 
         return b.buffer;
     },
-    (b: ArrayBuffer) => btoa(fromCharCode.apply(undefined, new Uint8Array(b)))
+    (b: ArrayBuffer) => btoa(to_str(u8_arr(b)))
 );
 
 function raw_type(tn: string, re: RegExp | void, p: (_: string) => ArrayBuffer, b: (_: ArrayBuffer) => string): Type<ArrayBuffer> {
     return {
         p: mk_seq(
-            re ? re_check(re, `!${tn}`) : str_check,
+            str_check,
+            re ? then_ok(re_check(re, `!${tn}`)) : identity,
+            str_check,
             then_ok(mk_seq(
                 ok_try(p),
                 map_error
@@ -79,4 +80,12 @@ function raw_type(tn: string, re: RegExp | void, p: (_: string) => ArrayBuffer, 
             map_error
         )
     };
+}
+
+function u8_arr(a: ArrayBuffer | ArrayLike<number> | number): Uint8Array {
+    return new Uint8Array(a as number);
+}
+
+function to_str(a: ArrayLike<number>): string {
+    return String.fromCharCode.apply(null, a);
 }
