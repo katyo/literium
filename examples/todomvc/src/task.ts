@@ -53,8 +53,7 @@ export function update(state: State, signal: Signal) {
     }
 }
 
-export function render(state: State, emit: Emit<Signal>): VNode {
-    const { content, completed, editing } = state;
+export function render({ content, completed, editing }: State, emit: Emit<Signal>): VNode {
     return h('li', {
         class: {
             completed,
@@ -71,11 +70,11 @@ export function render(state: State, emit: Emit<Signal>): VNode {
                         checked: completed,
                     },
                     on: {
-                        change: () => { emit(keyed('complete' as 'complete', !completed)); },
+                        change: () => { emit(keyed('complete', !completed)); },
                     },
                 }),
-                h('label', { on: { dblclick: () => { emit(keyed('edit' as 'edit', true)); } } }, content),
-                h('button.destroy', { on: { click: () => { emit(keyed('remove' as 'remove', undefined)); } } }),
+                h('label', { on: { dblclick: () => { emit(keyed('edit', true)); } } }, content),
+                h('button.destroy', { on: { click: () => { emit(keyed('remove', undefined)); } } }),
             ]),
             h('input.edit', {
                 attrs: { value: content },
@@ -89,13 +88,13 @@ export function render(state: State, emit: Emit<Signal>): VNode {
                     }
                 },
                 on: {
-                    blur: () => { emit(keyed('edit' as 'edit', false)); },
-                    change: e => { emit(keyed('change' as 'change', (e.target as HTMLInputElement).value)); },
+                    blur: () => { emit(keyed('edit', false)); },
+                    change: e => { emit(keyed('change', (e.target as HTMLInputElement).value)); },
                     keydown: e => {
                         if (e.keyCode == KeyCode.Enter || e.keyCode == KeyCode.Escape) {
-                            emit(keyed('edit' as 'edit', false));
+                            emit(keyed('edit', false));
                         } else {
-                            emit(keyed('change' as 'change', (e.target as HTMLInputElement).value));
+                            emit(keyed('change', (e.target as HTMLInputElement).value));
                         }
                     },
                 }

@@ -1,6 +1,7 @@
-import { VNode, Emit, Component, Keyed, h, page, keyed_emit } from 'literium';
+import { VNode, Emit, Component, Keyed, h, page, key_emit } from 'literium';
 import * as Todo from './todo';
-import * as Json from 'literium-json';
+//import * as Json from 'literium-json';
+import { nat, str, bin, dict, list } from 'literium-json';
 import { StoreType, initStore, loadStore, moveStore, saveStore } from 'literium-runner';
 
 const styles = [{ link: `client_${process.env.npm_package_version}.min.css` }];
@@ -9,18 +10,19 @@ const settings = {
     viewport: "width=device-width, initial-scale=1"
 };
 
-export type Signal = Keyed<'todo', Todo.Signal>;
-
 export interface State {
     todo: Todo.State;
 }
 
-const store = initStore('todo', Json.dict({
-    tasks: Json.list(Json.dict({
-        content: Json.str,
-        completed: Json.bin,
+export type Signal
+    = Keyed<'todo', Todo.Signal>;
+
+const store = initStore('todo', dict({
+    tasks: list(dict({
+        content: str,
+        completed: bin,
     })),
-    filter: Json.nat
+    filter: nat
 }), Todo.save(Todo.create()));
 
 function create() {
@@ -39,8 +41,6 @@ function update(state: State, signal: Signal) {
     return state;
 }
 
-const emit_todo = keyed_emit('todo');
-
 function render(state: State, emit: Emit<Signal>) {
     return page({
         styles,
@@ -50,7 +50,7 @@ function render(state: State, emit: Emit<Signal>) {
         body: { class: { 'learn-bar': true } },
     }, [
             learn(),
-            Todo.render(state.todo, emit_todo(emit)),
+            Todo.render(state.todo, key_emit(emit, 'todo')),
             footer(),
         ]);
 }

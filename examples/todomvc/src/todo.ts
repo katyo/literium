@@ -1,4 +1,4 @@
-import { VNode, Emit, h, with_key, KeyCode, Keyed, keyed, keyed_emit } from 'literium';
+import { VNode, Emit, h, with_key, KeyCode, Keyed, keyed, key_emit } from 'literium';
 import * as Task from './task';
 
 export const enum Filter {
@@ -18,14 +18,13 @@ export interface State {
     filter: Filter;
 }
 
-export type WithTask = Keyed<'task', Keyed<number, Task.Signal>>;
-
 export type Signal
     = Keyed<'add', string>
     | Keyed<'complete', void>
     | Keyed<'filter', Filter>
     | Keyed<'remove', void>
-    | WithTask;
+    | Keyed<'task', Keyed<number, Task.Signal>>
+    ;
 
 export function create() {
     return {
@@ -88,12 +87,10 @@ export function update(state: State, signal: Signal) {
     return state;
 }
 
-const task_emit_wrap = keyed_emit('task' as 'task');
-
 export function render(state: State, emit: Emit<Signal>): VNode {
     const { filter, tasks } = state;
+    const task_emit = key_emit(emit, 'task');
     const incomplete = tasks.filter(task => !task._.completed);
-    const task_emit = task_emit_wrap(emit as Emit<WithTask>);
 
     return h('section.todoapp', [
         h('header.header', [
@@ -104,7 +101,7 @@ export function render(state: State, emit: Emit<Signal>): VNode {
                     keydown: e => {
                         const input = e.target as HTMLInputElement;
                         if (input.value != '' && e.keyCode == KeyCode.Enter) {
-                            emit(keyed('add' as 'add', input.value));
+                            emit(keyed('add', input.value));
                             input.value = '';
                         }
                     }
@@ -116,7 +113,7 @@ export function render(state: State, emit: Emit<Signal>): VNode {
             h('section.main', [
                 h('input#toggle-all.toggle-all', {
                     attrs: { type: "checkbox", checked: !incomplete.length }, props: { checked: !incomplete.length }, on: {
-                        click: () => { emit(keyed('complete' as 'complete', undefined)); }
+                        click: () => { emit(keyed('complete', undefined)); }
                     }
                 }),
                 h('label', { attrs: { for: "toggle-all" } }, "Mark all as complete"),
@@ -127,7 +124,7 @@ export function render(state: State, emit: Emit<Signal>): VNode {
                         .filter(task => filter == Filter.Active ? !task._.completed :
                             filter == Filter.Completed ? task._.completed : true)
                         .map(task => with_key(task.$, Task.render(task._,
-                            keyed_emit(task.$)(task_emit))))
+                            key_emit(task_emit, task.$))))
                 ]),
             ]),
             h('!', "This footer should hidden by default and shown when there are todos"),
@@ -138,17 +135,17 @@ export function render(state: State, emit: Emit<Signal>): VNode {
                 h('ul.filters', [
                     h('li', h('a', {
                         class: { selected: filter == Filter.All }, attrs: { href: "#/" }, on: {
-                            click: () => { emit(keyed('filter' as 'filter', Filter.All)); }
+                            click: () => { emit(keyed('filter', Filter.All)); }
                         }
                     }, "All")),
                     h('li', h('a', {
                         class: { selected: filter == Filter.Active }, attrs: { href: "#/active" }, on: {
-                            click: () => { emit(keyed('filter' as 'filter', Filter.Active)); }
+                            click: () => { emit(keyed('filter', Filter.Active)); }
                         }
                     }, "Active")),
                     h('li', h('a', {
                         class: { selected: filter == Filter.Completed }, attrs: { href: "#/completed" }, on: {
-                            click: () => { emit(keyed('filter' as 'filter', Filter.Completed)); }
+                            click: () => { emit(keyed('filter', Filter.Completed)); }
                         }
                     }, "Completed")),
                 ]),
@@ -156,7 +153,7 @@ export function render(state: State, emit: Emit<Signal>): VNode {
                 ...(tasks.length > incomplete.length ? [
                     h('button.clear-completed', {
                         on: {
-                            click: () => { emit(keyed('remove' as 'remove', undefined)); }
+                            click: () => { emit(keyed('remove', undefined)); }
                         }
                     }, `Clear completed (${tasks.length - incomplete.length})`)
                 ] : []),

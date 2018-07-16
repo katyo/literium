@@ -1,4 +1,4 @@
-import { Option, some, none, is_some, un_some, ok, err, tuple, keyed, un_some_or } from 'literium';
+import { Emit, Option, is_some, un_some, ok, err, tuple, keyed, un_some_or } from 'literium';
 import { RouterApi, SetRoute, NavApi, NavInit } from '../location';
 
 export function getBase({ location: { protocol, host } }: Window): string {
@@ -10,13 +10,13 @@ export function initNav(win: Window = window): NavInit {
 
     const pushState = history && history.pushState;
 
-    function getLocal(url: string): Option<string> {
+    function getLocal(url: string): string | void {
         const { protocol, host, path, hash } = parseUrl(url);
 
         return ((!protocol || protocol == location.protocol) &&
             (!host || host == location.host) &&
             (pushState || path == `${location.pathname}${location.search}`)) ?
-            some(`${path}${hash || ''}`) : none();
+            `${path}${hash || ''}` : undefined;
     }
 
     function getUrl(): string {
@@ -46,17 +46,16 @@ export function initNav(win: Window = window): NavInit {
                     path = new_path;
                     goPath(path);
                 }
-                setRoute(args, path);
-                return true;
             }
-            return false;
+            setRoute(args, path);
+            return is_some(args);
         }
 
         function goUrl(url: string) {
             const path = getLocal(url);
-            if (is_some(path)) {
-                if (setPath(un_some(path))) {
-                    goPath(un_some(path));
+            if (path != undefined) {
+                if (setPath(path)) {
+                    goPath(path);
                     return true;
                 }
             }
@@ -64,9 +63,7 @@ export function initNav(win: Window = window): NavInit {
         }
 
         return <NavApi<Signal>>{
-            create(fork) {
-                const [emit,] = fork();
-
+            create(emit: Emit<Signal>) {
                 setRoute = (args, path) => {
                     emit(keyed('route' as 'route', is_some(args) ? ok(tuple(un_some(args), path)) : err(path)) as Signal);
                 };

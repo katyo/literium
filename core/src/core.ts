@@ -1,12 +1,12 @@
 import { VNodeChild } from './vdom';
-import { Emit, Fork } from 'literium-base';
+import { Emit, Spawn } from 'literium-base';
 
 export interface Create<State, Signal> {
-    (fork: Fork<Signal>): State;
+    (emit: Emit<Signal>, spawn: Spawn): State;
 }
 
 export interface Update<State, Signal> {
-    (state: Readonly<State>, signal: Signal, fork: Fork<Signal>): State;
+    (state: Readonly<State>, signal: Signal, emit: Emit<Signal>, spawn: Spawn): State;
 }
 
 export interface Render<State, Signal> {

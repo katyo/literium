@@ -9,20 +9,23 @@ const render = init();
 
 stat(distdir, (err, stat) => {
     if (!err && stat.isDirectory()) {
-        store();
+        produce();
     } else {
         mkdir(distdir, err => {
             if (err) throw err;
-            store();
+            produce();
         });
     }
 });
 
-function store() {
-    const file = join(distdir, 'client.html');
-    render(main, html => {
+function produce() {
+    const name = 'client.html';
+    const file = join(distdir, name);
+    console.log(`generating ${name}`);
+    render(main)(([html,]) => {
         writeFile(file, html, err => {
-
+            if (err) console.log('error', err);
+            else console.log('ok');
         });
     });
 }

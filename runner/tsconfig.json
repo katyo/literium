@@ -17,7 +17,6 @@
     ]
   },
   "files": [
-    "src/sched.ts",
     "src/store.ts",
     "src/hasjs.ts",
     "src/http.ts",
