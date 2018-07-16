@@ -1,5 +1,6 @@
 import { VNode, Emit, h, with_key, KeyCode, Keyed, keyed, key_emit } from 'literium';
 import * as Task from './task';
+import { JSType, dict, list, nat } from 'literium-json';
 
 export const enum Filter {
     All,
@@ -7,10 +8,12 @@ export const enum Filter {
     Completed,
 }
 
-export interface Data {
-    tasks: Task.Data[];
-    filter: Filter;
-}
+export const json = dict({
+    tasks: list(Task.json),
+    filter: nat,
+});
+
+export type Data = JSType<typeof json>;
 
 export interface State {
     tasks: Keyed<number, Task.State>[];

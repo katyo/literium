@@ -1,7 +1,5 @@
 import { VNode, Emit, Component, Keyed, h, page, key_emit } from 'literium';
 import * as Todo from './todo';
-//import * as Json from 'literium-json';
-import { nat, str, bin, dict, list } from 'literium-json';
 import { StoreType, initStore, loadStore, moveStore, saveStore } from 'literium-runner';
 
 const styles = [{ link: `client_${process.env.npm_package_version}.min.css` }];
@@ -17,13 +15,7 @@ export interface State {
 export type Signal
     = Keyed<'todo', Todo.Signal>;
 
-const store = initStore('todo', dict({
-    tasks: list(dict({
-        content: str,
-        completed: bin,
-    })),
-    filter: nat
-}), Todo.save(Todo.create()));
+const store = initStore('todo', Todo.json, Todo.save(Todo.create()));
 
 function create() {
     const todo = Todo.load(loadStore(store));

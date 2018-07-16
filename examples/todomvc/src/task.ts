@@ -1,9 +1,12 @@
 import { VNode, Emit, h, KeyCode, Keyed, keyed } from 'literium';
+import { JSType, dict, str, bin } from 'literium-json';
 
-export interface Data {
-    content: string;
-    completed: boolean;
-}
+export const json = dict({
+    content: str,
+    completed: bin,
+});
+
+export type Data = JSType<typeof json>;
 
 export interface State extends Data {
     editing: boolean;
