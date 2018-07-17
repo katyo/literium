@@ -282,18 +282,18 @@ export function build_keyed<State>(routes: Routes<State>): (state: PairedAsKeyed
 
 export const str: ArgType<string> = {
     r: /^[^\/\?]+/,
-    p: map_some(decodeURIComponent),
-    b: mk_seq(some_type('string'), map_some(encodeURIComponent)),
+    p: /*@__PURE__*/map_some(decodeURIComponent),
+    b: /*@__PURE__*/mk_seq(some_type('string'), map_some(encodeURIComponent)),
 };
 
-const some_if_num = some_type('number');
-const filter_if_fin = then_some(some_if(isFinite));
-const map_to_str = map_some(any_to_str);
+const some_if_num = /*@__PURE__*/some_type('number');
+const filter_if_fin = /*@__PURE__*/then_some(some_if(isFinite));
+const map_to_str = /*@__PURE__*/map_some(any_to_str);
 
 export const num: ArgType<number> = {
     r: /^\-?\d+(?:\.\d+)?/,
-    p: mk_seq(map_some(parseFloat), filter_if_fin),
-    b: mk_seq(some_if_num, filter_if_fin, map_to_str),
+    p: /*@__PURE__*/mk_seq(map_some(parseFloat), filter_if_fin),
+    b: /*@__PURE__*/mk_seq(some_if_num, filter_if_fin, map_to_str),
 };
 
 export const und: ArgType<void> = {
@@ -309,16 +309,16 @@ const filter_if_int = filter_some((_: number) => !(_ % 1));
 
 export const int: ArgType<number> = {
     r: /^\-?\d+/,
-    p: mk_seq(map_parse_int, filter_if_fin, filter_if_int),
-    b: mk_seq(some_if_num, filter_if_fin, filter_if_int, map_to_str)
+    p: /*@__PURE__*/mk_seq(map_parse_int, filter_if_fin, filter_if_int),
+    b: /*@__PURE__*/mk_seq(some_if_num, filter_if_fin, filter_if_int, map_to_str)
 };
 
 const filter_if_pos = filter_some((_: number) => _ >= 0);
 
 export const nat: ArgType<number> = {
     r: /^\d+/,
-    p: mk_seq(map_parse_int, filter_if_fin, filter_if_int, filter_if_pos),
-    b: mk_seq(some_if_num, filter_if_fin, filter_if_int, filter_if_pos, map_to_str)
+    p: /*@__PURE__*/mk_seq(map_parse_int, filter_if_fin, filter_if_int, filter_if_pos),
+    b: /*@__PURE__*/mk_seq(some_if_num, filter_if_fin, filter_if_int, filter_if_pos, map_to_str)
 };
 
 // Type modifiers

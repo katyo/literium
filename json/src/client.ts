@@ -2,9 +2,9 @@ import { then_ok, map_err, ok_try, mk_seq, err_to_str, identity } from 'literium
 import { Type } from './types';
 import { str_check, re_check } from './check';
 
-const map_error = map_err(err_to_str);
+const map_error = /*@__PURE__*/map_err(err_to_str);
 
-export const utf8 = raw_type('utf8', undefined,
+export const utf8 = /*@__PURE__*/raw_type('utf8', undefined,
     (s: string) => {
         const d = unescape(encodeURIComponent(s)), b = u8_arr(d.length);
 
@@ -27,7 +27,7 @@ function get_hb(s: string, i: number): number {
     return c - (c < 58 ? 48 : c < 71 ? 55 : 87);
 }
 
-export const hex = raw_type('hex', /^(?:[A-Fa-f0-9]{2})+$/,
+export const hex = /*@__PURE__*/raw_type('hex', /^(?:[A-Fa-f0-9]{2})+$/,
     (s: string) => {
         const a = u8_arr(s.length >> 1);
 
@@ -51,7 +51,7 @@ export const hex = raw_type('hex', /^(?:[A-Fa-f0-9]{2})+$/,
     }
 );
 
-export const base64 = raw_type('base64', /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
+export const base64 = /*@__PURE__*/raw_type('base64', /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
     (s: string) => {
         const d = atob(s), b = u8_arr(d.length);
 

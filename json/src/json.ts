@@ -61,12 +61,12 @@ export const nat: Type<number> = {
 // DateTime types
 
 export const date_msec: Type<Date> = {
-    p: mk_seq(nat_check, map_ok(v => new Date(v))),
+    p: /*@__PURE__*/mk_seq(nat_check, map_ok(v => new Date(v))),
     b: v => v instanceof Date ? ok(v.getTime()) : err('!date'),
 }
 
 export const date_unix: Type<Date> = {
-    p: mk_seq(nat_check, map_ok(v => new Date(v * 1000))),
+    p: /*@__PURE__*/mk_seq(nat_check, map_ok(v => new Date(v * 1000))),
     b: v => v instanceof Date ? ok((v.getTime() / 1000) | 0) : err('!date'),
 }
 
@@ -216,7 +216,7 @@ export function tup(...ts: Type<any>[]): Type<any[]> {
 
 // Type modifiers
 
-const and_defined = map_err((e: string) => `${e} & defined`);
+const and_defined = /*@__PURE__*/map_err((e: string) => `${e} & defined`);
 
 export function opt<T>(t: Type<T>): Type<T | void> {
     return {

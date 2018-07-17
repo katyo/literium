@@ -2,13 +2,13 @@ import { then_ok, map_err, ok_try, mk_seq, err_to_str, identity } from 'literium
 import { Type } from './types';
 import { str_check, re_check } from './check';
 
-const map_error = map_err(err_to_str);
+const map_error = /*@__PURE__*/map_err(err_to_str);
 
-export const utf8 = raw_type('utf8');
+export const utf8 = /*@__PURE__*/raw_type('utf8');
 
-export const hex = raw_type('hex', /^(?:[A-Fa-f0-9]{2})+$/);
+export const hex = /*@__PURE__*/raw_type('hex', /^(?:[A-Fa-f0-9]{2})+$/);
 
-export const base64 = raw_type('base64', /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/);
+export const base64 = /*@__PURE__*/raw_type('base64', /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/);
 
 function raw_type(tn: string, re?: RegExp): Type<ArrayBuffer> {
     return {
