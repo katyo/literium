@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { writeFile, stat, mkdir } from 'fs';
+import { createWriteStream, stat, mkdir } from 'fs';
 import { init } from 'literium-runner/server';
 import { main } from './main';
 
@@ -23,9 +23,13 @@ function produce() {
     const file = join(distdir, name);
     console.log(`generating ${name}`);
     render(main)(([html,]) => {
-        writeFile(file, html, err => {
-            if (err) console.log('error', err);
-            else console.log('ok');
+        const stm = createWriteStream(file);
+        html.pipe(stm);
+        stm.on('error', err => {
+            console.log('error', err);
+        });
+        stm.on('end', () => {
+            console.log('ok');
         });
     });
 }

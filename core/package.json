@@ -50,6 +50,6 @@
   },
   "dependencies": {
     "literium-base": "^0.2",
-    "snabbdom-ng": "^0.7.1-ng.10"
+    "snabbdom-ng": "^0.7.1-ng.11"
   }
 }

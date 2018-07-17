@@ -3,11 +3,6 @@ import {
     attributesModule as attrsModule, classModule, styleModule, propsModule, eventListenersModule as eventModule
 } from 'snabbdom-ng';
 
-import {
-    htmlDomApi,
-    attributesApi as attrsApi, classApi, styleApi, propsApi, eventListenersApi as eventApi
-} from 'snabbdom-ng/es/client';
-
 import { VNode, VData, Done, Component, task_pool, deferred, dummy } from 'literium';
 
 export interface Run<State, Signal> {
@@ -16,12 +11,12 @@ export interface Run<State, Signal> {
 
 export function init<State, Signal>(doc: Document = document): Run<State, Signal> {
     const { read, patch } = init_<VData>([
-        classModule(classApi),
-        styleModule(styleApi),
-        attrsModule(attrsApi),
-        propsModule(propsApi),
-        eventModule(eventApi),
-    ], htmlDomApi(doc));
+        classModule(document),
+        styleModule(requestAnimationFrame),
+        attrsModule(),
+        propsModule(),
+        eventModule(document),
+    ], document);
 
     return ({ create, update, render }, elm = doc.documentElement) => {
         let frame: any;
