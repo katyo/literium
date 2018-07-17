@@ -40,6 +40,9 @@
   },
   "dependencies": {
     "literium-base": "^0.2",
-    "literium-json": "^0.2"
+    "literium-json": "^0.2",
+    "literium-router": "^0.2",
+    "literium-runner": "^0.2",
+    "literium": "^0.2"
   }
 }

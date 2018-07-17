@@ -12,15 +12,19 @@
     "importHelpers": true,
     "lib": [
       "es5",
-      "es2015.core"
+      "es2015.core",
+      "dom"
     ]
   },
   "files": [
     "src/stream.ts",
+    "src/body.ts",
     "src/http.ts",
     "src/resource.ts",
     "src/bind.ts",
     "src/server.ts",
+    "src/router.ts",
+    "src/runner.ts",
     "src/index.ts"
   ]
 }

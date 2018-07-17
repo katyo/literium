@@ -1,9 +1,8 @@
 import { Option, some, none, some_def, then_some, tuple, mk_seq, do_seq, then_result, future_async, map_future_ok, future_ok, then_future_err } from 'literium-base';
 import { extname, resolve, join } from 'path';
 import { open, createReadStream } from 'fs';
-import { ServerRequest } from 'http';
-import { FutureResponse, not_found, okay, with_body, StreamBody } from './http';
-import { Readable } from 'stream';
+import { StreamBody } from './body';
+import { Method, Request, Handler, not_found, okay, with_body } from './http';
 
 export type MimeMap = Record<string, string>;
 
@@ -25,9 +24,9 @@ export const mime_map: MimeMap = {
     '.map': 'application/octet-stream',
 };
 
-function resource_check(dir: string, mime_map: MimeMap): (req: ServerRequest) => Option<[string, string]> {
+function resource_check(dir: string, mime_map: MimeMap): (req: Request) => Option<[string, string]> {
     const root = resolve(dir);
-    return req => req.method == 'GET' && req.url ? do_seq(
+    return req => req.method == Method.Get && req.url ? do_seq(
         some_def(mime_map[extname(req.url)]),
         then_some(mime => {
             const path = join(root, req.url as string);
@@ -36,7 +35,7 @@ function resource_check(dir: string, mime_map: MimeMap): (req: ServerRequest) =>
     ) : none();
 }
 
-export function resource_handler(root: string, types: MimeMap = mime_map): (req: ServerRequest) => FutureResponse<Readable> {
+export function resource_handler(root: string, types: MimeMap = mime_map): Handler {
     return mk_seq(
         resource_check(root, types),
         then_result(([mime, path]) => do_seq(

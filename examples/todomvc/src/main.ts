@@ -67,7 +67,7 @@ const source_links: SourceLinksGroup[] = [
         links: [
             {
                 title: 'Source',
-                url: 'https://github.com/katyo/literium/tree/master/example/todomvc',
+                url: 'https://github.com/katyo/literium/tree/master/examples/todomvc',
             }
         ]
     }
