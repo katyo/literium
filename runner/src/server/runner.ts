@@ -7,7 +7,7 @@ import {
     attributesApi as attrsApi, classApi, styleApi
 } from 'snabbdom-ng/server';
 
-import { VNode, VData, Component, Emit, Future, tuple, task_pool } from 'literium';
+import { VNode, VData, Component, Emit, Future, tuple, task_pool, deferred } from 'literium';
 
 export interface Run<State, Signal> {
     (app: Component<State, Signal>): Future<[string, State]>;
@@ -25,7 +25,8 @@ export function init<State, Signal>(doctype: string = 'html', timeout?: number):
         let timer: any;
 
         const [spawn, run, kill] = task_pool(done);
-        let state = create(emit, spawn);
+        const deferred_emit = deferred(emit);
+        let state = create(deferred_emit, spawn);
         if (timeout) timer = setTimeout(done, timeout);
 
         run();
@@ -35,7 +36,7 @@ export function init<State, Signal>(doctype: string = 'html', timeout?: number):
         function emit(signal: Signal) {
             if (!final) {
                 //console.log('emit: ', signal);
-                state = update(state, signal, emit, spawn);
+                state = update(state, signal, deferred_emit, spawn);
             }
         }
 
@@ -50,7 +51,7 @@ export function init<State, Signal>(doctype: string = 'html', timeout?: number):
                 //console.log('done');
                 stop();
                 const doc = htmlDomApi.createElement('html');
-                const vnode = render(state, emit) as VNode;
+                const vnode = render(state, deferred_emit) as VNode;
                 patch(read(doc), vnode);
                 end(tuple(`<!DOCTYPE ${doctype}>${toHtml(doc)}`, state));
             }

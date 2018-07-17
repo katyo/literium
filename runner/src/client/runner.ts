@@ -8,7 +8,7 @@ import {
     attributesApi as attrsApi, classApi, styleApi, propsApi, eventListenersApi as eventApi
 } from 'snabbdom-ng/es/client';
 
-import { VNode, VData, Done, Component, task_pool, dummy } from 'literium';
+import { VNode, VData, Done, Component, task_pool, deferred, dummy } from 'literium';
 
 export interface Run<State, Signal> {
     (app: Component<State, Signal>, elm?: Node): Done;
@@ -26,9 +26,10 @@ export function init<State, Signal>(doc: Document = document): Run<State, Signal
     return ({ create, update, render }, elm = doc.documentElement) => {
         let frame: any;
         const [spawn, run, kill] = task_pool(dummy);
+        const deferred_emit = deferred(emit);
 
         let vnode = read(elm);
-        let state = create(emit, spawn);
+        let state = create(deferred_emit, spawn);
 
         view();
         run();
@@ -38,13 +39,13 @@ export function init<State, Signal>(doc: Document = document): Run<State, Signal
         function view() {
             frame = undefined;
             const vnode_ = vnode;
-            vnode = render(state, emit) as VNode;
+            vnode = render(state, deferred_emit) as VNode;
             patch(vnode_, vnode);
         }
 
         function emit(signal: Signal) {
             if (!frame) frame = requestAnimationFrame(view);
-            state = update(state, signal, emit, spawn);
+            state = update(state, signal, deferred_emit, spawn);
             //console.log('emit:', signal);
             //console.log('state:', state);
         }
