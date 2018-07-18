@@ -133,3 +133,7 @@ export function err_to_str(error: Error): string {
 export function str_to_err(message: string): Error {
     return new Error(message);
 }
+
+export function trace(message: string): typeof identity {
+    return <T>(_: T) => (console.log(message, _), _);
+}
