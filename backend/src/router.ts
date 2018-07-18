@@ -12,9 +12,9 @@ export interface RoutedHandler<Args> {
 
 export type RoutedHandlers<State> = { [RKey in keyof State]: { [MKey in Method]?: RoutedHandler<State[RKey]> } };
 
-export function routed_handler<State>(routes: Routes<State>, handlers: RoutedHandlers<State>): Handler {
+export function routed_handler<State>(routes: Routes<State>): (handlers: RoutedHandlers<State>) => Handler {
     const router_match = match_paired(routes);
-    return (req: Request) => {
+    return (handlers: RoutedHandlers<State>) => (req: Request) => {
         const state = router_match(req.url);
         if (state.$) {
             for (const name in state._) {

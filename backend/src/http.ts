@@ -1,6 +1,6 @@
 import { ServerResponse, ServerRequest } from 'http';
 import { Readable } from 'stream';
-import { Option, ok, is_ok, un_ok, Result, FutureResult, un_err, is_some, un_some, some_def } from 'literium-base';
+import { ok, is_ok, un_ok, Result, FutureResult, un_err, is_some, un_some } from 'literium-base';
 import { BodyType } from './body';
 
 export const enum Method {
@@ -16,7 +16,7 @@ export const enum Method {
 export interface Request {
     url: string;
     method: Method;
-    header(name: string): Option<string | string[]>;
+    header(name: string): string[];
     body<T>(typ: BodyType<T>): FutureResult<T, string>;
 }
 
@@ -24,7 +24,10 @@ function request_from_node(req: ServerRequest): Request {
     return {
         url: req.url || '',
         method: req.method as Method, /* TODO: Check method */
-        header: (name: string) => some_def(req.headers[name]),
+        header: (name: string) => {
+            const value = req.headers[name];
+            return typeof value == 'string' ? [value] : value || [];
+        },
         body: <T>(typ: BodyType<T>) => typ.p(req),
     }
 }
@@ -32,7 +35,7 @@ function request_from_node(req: ServerRequest): Request {
 export interface Response {
     status: number;
     message: string;
-    headers?: Record<string, string | string[]>;
+    headers?: Record<string, string[]>;
     body?: () => Result<Readable, string>;
 }
 
@@ -80,7 +83,7 @@ export function okay(): Response {
 }
 
 export function created(location: string): Response {
-    return { status: 201, message: "Created", headers: { location } };
+    return with_header('location', [location])({ status: 201, message: "Created" });
 }
 
 export function no_content(): Response {
@@ -103,7 +106,7 @@ export interface ResponseMod {
     (res: Response): Response;
 }
 
-export function with_header(name: string, value: string): ResponseMod {
+export function with_header(name: string, value: string[]): ResponseMod {
     return (res: Response) => {
         res.headers = res.headers || {};
         res.headers[name] = value;
@@ -113,8 +116,8 @@ export function with_header(name: string, value: string): ResponseMod {
 
 export function with_body<T>(body_type: BodyType<T>, body_data: T, mime_type?: string): ResponseMod {
     return (res: Response) => {
-        if (is_some(body_type.t)) with_header('content-type', un_some(body_type.t))(res);
-        if (mime_type) with_header('content-type', mime_type)(res);
+        if (is_some(body_type.t)) with_header('content-type', [un_some(body_type.t)])(res);
+        if (mime_type) with_header('content-type', [mime_type])(res);
         res.body = () => body_type.b(body_data);
         return res;
     };
