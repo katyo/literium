@@ -10,3 +10,6 @@ export * from './form';
 export * from './button';
 export * from './entry';
 export * from './combo';
+
+export * from './icon';
+export * from './utils';

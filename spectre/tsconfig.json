@@ -27,6 +27,8 @@
     "src/button.ts",
     "src/entry.ts",
     "src/combo.ts",
+    "src/icon.ts",
+    "src/utils.ts",
     "src/index.ts"
   ]
 }

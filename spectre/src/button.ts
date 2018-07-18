@@ -15,19 +15,21 @@ export interface ButtonProps {
     action?: boolean;
     circle?: boolean;
     loading?: boolean;
+    clear?: boolean;
     label?: VNodeChildren;
     href?: string;
     off?: boolean;
     click?: () => void;
 }
 
-export function button({ kind, size, float, valid, action, circle, loading, label, href, off, click }: ButtonProps): VNode {
+export function button({ kind, size, float, valid, action, circle, loading, clear, label, href, off, click }: ButtonProps): VNode {
     return h(href ? 'a' : 'button', {
         attrs: { disabled: off },
         class: {
             btn: true,
             [`btn-${kind}`]: asBool(kind),
             [`btn-${valid ? 'success' : 'error'}`]: valid != undefined,
+            [`btn-clear`]: asBool(clear),
             [`btn-${size}`]: asBool(size),
             [`float-${float}`]: asBool(float),
             'btn-action': asBool(action),
