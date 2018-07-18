@@ -1,9 +1,5 @@
-import { IncomingMessage } from 'http';
+import { Request } from './request';
 
-export function getLangs(req: IncomingMessage): ReadonlyArray<string> {
-    let header = req.headers['accept-language'] || '';
-    if (typeof header != 'string') {
-        header = header.join(',');
-    }
-    return header.split(/\s*,\s*/);
+export function getLangs(req: Request): ReadonlyArray<string> {
+    return req.header('accept-language').join(',').split(/\s*,\s*/);
 }

@@ -1,16 +1,17 @@
 import { Emit, is_some, un_some, ok, err, keyed, tuple, dummy, un_some_or } from 'literium';
 import { RouterApi, SetRoute, NavApi, NavInit } from '../location';
-import { IncomingMessage } from 'http';
+import { Request } from './request';
 
-export function getBase({ headers: { host } }: IncomingMessage): string {
+export function getBase(req: Request): string {
+    const host = req.header('host').join('');
     return `http://${host}`;
 }
 
-export function initNav(req: IncomingMessage, redir?: (url: string) => void): NavInit {
+export function initNav(req: Request, redir?: (url: string) => void): NavInit {
     return <Args, Signal extends SetRoute<Args>>({ match, build }: RouterApi<Args>) => {
         return <NavApi<Signal>>{
             create(emit: Emit<Signal>) {
-                let path = req.url || '';
+                let path = req.url;
                 const args = match(path);
                 if (is_some(args)) {
                     const new_path = un_some_or(path)(build(un_some(args)));

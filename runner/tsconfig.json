@@ -25,6 +25,7 @@
     "src/client/location.ts",
     "src/client/language.ts",
     "src/client.ts",
+    "src/server/request.ts",
     "src/server/runner.ts",
     "src/server/location.ts",
     "src/server/language.ts",
