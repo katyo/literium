@@ -1,0 +1,52 @@
+{
+  "name": "literium-spectre",
+  "version": "0.2.5",
+  "description": "Spectre.css-based widgets library for Literium web-framework.",
+  "main": "index.js",
+  "typings": "index.d.ts",
+  "module": "es/index.js",
+  "scripts": {
+    "compile": "npm run compile-es && npm run compile-js",
+    "clean": "npm run clean-es && npm run clean-js",
+    "compile-es": "tsc --outDir es --module es6",
+    "clean-es": "rm -rf es",
+    "compile-js": "tsc --outDir .",
+    "clean-js": "rm -rf *.d.ts *.js *.js.map",
+    "prepack": "npm run compile",
+    "postpack": "npm run clean"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/katyo/literium/tree/master/spectre"
+  },
+  "keywords": [
+    "widget",
+    "webui",
+    "style",
+    "css",
+    "spectre",
+    "spectre.css",
+    "render",
+    "virtual-dom",
+    "client",
+    "server",
+    "literium",
+    "framework",
+    "typescript",
+    "es6",
+    "es2015"
+  ],
+  "author": "K. <kayo@illumium.org>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/katyo/literium/issues"
+  },
+  "devDependencies": {
+    "@types/node": "^8",
+    "typescript": "^2.9"
+  },
+  "dependencies": {
+    "literium": "^0.2",
+    "spectre.css": "^0.5"
+  }
+}

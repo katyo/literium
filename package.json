@@ -45,6 +45,7 @@
     "core",
     "runner",
     "highlight",
+    "spectre",
     "backend",
     "examples/todomvc"
   ]

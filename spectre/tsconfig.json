@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "strictNullChecks": true,
+    "declaration": true,
+    "removeComments": false,
+    "noUnusedLocals": true,
+    "importHelpers": true,
+    "lib": [
+      "dom",
+      "es5",
+      "es2015.core"
+    ]
+  },
+  "files": [
+    "src/widget.ts",
+    "src/markup.ts",
+    "src/table.ts",
+    "src/tabs.ts",
+    "src/modal.ts",
+    "src/toast.ts",
+    "src/form.ts",
+    "src/button.ts",
+    "src/entry.ts",
+    "src/combo.ts",
+    "src/index.ts"
+  ]
+}
