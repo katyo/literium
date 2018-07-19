@@ -19,14 +19,16 @@ export interface ButtonProps {
     label?: VNodeChildren;
     href?: string;
     off?: boolean;
+    ddtg?: boolean; // dropdown toggle
     click?: () => void;
 }
 
-export function button({ kind, size, float, valid, action, circle, loading, clear, label, href, off, click }: ButtonProps): VNode {
+export function button({ kind, size, float, valid, action, circle, loading, clear, label, href, off, ddtg, click }: ButtonProps): VNode {
     return h(href ? 'a' : 'button', {
         attrs: {
             href,
-            disabled: off
+            disabled: off,
+            tabindex: ddtg ? 0 : undefined
         },
         class: {
             btn: true,
@@ -38,6 +40,7 @@ export function button({ kind, size, float, valid, action, circle, loading, clea
             'btn-action': asBool(action),
             circle: asBool(circle),
             loading: asBool(loading),
+            'dropdown-toggle': asBool(ddtg),
         },
         on: { click: click as () => void }
     }, label);
