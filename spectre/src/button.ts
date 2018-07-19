@@ -24,7 +24,10 @@ export interface ButtonProps {
 
 export function button({ kind, size, float, valid, action, circle, loading, clear, label, href, off, click }: ButtonProps): VNode {
     return h(href ? 'a' : 'button', {
-        attrs: { disabled: off },
+        attrs: {
+            href,
+            disabled: off
+        },
         class: {
             btn: true,
             [`btn-${kind}`]: asBool(kind),
