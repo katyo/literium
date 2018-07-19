@@ -2,6 +2,7 @@ export * from './widget';
 export * from './markup';
 export * from './table';
 
+export * from './navbar';
 export * from './tabs';
 export * from './modal';
 export * from './toast';
