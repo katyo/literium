@@ -1,8 +1,8 @@
 export interface Keyed<Key extends keyof any, Value> { $: Key; _: Value; }
 
-export type KeyedKeys<Enum> = Enum extends Keyed<infer Key, infer Value> ? Key : never;
+export type KeyedKeys<Enum> = Enum extends Keyed<infer Key, infer Value> ? Key : Enum extends Keyed<infer Key, infer Value>[] ? Key : never;
 
-export type KeyedValue<Enum, Key extends keyof any> = Enum extends Keyed<Key, infer Value> ? Value : never;
+export type KeyedValue<Enum, Key extends keyof any> = Enum extends Keyed<Key, infer Value> ? Value : Enum extends Keyed<Key, infer Value>[] ? Value : never;
 
 export type KeyedAsPaired<Enum> = { [K in KeyedKeys<Enum>]: KeyedValue<Enum, K>; };
 
