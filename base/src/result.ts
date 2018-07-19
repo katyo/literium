@@ -58,9 +58,12 @@ export function filter_err<Value, Error>(fn: (_: Error) => Option<Value>): (_: R
     return then_err((_: Error) => ok_some(_)(fn(_)));
 }
 
-export function seek_ok<Value, NewValue, Error>(fn: (_: Value, i: number) => Result<NewValue, Error>, e: Error): (_: Value[]) => Result<NewValue, Error> {
+export function seek_ok<Value, NewValue, Error>(fn: (_: Value, i: number) => Result<NewValue, Error>, e: Error, reverse?: true): (_: Value[]) => Result<NewValue, Error> {
     return (_: Value[]) => {
-        for (let i = 0; i < _.length; i++) {
+        const f = reverse ? _.length - 1 : 0;
+        const t = reverse ? -1 : _.length;
+        const s = reverse ? -1 : 1;
+        for (let i = f; i != t; i += s) {
             const r = fn(_[i], i);
             if (is_ok(r)) return r;
         }
@@ -68,9 +71,12 @@ export function seek_ok<Value, NewValue, Error>(fn: (_: Value, i: number) => Res
     };
 }
 
-export function seek_err<Value, NewValue, Error>(fn: (_: Value, i: number) => Result<NewValue, Error>, v: NewValue): (_: Value[]) => Result<NewValue, Error> {
+export function seek_err<Value, NewValue, Error>(fn: (_: Value, i: number) => Result<NewValue, Error>, v: NewValue, reverse?: true): (_: Value[]) => Result<NewValue, Error> {
     return (_: Value[]) => {
-        for (let i = 0; i < _.length; i++) {
+        const f = reverse ? _.length - 1 : 0;
+        const t = reverse ? -1 : _.length;
+        const s = reverse ? -1 : 1;
+        for (let i = f; i != t; i += s) {
             const r = fn(_[i], i);
             if (is_err(r)) return r;
         }

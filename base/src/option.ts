@@ -54,9 +54,12 @@ export function filter_some<Value>(fn: (_: Value) => boolean): (_: Option<Value>
     return then_some((_: Value) => fn(_) ? some(_) : _none as Option<Value>);
 }
 
-export function seek_some<Value, NewValue>(fn: (_: Value, i: number) => Option<NewValue>): (_: Value[]) => Option<NewValue> {
+export function seek_some<Value, NewValue>(fn: (_: Value, i: number) => Option<NewValue>, reverse?: true): (_: Value[]) => Option<NewValue> {
     return (_: Value[]) => {
-        for (let i = 0; i < _.length; i++) {
+        const f = reverse ? _.length - 1 : 0;
+        const t = reverse ? -1 : _.length;
+        const s = reverse ? -1 : 1;
+        for (let i = f; i != t; i += s) {
             const r = fn(_[i], i);
             if (is_some(r)) return r;
         }
