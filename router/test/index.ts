@@ -13,6 +13,7 @@ const {
     blog_by_tag_and_opt_sort_by_date,
     blog_list,
     blog_list_alt,
+    blog_list_page,
     blog_search,
     author_by_id_or_name,
     author_by_id_or_name_alt,
@@ -91,6 +92,9 @@ describe('route', () => {
                 dse(match(author_by_id_or_name)('/author/kay/info'), some({ author: 'kay' }));
                 dse(match(author_by_id_or_name_alt)('/author/123/info'), some({ id: 123 }));
                 dse(match(author_by_id_or_name_alt)('/author/kay/info'), some({ name: 'kay' }));
+                dse(match(blog_list_page)('/blog/list/1'), some({ page: 1 }));
+                dse(match(blog_list_page)('/blog/list/0'), some({ page: 0 }));
+                dse(match(blog_list_page)('/blog/list'), some({ page: 1 }));
             });
         });
 
@@ -169,6 +173,9 @@ describe('route', () => {
             dse(build(author_by_id_or_name)({ author: 'kay' }), some('/author/kay/info'));
             dse(build(author_by_id_or_name_alt)({ id: 123 }), some('/author/123/info'));
             dse(build(author_by_id_or_name_alt)({ name: 'kay' }), some('/author/kay/info'));
+            dse(build(blog_list_page)({ page: 0 }), some('/blog/list/0'));
+            dse(build(blog_list_page)({ page: 1 }), some('/blog/list/1'));
+            dse(build(blog_list_page)({ page: 2 }), some('/blog/list/2'));
         });
 
         it('query args', () => {

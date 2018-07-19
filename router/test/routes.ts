@@ -1,5 +1,5 @@
 import { some, none, then_some } from 'literium-base';
-import { ArgType, dir, arg, query, alt, seq, str, nat, opt, def } from '../src/router';
+import { ArgType, dir, arg, query, alt, seq, str, nat, opt, def, ins } from '../src/router';
 
 export const enum Order { Asc, Desc }
 
@@ -29,6 +29,11 @@ const blog_list = seq(blog, alt(
 ));
 const blog_list_alt = seq(blog, query({ offset: opt(nat), count: def(nat, 10) }));
 
+const blog_list_page = seq(blog, dir('/list'), alt(
+    seq(dir('/'), arg({ page: nat })),
+    ins({ page: 1 }),
+));
+
 const blog_search = seq(blog, dir('/search'), query({ phrase: str }));
 
 const author_by_id_or_name = seq(root, dir('author/'), arg({ author: alt(nat, str) }), dir('/info'));
@@ -44,6 +49,7 @@ export const routes = {
     blog_by_tag_and_opt_sort_by_date,
     blog_list,
     blog_list_alt,
+    blog_list_page,
     blog_search,
     author_by_id_or_name,
     author_by_id_or_name_alt,
