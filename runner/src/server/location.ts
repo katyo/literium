@@ -7,7 +7,7 @@ export function getBase(req: Request): string {
     return `http://${host}`;
 }
 
-export function initNav(req: Request, redir?: (url: string) => void): NavInit {
+export function initNav(req: Request, redir: (url: string) => void = dummy): NavInit {
     return <Args, Signal extends SetRoute<Args>>({ match, build }: RouterApi<Args>) => {
         return <NavApi<Signal>>{
             create(emit: Emit<Signal>) {
@@ -17,12 +17,12 @@ export function initNav(req: Request, redir?: (url: string) => void): NavInit {
                     const new_path = un_some_or(path)(build(un_some(args)));
                     if (new_path != path) {
                         path = new_path;
-                        redir!(path);
+                        redir(path);
                     }
                 }
                 emit(keyed('route' as 'route', is_some(args) ? ok(tuple(un_some(args), path)) : err(path)) as Signal);
             },
-            direct: redir || dummy,
+            direct: redir,
             handle: dummy,
         };
     };
