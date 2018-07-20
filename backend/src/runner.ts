@@ -4,18 +4,19 @@ import { init } from 'literium-runner/server';
 import { StreamBody } from './body';
 import { Method, Request, Response, Handler, okay, not_found, with_body } from './http';
 
-export interface RunnerOptions<State, Signal> {
-    main(req: Request): Component<State, Signal>;
+export interface RunnerOptions<Props, State, Signal> {
+    pre(req: Request): Props;
+    main: Component<Props, State, Signal>;
     post?(state: State): Option<Response>;
     doctype?: string;
     timeout?: number;
 }
 
-export function runner_handler<State, Signal>({ main, post, doctype, timeout }: RunnerOptions<State, Signal>): Handler {
-    const render = init<State, Signal>(doctype, timeout);
+export function runner_handler<Props, State, Signal>({ pre, main, post, doctype, timeout }: RunnerOptions<Props, State, Signal>): Handler {
+    const render = init<Props, State, Signal>(doctype, timeout)(main);
 
     return req => req.method == Method.Get && req.url ? do_seq(
-        render(main(req)),
+        render(pre(req)),
         map_future(([html, state]) => do_seq(
             some_def(post),
             then_some(post => post(state)),

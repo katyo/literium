@@ -22,7 +22,7 @@ function produce() {
     const name = 'client.html';
     const file = join(distdir, name);
     console.log(`generating ${name}`);
-    render(main)(([html,]) => {
+    render(main)({ store: 'none' })(([html,]) => {
         const stm = createWriteStream(file);
         html.pipe(stm);
         stm.on('error', err => {

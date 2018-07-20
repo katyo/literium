@@ -5,11 +5,15 @@ import {
 
 import { VNode, VData, Done, Component, task_pool, deferred, dummy } from 'literium';
 
-export interface Run<State, Signal> {
-    (app: Component<State, Signal>, elm?: Node): Done;
+export interface Init {
+    <Props, State, Signal>(app: Component<Props, State, Signal>): Run<Props, State, Signal>;
 }
 
-export function init<State, Signal>(doc: Document = document): Run<State, Signal> {
+export interface Run<Props, State, Signal> {
+    (props: Props, elm?: Node): Done;
+}
+
+export function init(doc: Document = document): Init {
     const { read, patch } = init_<VData>([
         classModule(document),
         styleModule(requestAnimationFrame),
@@ -18,13 +22,13 @@ export function init<State, Signal>(doc: Document = document): Run<State, Signal
         eventModule(document),
     ], document);
 
-    return ({ create, update, render }, elm = doc.documentElement) => {
+    return <Props, State, Signal>({ create, update, render }: Component<Props, State, Signal>) => (props: Props, elm: Node = doc.documentElement) => {
         let frame: any;
         const [spawn, run, kill] = task_pool(dummy);
         const deferred_emit = deferred(emit);
 
         let vnode = read(elm);
-        let state = create(deferred_emit, spawn);
+        let state = create(props, deferred_emit, spawn);
 
         view();
         run();
@@ -34,13 +38,13 @@ export function init<State, Signal>(doc: Document = document): Run<State, Signal
         function view() {
             frame = undefined;
             const vnode_ = vnode;
-            vnode = render(state, deferred_emit) as VNode;
+            vnode = render(props, state, deferred_emit) as VNode;
             patch(vnode_, vnode);
         }
 
         function emit(signal: Signal) {
             if (!frame) frame = requestAnimationFrame(view);
-            state = update(state, signal, deferred_emit, spawn);
+            state = update(props, state, signal, deferred_emit, spawn);
             //console.log('emit:', signal);
             //console.log('state:', state);
         }

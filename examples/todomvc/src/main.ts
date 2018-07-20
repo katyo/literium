@@ -1,6 +1,6 @@
 import { VNode, Emit, Component, Keyed, h, page, key_emit } from 'literium';
 import * as Todo from './todo';
-import { StoreType, initStore, loadStore, moveStore, saveStore } from 'literium-runner';
+import { StoreCell, StoreType, initStore, loadStore, moveStore, saveStore } from 'literium-runner';
 
 const styles = [{ link: `client_${process.env.npm_package_version}.min.css` }];
 const scripts = [{ link: `client_${process.env.npm_package_version}.min.js` }];
@@ -8,32 +8,36 @@ const settings = {
     viewport: "width=device-width, initial-scale=1"
 };
 
+export interface Props {
+    store: string;
+}
+
 export interface State {
+    store: StoreCell<Todo.Data>;
     todo: Todo.State;
 }
 
 export type Signal
     = Keyed<'todo', Todo.Signal>;
 
-const store = initStore('todo', Todo.json, Todo.save(Todo.create()));
-
-function create() {
+function create({ store: name }: Props) {
+    const store = initStore(name, Todo.json, Todo.save(Todo.create()));
     const todo = Todo.load(loadStore(store));
-    return { todo };
+    return { store, todo };
 }
 
-function update(state: State, signal: Signal) {
+function update(props: Props, state: State, signal: Signal) {
     switch (signal.$) {
         case 'todo':
             const todo = Todo.update(state.todo, signal._);
-            moveStore(store, StoreType.Persist);
-            saveStore(store, Todo.save(todo));
+            moveStore(state.store, StoreType.Persist);
+            saveStore(state.store, Todo.save(todo));
             return { ...state, todo };
     }
     return state;
 }
 
-function render(state: State, emit: Emit<Signal>) {
+function render(props: Props, state: State, emit: Emit<Signal>) {
     return page({
         styles,
         scripts,
@@ -47,7 +51,7 @@ function render(state: State, emit: Emit<Signal>) {
         ]);
 }
 
-export const main: Component<State, Signal> = { create, update, render };
+export const main: Component<Props, State, Signal> = { create, update, render };
 
 interface SourceLink {
     title: string;
