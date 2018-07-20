@@ -1,6 +1,7 @@
 export * from './widget';
 export * from './markup';
 export * from './table';
+export * from './grid';
 
 export * from './navbar';
 export * from './menu';

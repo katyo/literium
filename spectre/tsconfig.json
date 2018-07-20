@@ -20,6 +20,7 @@
     "src/widget.ts",
     "src/markup.ts",
     "src/table.ts",
+    "src/grid.ts",
 
     "src/navbar.ts",
     "src/menu.ts",
