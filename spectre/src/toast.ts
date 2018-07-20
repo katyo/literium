@@ -22,7 +22,7 @@ export function toast({ active, kind, close, content }: ToastProps): VNode {
     }, [
             ...(close ? [h('button', {
                 class: { btn: true, 'btn-clear': true, 'float-right': true },
-                on: { click: close as () => void }
+                on: { click: close }
             })] : []),
             h('div', content),
         ]);

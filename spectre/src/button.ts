@@ -42,6 +42,6 @@ export function button({ kind, size, float, valid, action, circle, loading, clea
             loading: asBool(loading),
             'dropdown-toggle': asBool(ddtg),
         },
-        on: { click: click as () => void }
+        on: { click }
     }, label);
 }

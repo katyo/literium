@@ -23,7 +23,7 @@ export function entry(props: EntryProps): VNode {
     const { kind, size, id, ghost, start, end, change, focus, blur, off } = props;
     let { value } = props;
 
-    const send = (e: KeyboardEvent, fn: (value: string, start: number, end: number) => void) => {
+    const send = (e: Event, fn: (value: string, start: number, end: number) => void) => {
         const elm = e.target as HTMLInputElement;
         fn(elm.value, elm.selectionStart || 0, elm.selectionEnd || 0);
     };
@@ -43,10 +43,10 @@ export function entry(props: EntryProps): VNode {
             },
             props: { value, selectionStart: start, selectionEnd: end },
             on: {
-                input: on_input as () => void,
-                change: on_input as () => void,
-                focus: (focus ? (e: KeyboardEvent) => { send(e, focus); } : undefined) as () => void,
-                blur: (blur ? (e: KeyboardEvent) => { send(e, blur); } : undefined) as () => void,
+                input: on_input,
+                change: on_input,
+                focus: focus ? (e: Event) => { send(e, focus); } : undefined,
+                blur: blur ? (e: Event) => { send(e, blur); } : undefined,
             }
         })
     ]);

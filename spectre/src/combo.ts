@@ -46,7 +46,7 @@ export function combo<Key extends keyof any>(props: ComboProps<Key>): VNode {
                 disabled: off,
                 multiple: multi || empty,
             },
-            on: { change: update as () => void }
+            on: { change: update }
         }, keys.map((key, index) => {
             const selected = values ? values.indexOf(key) != -1 : undefined;
 
