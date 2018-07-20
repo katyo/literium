@@ -67,6 +67,10 @@ export function do_seq<S>(_: any, ...fs: ((_: any) => any)[]): any {
     return mk_seq.apply(undefined, fs)(_);
 }
 
+const defer = typeof setImmediate != 'undefined' ?
+    [setImmediate, clearImmediate] :
+    [((f: () => void) => setTimeout(f, 0)), clearTimeout];
+
 export function deferred(fn: () => void): () => () => void;
 export function deferred<T1>(fn: (a1: T1) => void): (a1: T1) => () => void;
 export function deferred<T1, T2>(fn: (a1: T1, a2: T2) => void): (a1: T1, a2: T2) => () => void;
@@ -79,11 +83,11 @@ export function deferred<T1, T2, T3, T4, T5, T6, T7, T8>(fn: (a1: T1, a2: T2, a3
 export function deferred<T1, T2, T3, T4, T5, T6, T7, T8, T9>(fn: (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9) => void): (a1: T1, a2: T2, a3: T3, a4: T4, a5: T5, a6: T6, a7: T7, a8: T8, a9: T9) => () => void;
 export function deferred(fn: (...args: any[]) => void): (...args: any[]) => () => void {
     return function(...args: any[]) {
-        const timer = setImmediate(() => {
+        const timer = defer[0](() => {
             fn(...args);
         });
         return () => {
-            clearImmediate(timer);
+            defer[1](timer);
         };
     };
 }
