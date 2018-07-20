@@ -1,3 +1,6 @@
+import { Keyed, keyed, do_seq, some, some_def, map_some, then_none, then_some } from 'literium';
+import { RouterApi } from './location';
+
 export interface Locale<Lang extends string> {
     lang: Lang;
     title: string;
@@ -36,4 +39,23 @@ export interface SetLang {
 
 export function setLang<Lang extends string, State extends HasLang<Lang>>(state: State, { lang }: SetLang): State {
     return { ...(state as {}), lang } as State;
+}
+
+export function langPrefix<Lang extends string, Args>({ match, build }: RouterApi<Args>, locales: Locale<Lang>[], defLang: Lang): RouterApi<Keyed<Lang, Args>> {
+    const re = new RegExp('^\\/(' + locales.map(({ lang }) => lang).join('|') + ')(.*)$');
+    return {
+        match: path => do_seq(
+            re.exec(path),
+            some_def,
+            then_none(() => some(['', defLang, path])),
+            then_some(([_, lang, path]) => do_seq(
+                match(path),
+                map_some(args => keyed(lang as Lang, args))
+            ))
+        ),
+        build: ({ $: lang, _: args }) => do_seq(
+            build(args),
+            map_some(path => `/${lang || defLang}${path}`)
+        )
+    };
 }
