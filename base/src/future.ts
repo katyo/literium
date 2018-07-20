@@ -164,19 +164,19 @@ export function task_pool(done: Done): [Spawn, /* run */Done, /* kill */Done] {
     let index = 0;
     const drops: Record<number, Done> = {};
     function emit(index: number): Done {
-        return () => {
+        return deferred(() => {
             delete drops[index];
             if (!--tasks) done();
-        };
+        });
     }
     return [
         (future: Future<any>) => {
             ++tasks; ++index;
             drops[index] = future(emit(index));
         },
-        () => {
+        deferred(() => {
             if (!tasks) done();
-        },
+        }),
         () => {
             for (const index in drops) drops[index]();
         }
