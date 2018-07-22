@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "literium": "^0.2",
-    "literium-backend": "^0.2",
+    "literium-node": "^0.2",
     "literium-json": "^0.2",
     "literium-runner": "^0.2",
     "raf-polyfill": "^1",

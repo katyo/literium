@@ -1,7 +1,7 @@
 {
-  "name": "literium-backend",
+  "name": "literium-node",
   "version": "0.2.5",
-  "description": "NodeJS backend support functions for Literium WEB-framework.",
+  "description": "NodeJS support functions for Literium WEB-framework.",
   "main": "index.js",
   "typings": "index.d.ts",
   "module": "es/index.js",
@@ -17,11 +17,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/katyo/literium/tree/master/backend"
+    "url": "https://github.com/katyo/literium/tree/master/node"
   },
   "keywords": [
+    "node",
+    "nodejs",
     "backend",
-    "client",
     "server",
     "literium",
     "framework",
