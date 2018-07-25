@@ -103,8 +103,8 @@ export type NativeBody = NativeType[keyof NativeType];
 
 export interface BodyType<T, N extends DataType> {
     t: N; // native type
-    p: (d: NativeType[N]) => Result<T, Error>; // parse (native to user type)
-    b: (d: T) => Result<NativeType[N], Error>; // build (user type to native)
+    p: (d: NativeType[N]) => Result<T, string>; // parse (native to user type)
+    b: (d: T) => Result<NativeType[N], string>; // build (user type to native)
 }
 
 export type FromBodyType<B> = B extends BodyType<infer T, infer N> ? T : never;

@@ -1,7 +1,7 @@
 export { Method, Status, Headers, DataType, BodyType, NativeBody, NativeType } from './types';
 export { JsonBody } from './json';
 
-import { Emit, FutureResult, Result, ok, err, do_seq, map_ok, then_future_ok, future, dummy, deferred } from 'literium-base';
+import { Emit, FutureResult, ok, err, do_seq, map_ok, map_err, then_future_ok, future, dummy, deferred, str_to_err } from 'literium-base';
 import { Method, Status, DataType, BodyType, NativeBody, Headers, FromBodyType } from './types';
 import { request as backend } from './server';
 
@@ -92,8 +92,10 @@ export type GenericFutureResponse = FutureResult<GenericResponse, Error>;
 export const request = ((req: GenericRequest) =>
     do_seq(
         // parse request body
-        future((uploadable(req.method) && req.request ? req.request.b(req.body) :
-            ok(undefined)) as Result<NativeBody | void, Error>),
+        future((uploadable(req.method) && req.request ? do_seq(
+            req.request.b(req.body),
+            map_err(str_to_err),
+        ) : ok<NativeBody | void, Error>(undefined))),
         // run request
         then_future_ok(req_body => <GenericFutureResponse>(emit => {
             let final = false;
@@ -126,6 +128,7 @@ export const request = ((req: GenericRequest) =>
         then_future_ok(res => future(downloadable(req.method) && req.response ?
             do_seq(
                 req.response.p(res.body),
+                map_err(str_to_err),
                 map_ok(body => (res.body = body, res))
             ) : ok(res)))
     )) as RequestApi;
