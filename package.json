@@ -47,6 +47,7 @@
     "highlight",
     "spectre",
     "node",
+    "backend",
     "frontend",
     "examples/todomvc"
   ]
