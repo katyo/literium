@@ -68,9 +68,13 @@ export interface RequestApi {
     <ReqBody, ReqNType extends DataType, ReqData extends BodyType<ReqBody, ReqNType>, ResBody, ResNType extends DataType, ResData extends BodyType<ResBody, ResNType>>(request: RequestWithBody<MethodWithRequestBody, ReqBody, ReqData> & WithResponseBody<ResBody, ResData>): FutureResponseWithBody<FromBodyType<ResData>>;
 }
 
-type NativeBodyType = BodyType<any, DataType>;
+export interface RequestWrap {
+    (r: RequestApi): RequestApi;
+}
 
-interface GenericRequest {
+export type NativeBodyType = BodyType<any, DataType>;
+
+export interface GenericRequest {
     method: Method;
     url: string;
     headers?: Headers;
@@ -80,7 +84,7 @@ interface GenericRequest {
     response?: NativeBodyType;
 }
 
-interface GenericResponse {
+export interface GenericResponse {
     status: Status;
     message: string;
     headers: Headers;
@@ -139,4 +143,26 @@ function uploadable(method: Method): boolean {
 
 function downloadable(method: Method): boolean {
     return method != Method.Head && method != Method.Delete && method != Method.Options;
+}
+
+export function wrap_request(fn: (r: GenericRequest) => FutureResult<GenericRequest, Error>): RequestWrap {
+    return (request_fn: RequestApi) => {
+        return ((request: GenericRequest) => {
+            return do_seq(
+                fn(request),
+                then_future_ok(request_fn as (req: GenericRequest) => GenericFutureResponse)
+            );
+        }) as RequestApi;
+    };
+}
+
+export function wrap_response(fn: (r: GenericResponse) => FutureResult<GenericResponse, Error>): RequestWrap {
+    return (request_fn: RequestApi) => {
+        return ((request: GenericRequest) => {
+            return do_seq(
+                (request_fn as (req: GenericRequest) => GenericFutureResponse)(request),
+                then_future_ok(fn)
+            );
+        }) as RequestApi;
+    };
 }
