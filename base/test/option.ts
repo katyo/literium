@@ -8,8 +8,8 @@ import {
     un_some,
     un_some_or,
     un_some_else,
-    ok_some, err_some,
-    a_some, b_some,
+    ok_some_or, err_some_or,
+    a_some_or, b_some_or,
 
     ok, err,
     a, b,
@@ -71,23 +71,23 @@ describe('option', () => {
         dse(un_some_else(() => false)(none()), false);
     });
 
-    it('ok_some', () => {
-        dse(ok_some('unknown')(some(123)), ok(123));
-        dse(ok_some('unknown')(none()), err('unknown'));
+    it('ok_some_or', () => {
+        dse(ok_some_or('unknown')(some(123)), ok(123));
+        dse(ok_some_or('unknown')(none()), err('unknown'));
     });
 
-    it('err_some', () => {
-        dse(err_some(123)(some('error')), err('error'));
-        dse(err_some(123)(none()), ok(123));
+    it('err_some_', () => {
+        dse(err_some_or(123)(some('error')), err('error'));
+        dse(err_some_or(123)(none()), ok(123));
     });
 
-    it('a_some', () => {
-        dse(a_some('unknown')(some(123)), a(123));
-        dse(a_some('unknown')(none()), b('unknown'));
+    it('a_some_or', () => {
+        dse(a_some_or('unknown')(some(123)), a(123));
+        dse(a_some_or('unknown')(none()), b('unknown'));
     });
 
-    it('b_some', () => {
-        dse(b_some(123)(some('unknown')), b('unknown'));
-        dse(b_some(123)(none()), a(123));
+    it('b_some_or', () => {
+        dse(b_some_or(123)(some('unknown')), b('unknown'));
+        dse(b_some_or(123)(none()), a(123));
     });
 });

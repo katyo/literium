@@ -1,5 +1,5 @@
 import { JSTypeMap } from './helper';
-import { Option, none, ok_some, err_some } from './option';
+import { Option, none, ok_some_or, err_some_or } from './option';
 import { Either } from './either';
 
 export interface Ok<Value> { $: 1, _: Value }
@@ -51,11 +51,11 @@ export function map_err<Error, NewError>(fn: (_: Error) => NewError): <Value>(re
 }
 
 export function filter_ok<Value, Error>(fn: (_: Value) => Option<Error>): (_: Result<Value, Error>) => Result<Value, Error> {
-    return then_ok((_: Value) => err_some(_)(fn(_)));
+    return then_ok((_: Value) => err_some_or(_)(fn(_)));
 }
 
 export function filter_err<Value, Error>(fn: (_: Error) => Option<Value>): (_: Result<Value, Error>) => Result<Value, Error> {
-    return then_err((_: Error) => ok_some(_)(fn(_)));
+    return then_err((_: Error) => ok_some_or(_)(fn(_)));
 }
 
 export function seek_ok<Value, NewValue, Error>(fn: (_: Value, i: number) => Result<NewValue, Error>, e: Error, reverse?: true): (_: Value[]) => Result<NewValue, Error> {
@@ -155,7 +155,7 @@ export function b_ok<A, B>(res: Result<B, A>): Either<A, B> {
 }
 
 export function err_if<Value, Error>(fn: (_: Value) => Option<Error>): (_: Value) => Result<Value, Error> {
-    return (_: Value) => err_some(_)(fn(_));
+    return (_: Value) => err_some_or(_)(fn(_));
 }
 
 export function ok_type<Type extends keyof JSTypeMap>(t: Type): <Value>(_: Value) => Result<JSTypeMap[Type], string> {

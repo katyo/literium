@@ -98,20 +98,52 @@ export function un_some_else<Value>(def: () => Value): (_: Option<Value>) => Val
     return (opt: Option<Value>) => opt.$ ? opt._ : def();
 }
 
-export function ok_some<Error>(e: Error): <Value>(_: Option<Value>) => Result<Value, Error> {
+export function ok_some<Value>(o: Option<Value>): Result<Value, void> {
+    return o.$ ? { $: 1, _: o._ } : { $: 0, _: undefined };
+}
+
+export function ok_some_or<Error>(e: Error): <Value>(_: Option<Value>) => Result<Value, Error> {
     return <Value>(o: Option<Value>) => o.$ ? { $: 1, _: o._ } : { $: 0, _: e };
 }
 
-export function err_some<Value>(v: Value): <Error>(_: Option<Error>) => Result<Value, Error> {
+export function ok_some_else<Error>(fn: () => Error): <Value>(_: Option<Value>) => Result<Value, Error> {
+    return <Value>(o: Option<Value>) => o.$ ? { $: 1, _: o._ } : { $: 0, _: fn() };
+}
+
+export function err_some<Error>(o: Option<Error>): Result<void, Error> {
+    return o.$ ? { $: 0, _: o._ } : { $: 1, _: undefined };
+}
+
+export function err_some_or<Value>(v: Value): <Error>(_: Option<Error>) => Result<Value, Error> {
     return <Error>(o: Option<Error>) => o.$ ? { $: 0, _: o._ } : { $: 1, _: v };
 }
 
-export function a_some<B>(b: B): <A>(_: Option<A>) => Either<A, B> {
+export function err_some_else<Value>(fn: () => Value): <Error>(_: Option<Error>) => Result<Value, Error> {
+    return <Error>(o: Option<Error>) => o.$ ? { $: 0, _: o._ } : { $: 1, _: fn() };
+}
+
+export function a_some<A>(o: Option<A>): Either<A, void> {
+    return o.$ ? { $: 0, _: o._ } : { $: 1, _: undefined };
+}
+
+export function a_some_or<B>(b: B): <A>(_: Option<A>) => Either<A, B> {
     return <A>(o: Option<A>) => o.$ ? { $: 0, _: o._ } : { $: 1, _: b };
 }
 
-export function b_some<A>(a: A): <B>(_: Option<B>) => Either<A, B> {
+export function a_some_else<B>(fn: () => B): <A>(_: Option<A>) => Either<A, B> {
+    return <A>(o: Option<A>) => o.$ ? { $: 0, _: o._ } : { $: 1, _: fn() };
+}
+
+export function b_some<B>(o: Option<B>): Either<void, B> {
+    return o.$ ? { $: 1, _: o._ } : { $: 0, _: undefined };
+}
+
+export function b_some_or<A>(a: A): <B>(_: Option<B>) => Either<A, B> {
     return <B>(o: Option<B>) => o.$ ? { $: 1, _: o._ } : { $: 0, _: a };
+}
+
+export function b_some_else<A>(fn: () => A): <B>(_: Option<B>) => Either<A, B> {
+    return <B>(o: Option<B>) => o.$ ? { $: 1, _: o._ } : { $: 0, _: fn() };
 }
 
 export function some_if<Value>(fn: (_: Value) => boolean): (_: Value) => Option<Value> {
