@@ -8,7 +8,7 @@ import { do_seq, future_ok, then_future_ok } from 'literium-base';
 export function handle_all(handler: Handler, ...handlers: Handler[]): Handler {
     return req => do_seq(
         handler(req),
-        then_future_ok(res => res.status == 404 &&
+        then_future_ok(res => res.status == 501 &&
             handlers.length ?
             handle_all(handlers[0], ...handlers.slice(1))(req) :
             future_ok(res))

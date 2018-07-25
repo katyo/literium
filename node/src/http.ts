@@ -102,6 +102,10 @@ export function not_found(): Response {
     return { status: 404, message: "Not found" };
 }
 
+export function not_implemented(): Response {
+    return { status: 501, message: "Not implemented" };
+}
+
 export interface ResponseMod {
     (res: Response): Response;
 }

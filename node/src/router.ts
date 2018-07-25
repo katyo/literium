@@ -1,4 +1,4 @@
-import { Method, Request, Handler, FutureResponse, not_found } from './http';
+import { Method, Request, Handler, FutureResponse, not_implemented } from './http';
 import { Routes, match_paired } from 'literium-router';
 import { future_ok } from 'literium-base';
 
@@ -28,6 +28,6 @@ export function routed_handler<State>(routes: Routes<State>): (handlers: RoutedH
                 }
             }
         }
-        return future_ok(not_found());
+        return future_ok(not_implemented());
     };
 }

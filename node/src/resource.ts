@@ -2,7 +2,7 @@ import { Option, some, none, some_def, then_some, tuple, mk_seq, do_seq, then_re
 import { extname, resolve, join } from 'path';
 import { open, createReadStream } from 'fs';
 import { StreamBody } from './body';
-import { Method, Request, Handler, not_found, okay, with_body } from './http';
+import { Method, Request, Handler, not_found, not_implemented, okay, with_body } from './http';
 
 export type MimeMap = Record<string, string>;
 
@@ -45,6 +45,6 @@ export function resource_handler(root: string, types: MimeMap = mime_map): Handl
                 with_body(StreamBody, createReadStream(path, { fd }), mime)
             )),
             then_future_err(() => future_ok(not_found()))
-        ), () => future_ok(not_found()))
+        ), () => future_ok(not_implemented()))
     );
 }
