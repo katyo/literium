@@ -1,5 +1,6 @@
-import { Result, ok, err, is_ok, un_ok, un_err } from './result';
-import { Emit, Future, future, then_future, FutureConv } from './future';
+import { do_seq } from './helper';
+import { Result, ok, err, is_ok, un_ok, un_err, ErrFn, OkFn } from './result';
+import { Emit, Future, future, then_future, FutureConv, select_future, map_future, timeout } from './future';
 
 export type FutureResult<Value, Error> = Future<Result<Value, Error>>;
 
@@ -60,4 +61,16 @@ export function future_async<T, E>(fn: (...a: any[]) => void, ...a: any[]): Futu
             final = true;
         };
     };
+}
+
+export function max_delay(msec: number): <Type>(fu: Future<Type>) => Future<Result<Type, number>> {
+    return <Type>(fu: Future<Type>) => select_future(
+        do_seq(
+            timeout(msec),
+            map_future(err as ErrFn<Type>)
+        ), do_seq(
+            fu,
+            map_future(ok as OkFn<number>)
+        )
+    );
 }

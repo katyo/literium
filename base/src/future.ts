@@ -1,5 +1,5 @@
 import { Keyed, KeyedValue, to_keyed } from './keyed';
-import { constant, deferred, dummy } from './helper';
+import { constant, deferred, dummy, do_seq } from './helper';
 import { Option, some, none, is_some, un_some } from './option';
 import { Either, a, b } from './either';
 
@@ -37,6 +37,10 @@ export interface FutureConv<Type, NewType> {
     (_: Future<Type>): Future<NewType>;
 }
 
+export interface GenericFutureConv {
+    <Type>(_: Future<Type>): Future<Type>;
+}
+
 export function future<Type>(val: Type): Future<Type> {
     return (emit: Emit<Type>) => deferred(emit)(val);
 }
@@ -64,6 +68,13 @@ export function timeout(msec: number): Future<number> {
         const timer = setTimeout(() => emit(msec), msec);
         return () => { clearTimeout(timer); };
     };
+}
+
+export function min_delay(msec: number): GenericFutureConv {
+    return <Type>(fu: Future<Type>) => do_seq(
+        join_future(timeout(msec), fu),
+        map_future(([_, r]) => r),
+    );
 }
 
 export function then_future<Type, NewType>(fn: (data: Type) => Future<NewType>): FutureConv<Type, NewType> {
