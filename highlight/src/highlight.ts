@@ -1,12 +1,12 @@
 import { VNodeChildren } from 'literium';
-import { Renderer, Options, init, process } from 'highlight-ts';
+import { Options, init, process } from 'highlight-ts';
 import { vdomRender } from './vdom';
 
 export interface Highlight {
     (src: string, lang?: string | string[]): VNodeChildren;
 }
 
-export function initHighlight(render: Renderer<VNodeChildren>, options?: Options): Highlight {
+export function initHighlight(options?: Options): Highlight {
     const highlighter = init(vdomRender, options);
 
     return (src, lang) => {
