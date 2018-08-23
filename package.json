@@ -45,6 +45,8 @@
     "core",
     "runner",
     "highlight",
+    "markup",
+    "marklight",
     "spectre",
     "node",
     "backend",
