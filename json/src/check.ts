@@ -41,7 +41,7 @@ export const nat_check = /*@__PURE__*/mk_seq(
 // Extra string checks
 
 export function re_check(re: RegExp, cause?: string): (s: string) => Result<string> {
-    return s => re.test(s) ? ok(s) : err(cause || '!match');
+    return s => typeof s != 'string' ? err('!string') : re.test(s) ? ok(s) : err(cause || '!match');
 }
 
 // Structure checks

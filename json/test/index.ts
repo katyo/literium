@@ -1,6 +1,6 @@
 import { deepStrictEqual as dse } from 'assert';
 import { ok, err } from 'literium-base';
-import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, mix, tup, alt, opt, def, val, map, then, parse, build, Type, date_msec, date_unix, re_str } from '../src/index';
+import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, mix, tup, alt, opt, def, val, map, then, parse, build, Type, date_msec, date_unix, regex } from '../src/index';
 
 // custom type
 
@@ -71,16 +71,6 @@ describe('json', () => {
                     dse(parse(str)(`"abc"`), ok("abc"));
                     dse(parse(str)(`123`), err("!string"));
                     dse(parse(str)(`null`), err("!string"));
-                });
-
-                it('re_str', () => {
-                    const s = re_str(/^a+bc?$/, '!match');
-                    dse(parse(s)(`"abc"`), ok("abc"));
-                    dse(parse(s)(`"aab"`), ok("aab"));
-                    dse(parse(s)(`"aabc"`), ok("aabc"));
-                    dse(parse(s)(`"aac"`), err('!match'));
-                    dse(parse(s)(`123`), err("!string"));
-                    dse(parse(s)(`null`), err("!string"));
                 });
 
                 it('num', () => {
@@ -278,6 +268,18 @@ describe('json', () => {
         });
 
         describe('modifiers', () => {
+            describe('regex', () => {
+                it('basic', () => {
+                    const s = regex(/^a+bc?$/, '!match')(str);
+                    dse(parse(s)(`"abc"`), ok("abc"));
+                    dse(parse(s)(`"aab"`), ok("aab"));
+                    dse(parse(s)(`"aabc"`), ok("aabc"));
+                    dse(parse(s)(`"aac"`), err('!match'));
+                    dse(parse(s)(`123`), err("!string"));
+                    dse(parse(s)(`null`), err("!string"));
+                });
+            });
+
             describe('alt', () => {
                 it('dual', () => {
                     const t = alt(str, num);
@@ -353,16 +355,6 @@ describe('json', () => {
                     dse(build(str)("abc"), ok(`"abc"`));
                     dse(build(str)(123 as any), err("!string"));
                     dse(build(str)(null as any), err("!string"));
-                });
-
-                it('re_str', () => {
-                    const s = re_str(/^a+bc?$/, '!match');
-                    dse(build(s)("abc"), ok(`"abc"`));
-                    dse(build(s)("aab"), ok(`"aab"`));
-                    dse(build(s)("aabc"), ok(`"aabc"`));
-                    dse(build(s)("aac"), err('!match'));
-                    dse(build(s)(123 as any), err("!string"));
-                    dse(build(s)(null as any), err("!string"));
                 });
 
                 it('num', () => {
@@ -563,6 +555,18 @@ describe('json', () => {
         });
 
         describe('modifiers', () => {
+            describe('regex', () => {
+                it('basic', () => {
+                    const s = regex(/^a+bc?$/, '!match')(str);
+                    dse(build(s)("abc"), ok(`"abc"`));
+                    dse(build(s)("aab"), ok(`"aab"`));
+                    dse(build(s)("aabc"), ok(`"aabc"`));
+                    dse(build(s)("aac"), err('!match'));
+                    dse(build(s)(123 as any), err("!string"));
+                    dse(build(s)(null as any), err("!string"));
+                });
+            });
+
             describe('alt', () => {
                 it('dual', () => {
                     const t = alt(str, num);
