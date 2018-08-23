@@ -52,7 +52,7 @@
     "testem": "^2",
     "ts-node": "^7",
     "tsify": "^4",
-    "typescript": "^2.9"
+    "typescript": "^3"
   },
   "dependencies": {
     "literium": "^0.2",

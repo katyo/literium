@@ -8,8 +8,8 @@ export function request(method: Method, url: string, headers: Headers, body: Nat
         xhr.setRequestHeader(name, headers[name]);
     }
 
-    xhr.onerror = ({ error }) => {
-        err_fn(error);
+    xhr.onerror = () => {
+        err_fn(new Error('Data recv error'));
     };
 
     xhr.onprogress = ({ loaded, total }) => {
@@ -28,8 +28,8 @@ export function request(method: Method, url: string, headers: Headers, body: Nat
         if (body) {
             const { upload } = xhr;
             if (upload) {
-                upload.onerror = ({ error }) => {
-                    err_fn(error);
+                upload.onerror = () => {
+                    err_fn(new Error('Data send error'));
                 };
                 upload.onprogress = ({ loaded, total }) => {
                     sta_fn(loaded, total, false);
@@ -38,7 +38,7 @@ export function request(method: Method, url: string, headers: Headers, body: Nat
 
             upload_send(xhr, body);
         } else {
-            xhr.send(null);
+            xhr.send();
         }
     } catch (error) {
         delete xhr.onreadystatechange;
