@@ -1,20 +1,29 @@
 import { VNodeChild, h } from 'literium';
 import {
     ContextTag,
-    NoMeta, MetaHeadings,
+    NoMeta,
     UnknownToken,
     BlockTag,
-    BlockCode, BlockHeading,
-    BlockHr, BlockQuote,
-    BlockList, BlockOrdList,
-    BlockParagraph, BlockText,
+    BlockCode,
+    BlockMath,
+    BlockHeading,
+    BlockHr,
+    BlockQuote,
+    BlockList,
+    BlockOrdList,
+    BlockParagraph,
+    BlockText,
     BlockTable,
     BlockListItem,
     BlockTableCell,
     BlockAlign,
     BlockTableRow,
+    BlockFootnotes,
+    MetaHeadings,
+    MetaFootnotes,
     renderNest,
-    textAlign
+    textAlign,
+    simpleId
 } from 'marklit';
 import {
     BlockRenderRuleVDom,
@@ -33,16 +42,41 @@ export const CodeBlockWithClassVDom: BlockRenderRuleVDom<BlockCode, NoMeta> = [
     ({ }, { _, l }) => h('pre', h('code', { class: { [`language-${l}`]: !!l } }, _))
 ];
 
-export const HeadingVDom: BlockRenderRuleVDom<BlockHeading<UnknownToken>, MetaHeadings<UnknownToken>> = [
+export const MathBlockVDom: BlockRenderRuleVDom<BlockMath, NoMeta> = [
+    ContextTag.Block,
+    BlockTag.Math,
+    ({ }, { _ }) => h('math', _)
+];
+
+export const MathBlockWithClassVDom: BlockRenderRuleVDom<BlockMath, NoMeta> = [
+    ContextTag.Block,
+    BlockTag.Math,
+    ({ }, { _, s }) => h('math', { class: { [`spec-${s}`]: !!s } }, _)
+];
+
+export const FootnotesBlockVDom: BlockRenderRuleVDom<BlockFootnotes<UnknownToken>, MetaFootnotes> = [
+    ContextTag.Block,
+    BlockTag.Footnotes,
+    ($, { _ }) => h('ol', { class: { "fn-list": true } },
+        _.map(({ l, _ }) => {
+            const id = simpleId(l);
+            return h('li', { attrs: { id: `fn-${id}` } }, [
+                ...(renderNest($, _) as VNodeChild[]),
+                h('a', { attrs: { href: `#fnref-${id}` } }, '↩')
+            ]);
+        }))
+];
+
+export const HeadingVDom: BlockRenderRuleVDom<BlockHeading<UnknownToken>, MetaHeadings> = [
     ContextTag.Block,
     BlockTag.Heading,
     ($, { n, i, _ }) => h(`h${n}`, renderNest($, _, ContextTag.Inline))
 ];
 
-export const HeadingWithIdVDom: BlockRenderRuleVDom<BlockHeading<UnknownToken>, MetaHeadings<UnknownToken>> = [
+export const HeadingWithIdVDom: BlockRenderRuleVDom<BlockHeading<UnknownToken>, MetaHeadings> = [
     ContextTag.Block,
     BlockTag.Heading,
-    ($, { n, i, _ }) => h(`h${n}`, { attrs: { id: `${$.m.headings[i].t.toLowerCase().replace(/[^\w]+/g, '-')}` } },
+    ($, { n, i, _ }) => h(`h${n}`, { attrs: { id: simpleId($.m.h[i].t) } },
         renderNest($, _, ContextTag.Inline))
 ];
 
@@ -127,4 +161,6 @@ function renderTableCells($: BlockRenderHandleVDom<BlockTable<UnknownToken>, NoM
 
 export const BlockVDom = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom];
 
-export const BlockTablesVDom = [...BlockVDom, TableVDom];
+export const BlockTablesVDom = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, TableVDom];
+
+export const BlockLitVDom = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, TableVDom, FootnotesBlockVDom];

@@ -1,14 +1,26 @@
 import { h } from 'literium';
 import {
     ContextTag,
-    NoMeta, MetaLinks, MetaLink,
+    NoMeta,
+    MetaLinks,
+    MetaLink,
+    MetaAbbrevs,
+    MetaFootnotes,
     UnknownToken,
     InlineTag,
-    InlineLink, InlineImage,
-    InlineStrong, InlineEm, InlineDel,
-    InlineCode, InlineMath,
+    InlineLink,
+    InlineImage,
+    InlineStrong,
+    InlineEm,
+    InlineDel,
+    InlineCode,
+    InlineMath,
+    InlineAbbrev,
+    InlineFootnote,
     InlineBr,
+    InlineText,
     sanitizeUrl,
+    simpleId,
     renderNest
 } from 'marklit';
 import {
@@ -46,8 +58,8 @@ export const ImageVDom: InlineRenderRuleVDom<InlineImage, MetaLinks> = [
 ];
 
 function getLinkAttr(l: string, v: string | void, n: keyof MetaLink, m: MetaLinks): string | undefined {
-    if (m.links) {
-        const $ = m.links[l];
+    if (m.l) {
+        const $ = m.l[l];
         if ($ && $[n]) {
             v = $[n] as string;
         }
@@ -89,12 +101,35 @@ export const MathSpanVDom: InlineRenderRuleVDom<InlineMath, NoMeta> = [
     ({ }, { _ }) => h('math', _)
 ];
 
+export const AbbrevVDom: InlineRenderRuleVDom<InlineAbbrev, MetaAbbrevs> = [
+    ContextTag.Inline,
+    InlineTag.Abbrev,
+    ({ m: { a } }, { t, _ }) => h('abbr', { attrs: { title: t || a[_] } }, _)
+];
+
+export const FootnoteVDom: InlineRenderRuleVDom<InlineFootnote, MetaFootnotes> = [
+    ContextTag.Inline,
+    InlineTag.Footnote,
+    ({ m: { f } }, { l }) => {
+        const id = simpleId(l);
+        return h('sup', { class: { "fn-ref": true } }, h('a', { attrs: { id: `fnref-${id}`, href: `#fn-${id}` } }, l));
+    }
+];
+
+export const TextVDom: InlineRenderRuleVDom<InlineText, NoMeta> = [
+    ContextTag.Inline,
+    InlineTag.Text,
+    ({ }, { _ }) => _
+];
+
 export const BrVDom: InlineRenderRuleVDom<InlineBr, NoMeta> = [
     ContextTag.Inline,
     InlineTag.Br,
     () => h('br')
 ];
 
-export const InlineVDom = [LinkVDom, ImageVDom, StrongVDom, EmVDom, CodeSpanVDom, BrVDom];
+export const InlineVDom = [LinkVDom, ImageVDom, StrongVDom, EmVDom, CodeSpanVDom, TextVDom, BrVDom];
 
-export const InlineGfmVDom = [LinkVDom, ImageVDom, StrongVDom, EmVDom, CodeSpanVDom, BrVDom, DelVDom];
+export const InlineGfmVDom = [LinkVDom, ImageVDom, StrongVDom, EmVDom, CodeSpanVDom, TextVDom, BrVDom, DelVDom];
+
+export const InlineLitVDom = [LinkVDom, ImageVDom, StrongVDom, EmVDom, CodeSpanVDom, TextVDom, BrVDom, DelVDom, AbbrevVDom, FootnoteVDom];

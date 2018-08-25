@@ -44,6 +44,6 @@
   },
   "dependencies": {
     "literium": "^0.2",
-    "marklit": "^0.1"
+    "marklit": "^0.2"
   }
 }
