@@ -38,7 +38,7 @@ function resource_check(dir: string, mime_map: MimeMap): (req: Request) => Optio
 export function resource_handler(root: string, types: MimeMap = mime_map): Handler {
     return mk_seq(
         resource_check(root, types),
-        then_result(([mime, path]) => do_seq(
+        then_option(([mime, path]) => do_seq(
             future_async(open, path, 'r'),
             map_future_ok(fd => do_seq(
                 okay(),
