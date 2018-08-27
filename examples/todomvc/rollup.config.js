@@ -7,6 +7,7 @@ import postcss from 'rollup-plugin-postcss';
 import { terser } from 'rollup-plugin-terser';
 //import closure from 'rollup-plugin-closure-compiler-js';
 import replace from 'rollup-plugin-replace';
+import { compress } from 'node-zopfli';
 import gzip from 'rollup-plugin-gzip';
 import { plugin as analyze } from 'rollup-plugin-analyzer';
 import visualize from 'rollup-plugin-visualizer';
@@ -44,19 +45,19 @@ export default {
                 })
             ]
         }),
+        nodeResolve({
+            browser: true,
+        }),
         typescript({
             tsconfigOverride: {
                 compilerOptions: {
-                    module: 'es6'
+                    module: 'ESNext'
                 }
             }
         }),
         replace({
             'process.env.npm_package_version': stringify(version),
             NODE_ENV: stringify(devel ? 'development' : 'production')
-        }),
-        nodeResolve({
-            browser: true,
         }),
         sourceMaps(),
         terser({
@@ -90,19 +91,19 @@ export default {
             externs: ['process', 'global', 'sessionStorage', 'localStorage']
         }),*/
         gzip({
-            algorithm: 'zopfli',
-            options: {
+            customCompression: content => compress(Buffer.from(content), 'deflate'),
+            gzipOptions: {
                 level: 9,
-                numiterations: 10
+                //numiterations: 10
             },
-            additional: [
+            additionalFiles: [
                 join(distdir, `client_${version}.min.css`),
                 join(distdir, 'client.html')
             ],
         }),
         //analyze(),
-        visualize({
+        /*visualize({
             filename: join(distdir, 'stats.html')
-        })
+        })*/
     ],
 }

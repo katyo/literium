@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { createWriteStream, stat, mkdir } from 'fs';
-import { init } from 'literium-runner/server';
+import { init } from '@literium/runner/server';
 import { main } from './main';
 
 const distdir = process.env.npm_package_config_output_directory || 'dist';

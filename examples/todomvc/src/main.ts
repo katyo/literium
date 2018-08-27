@@ -1,6 +1,7 @@
-import { VNode, Emit, Component, Keyed, h, page, key_emit } from 'literium';
+import { Emit, Keyed, key_emit } from '@literium/base';
+import { VNode, Component, h, page } from '@literium/core';
 import * as Todo from './todo';
-import { StoreCell, StoreType, initStore, loadStore, moveStore, saveStore } from 'literium-runner';
+import { StoreCell, StoreType, initStore, loadStore, moveStore, saveStore } from '@literium/runner';
 
 const styles = [{ link: `client_${process.env.npm_package_version}.min.css` }];
 const scripts = [{ link: `client_${process.env.npm_package_version}.min.js` }];

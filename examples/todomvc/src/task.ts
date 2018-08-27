@@ -1,5 +1,6 @@
-import { VNode, Emit, h, KeyCode, Keyed, keyed } from 'literium';
-import { JSType, dict, str, bin } from 'literium-json';
+import { Emit, Keyed, keyed } from '@literium/base';
+import { VNode, KeyCode, h } from '@literium/core';
+import { JSType, dict, str, bin } from '@literium/json';
 
 export const json = dict({
     content: str,

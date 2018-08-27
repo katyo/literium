@@ -1,6 +1,7 @@
-import { VNode, Emit, h, with_key, KeyCode, Keyed, keyed, key_emit } from 'literium';
+import { Emit, Keyed, keyed, key_emit } from '@literium/base';
+import { VNode, h, with_key, KeyCode } from '@literium/core';
 import * as Task from './task';
-import { JSType, dict, list, nat } from 'literium-json';
+import { JSType, dict, list, nat } from '@literium/json';
 
 export const enum Filter {
     All,
