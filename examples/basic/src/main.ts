@@ -1,5 +1,6 @@
-import { Component, Fork, Send, Keyed, h, page, fork_wrap, send_wrap } from 'literium';
-import { hasJsScript } from 'literium-runner';
+import { Emit, Spawn, PairedAsKeyed, wrap_emit } from '@literium/base';
+import { Component, h, page } from '@literium/core';
+import { hasJsScript } from '@literium/runner';
 
 import hello from './apps/hello';
 import counter from './apps/counter';
@@ -22,13 +23,17 @@ const settings = {
     'apple-touch-fullscreen': 'yes',
 };
 
-const apps: [string, Component<any, any>][] = [
+const apps: [string, Component<any, any, any>][] = [
     ["Hello", hello],
     ["Counter", counter],
     ["Greeting", greeting],
     ["Chats", chats],
     ["Editor", editor],
 ];
+
+export interface Props {
+    fast: boolean;
+}
 
 export interface State {
     appId: number;
@@ -40,49 +45,49 @@ export interface SelectApp {
     appId: number;
 }
 
-export type Event = SelectApp | Keyed<'app', any>;
+export type Signal = PairedAsKeyed<{
+    select: number /* app id */,
+    app: any /* app state */
+}>;
 
-const fork_app = fork_wrap<'app', Event>('app');
-const send_app = send_wrap<'app', Event>('app');
+const emit_app = wrap_emit('app');
 
-export function main(fastrun: boolean): Component<State, Event> {
-    function create(fork: Fork<Event>) {
-        return {
-            appId: 0,
-            appState: fastrun ? undefined : apps[0][1].create(fork_app(fork))
+function create(props: Props, emit: Emit<Signal>, spawn: Spawn) {
+    return {
+        appId: 0,
+        appState: props.fast ? undefined : apps[0][1].create(props, emit_app(emit), spawn)
+    };
+}
+
+function update(props: Props, state: State, signal: Signal, emit: Emit<Signal>, spawn: Spawn) {
+    switch (signal.$) {
+        case 'app': return {
+            ...state,
+            appState: apps[state.appId][1].update(props, state.appState, signal._, emit_app(emit), spawn)
+        };
+        case 'select': return {
+            appId: signal._,
+            appState: apps[signal._][1].create(props, emit_app(emit), spawn)
         };
     }
-
-    function update(state: State, event: Event, fork: Fork<Event>) {
-        switch (event.$) {
-            case 'app': return {
-                ...state,
-                appState: apps[state.appId][1].update(state.appState, event._, fork_app(fork))
-            };
-            case 'select': return {
-                appId: event.appId,
-                appState: apps[event.appId][1].create(fork_app(fork))
-            };
-        }
-    }
-
-    function render({ appId, appState }: State, send: Send<Event>) {
-        return page({
-            styles,
-            scripts,
-            settings,
-        }, fastrun ? [] : [
-            h('div.wrapper-small', [
-                h('p', apps.map(([title,], appId_) => h('button', {
-                    key: appId_,
-                    class: { 'btn--secondary': appId != appId_ },
-                    on: { click: () => { if (appId != appId_) { send({ $: 'select', appId: appId_ }); } } }
-                }, title))),
-                h('h2', apps[appId][0]),
-            ]),
-            apps[appId][1].render(appState, send_app(send))
-        ]);
-    }
-
-    return { create, update, render };
 }
+
+function render(props: Props, { appId, appState }: State, emit: Emit<Signal>) {
+    return page({
+        styles,
+        scripts,
+        settings,
+    }, props.fast ? [] : [
+        h('div.wrapper-small', [
+            h('p', apps.map(([title,], appId_) => h('button', {
+                key: appId_,
+                class: { 'btn--secondary': appId != appId_ },
+                on: { click: () => { if (appId != appId_) { emit({ $: 'select', _: appId_ }); } } }
+            }, title))),
+            h('h2', apps[appId][0]),
+        ]),
+        apps[appId][1].render(props, appState, emit_app(emit))
+    ]);
+}
+
+export const main: Component<Props, State, Signal> = { create, update, render };

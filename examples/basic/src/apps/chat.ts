@@ -1,68 +1,47 @@
-import { VNode, Send, h } from 'literium';
-import { KeyCode } from 'literium/keys';
+import { Emit, Keyed, AsKeyed } from '@literium/base';
+import { VNode, h, KeyCode } from '@literium/core';
 
-export interface Msg {
-    user: string;
-    text: string;
-}
+export type Props = void;
 
 export interface State {
     user?: string;
-    msgs: Msg[];
+    msgs: Keyed<string /* user name */, string /* phrase */>[];
     blocked: string[];
 }
 
-export interface Login {
-    $: 'login';
-    user: string;
-}
+export type Signal = AsKeyed<{
+    login: string; /* user name */
+    reply: Keyed<string /* user name */, string /* phrase */>; /* message */
+    block: string; /* user name */
+    unblock: string; /* user name */
+    clear: void;
+}>;
 
-export interface Reply {
-    $: 'reply';
-    msg: Msg;
-}
-
-export interface Block {
-    $: 'block';
-    user: string;
-}
-
-export interface Unblock {
-    $: 'unblock';
-    user: string;
-}
-
-export interface Clear {
-    $: 'clear';
-}
-
-export type Event = Login | Reply | Block | Unblock | Clear;
-
-export function create() {
+export function create(_props: Props) {
     return { msgs: [], blocked: [] } as State;
 }
 
-export function update(state: State, event: Event): State {
-    switch (event.$) {
+export function update(_props: Props, state: State, signal: Signal): State {
+    switch (signal.$) {
         case 'login':
-            return { ...state, user: event.user };
+            return { ...state, user: signal._ };
         case 'reply':
-            if (state.blocked.indexOf(event.msg.user) != -1) return state;
-            return { ...state, msgs: [...state.msgs, event.msg] };
+            if (state.blocked.indexOf(signal._.$) != -1) return state;
+            return { ...state, msgs: [...state.msgs, signal._] };
         case 'block':
             return {
-                ...state, blocked: [...state.blocked, event.user],
-                msgs: state.msgs.filter(msg => msg.user != event.user)
+                ...state, blocked: [...state.blocked, signal._],
+                msgs: state.msgs.filter(msg => msg.$ != signal._)
             };
         case 'unblock':
-            return { ...state, blocked: state.blocked.filter(user => user != event.user) };
+            return { ...state, blocked: state.blocked.filter(user => user != signal._) };
         case 'clear':
             return { ...state, msgs: [] };
     }
     return state;
 }
 
-export function render({ user, msgs, blocked }: State, send: Send<Event>): VNode {
+export function render(_props: Props, { user, msgs, blocked }: State, emit: Emit<Signal>): VNode {
     return h('div.chat', [
         h('dl.msgs', (() => {
             const out = [];
@@ -70,11 +49,11 @@ export function render({ user, msgs, blocked }: State, send: Send<Event>): VNode
                 out.push(h('dt', {
                     on: {
                         dblclick: () => {
-                            if (msg.user != user) send({ $: 'block', user: msg.user });
+                            if (msg.$ != user) emit({ $: 'block', _: msg.$ });
                         }
                     }
-                }, msg.user == user ? h('strong', msg.user) : msg.user));
-                out.push(h('dd', msg.text));
+                }, msg.$ == user ? h('strong', msg.$) : msg.$));
+                out.push(h('dd', msg._));
             }
             return out;
         })()),
@@ -89,7 +68,7 @@ export function render({ user, msgs, blocked }: State, send: Send<Event>): VNode
                                 const text = field.value;
                                 if (text) {
                                     field.value = '';
-                                    send({ $: 'reply', msg: { user, text } });
+                                    emit({ $: 'reply', _: { $: user, _: text } });
                                 }
                             }
                         }
@@ -106,7 +85,7 @@ export function render({ user, msgs, blocked }: State, send: Send<Event>): VNode
                                     const user = field.value;
                                     if (user) {
                                         field.value = '';
-                                        send({ $: 'login', user });
+                                        emit({ $: 'login', _: user });
                                     }
                                 }
                             }
@@ -116,7 +95,7 @@ export function render({ user, msgs, blocked }: State, send: Send<Event>): VNode
                 ]),
         blocked.length ? h('div', [
             h('p', 'Blocked users:'),
-            h('ul', blocked.map(user => h('li', { on: { dblclick: () => { send({ $: 'unblock', user }); } } }, user))),
+            h('ul', blocked.map(user => h('li', { on: { dblclick: () => { emit({ $: 'unblock', _: user }); } } }, user))),
             h('p.fs-small', 'Double click on nickname to unblock user')
         ]) : h('p.fs-small', 'Double click on nickname to block user'),
     ]);

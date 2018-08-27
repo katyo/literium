@@ -1,15 +1,49 @@
-import { VNode, VData, VNodeChildren, Component, Send, h, Keyed, keyed, send_wrap, vnode_log, bench } from 'literium';
-import { initMarkup, gfm_tables_breaks, vdomRender } from 'literium-markup';
-import { highlightVDomRender } from './editor/highlight';
+import { Emit, AsKeyed, keyed, wrap_emit } from '@literium/base';
+import { VNode, VData, VNodeChildren, Component, h, vnode_log, bench } from '@literium/core';
+import {
+    MetaData,
+    InlineTokenMap,
+    BlockTokenMap,
+    ContextMap,
+
+    BlockGfmTables,
+    InlineGfm,
+} from 'marklit';
+import {
+    BlockTablesVDom,
+    InlineGfmVDom,
+    
+    initMarkup
+} from '@literium/markup';
+import './editor/highlight';
+import {
+    CodeBlockVDom,
+    CodeSpanVDom
+} from '@literium/marklight';
 import * as Editor from './editor/common';
 import * as SimpleEditor from './editor/simple';
 import * as AdvancedEditor from './editor/advanced';
+
+interface Meta extends MetaData {}
+
+interface InlineToken extends InlineTokenMap<InlineToken> { }
+ 
+interface BlockToken extends BlockTokenMap<BlockToken, InlineToken> { }
+ 
+interface Context extends ContextMap<BlockToken, InlineToken, Meta> { }
 
 import example_md from './sample.md';
 
 const benchmark = bench();
 
-const renderMarkup = initMarkup(gfm_tables_breaks, highlightVDomRender(vdomRender));
+const renderMarkup = initMarkup<Context>([...BlockGfmTables, ...InlineGfm], [...BlockTablesVDom, ...InlineGfmVDom, CodeBlockVDom(), CodeSpanVDom()] as any);
+
+export const enum ScrollSource {
+    Editor,
+    Preview,
+}
+
+export type Props = void;
 
 export interface State {
     editor: Editor.State;
@@ -17,46 +51,52 @@ export interface State {
     markup: VNodeChildren;
     gentime: number;
     scroll: number;
-};
+    scrollSource?: ScrollSource;
+}
 
-export type Event = Keyed<'editor', Editor.Event> | Keyed<'scroll', number> | Keyed<'set-advanced', boolean>;
+export type Signal = AsKeyed<{
+    editor: Editor.Signal;
+    scroll: [ScrollSource, number];
+    set_advanced: boolean;
+}>;
 
-function create(): State {
+function create(_props: Props): State {
     const source = example_md;
     const bench_markup = benchmark.run();
-    const markup = renderMarkup(source);
+    const [, markup] = renderMarkup(source);
 
     return {
-        editor: Editor.update(Editor.create(), keyed('change' as 'change', source)),
+        editor: Editor.update(Editor.create(), keyed('change', source)),
         advanced: false,
         markup,
         gentime: bench_markup(),
-        scroll: 0,
+        scroll: 0
     };
 }
 
-function update(state: State, event: Event): State {
-    console.log(event);
-    switch (event.$) {
+function update(_props: Props, state: State, signal: Signal): State {
+    console.log(signal);
+    switch (signal.$) {
         case 'editor':
-            if (event._.$ == 'change') {
-                const source = event._._;
+            if (signal._.$ == 'change') {
+                const source = signal._._;
                 const bench_markup = benchmark.run();
-                const markup = renderMarkup(source);
+                const [, markup] = renderMarkup(source);
                 return {
                     ...state,
-                    editor: Editor.update(state.editor, event._),
-                    markup, gentime: bench_markup()
+                    editor: Editor.update(state.editor, signal._),
+                    markup,
+                    gentime: bench_markup()
                 };
             }
             return {
                 ...state,
-                editor: Editor.update(state.editor, event._)
+                editor: Editor.update(state.editor, signal._)
             };
-        case 'set-advanced':
-            return { ...state, advanced: event._ };
+        case 'set_advanced':
+            return { ...state, advanced: signal._ };
         case 'scroll':
-            return { ...state, scroll: event._ };
+            return { ...state, scroll: signal._[1], scrollSource: signal._[0] };
     }
     return state;
 }
@@ -69,7 +109,7 @@ function setScrollHeight(elm: HTMLElement, scroll: number) {
     elm.scrollTop = Math.round(scroll * (elm.scrollHeight - elm.clientHeight));
 }
 
-function wrapContent(state: State, send: Send<Event>, vnode: VNode): VNode {
+function wrapContent(src: ScrollSource, state: State, emit: Emit<Signal>, vnode: VNode): VNode {
     const data = vnode.data as VData;
     const on = data.on || (data.on = {});
     const hook = data.hook || (data.hook = {});
@@ -78,17 +118,21 @@ function wrapContent(state: State, send: Send<Event>, vnode: VNode): VNode {
 
     hook.insert = (vnode) => {
         if (insert) insert(vnode);
-        setScrollHeight(vnode.elm as HTMLElement, state.scroll);
+        if (state.scrollSource != src) {
+            setScrollHeight(vnode.elm as HTMLElement, state.scroll);
+        }
     };
 
     hook.update = (_, vnode) => {
         if (update) update(_, vnode);
-        setScrollHeight(vnode.elm as HTMLElement, state.scroll);
+        if (state.scrollSource != src) {
+            setScrollHeight(vnode.elm as HTMLElement, state.scroll);
+        }
     };
 
     on.scroll = (e, vnode) => {
         if (scroll) scroll(e, vnode);
-        send({ $: 'scroll', _: getScrollHeight(vnode.elm as HTMLElement) });
+        emit({ $: 'scroll', _: [src, getScrollHeight(vnode.elm as HTMLElement)] });
     };
 
     data.style = { height: '250px' };
@@ -96,29 +140,27 @@ function wrapContent(state: State, send: Send<Event>, vnode: VNode): VNode {
     return vnode;
 }
 
-const simple_editor_send_wrap = send_wrap('editor');
+const editor_emit = wrap_emit('editor');
 
-function render(state: State, send: Send<Event>): VNode {
+function render(_props: Props, state: State, emit: Emit<Signal>): VNode {
     return h('div.wrapper-small', [
         h('div', [
             h('label', { class: { checkbox: true } }, [
                 h('input', {
                     attrs: { type: 'checkbox', checked: state.advanced },
                     props: { checked: state.advanced },
-                    on: { click: (_, vnode) => { send(keyed('set-advanced' as 'set-advanced', (vnode.elm as HTMLInputElement).checked)); } }
+                    on: { click: (_, vnode) => { emit(keyed('set_advanced', (vnode.elm as HTMLInputElement).checked)); } }
                 }),
                 h('span', { class: { checkbox__label: true } }, 'Advanced editor')
             ]),
             h('label', { class: { textfield: true } }, [
                 //h('span', { class: { textfield__label: true } }, `Markdown source (${state.gentime.toPrecision(3)} mS, ${(1000 / state.gentime).toPrecision(3)} FPS)`)
-                vnode_log(wrapContent(state, send, (state.advanced ? AdvancedEditor.render : SimpleEditor.render)(state.editor, simple_editor_send_wrap(send)))),
+                vnode_log(wrapContent(ScrollSource.Editor, state, emit, (state.advanced ? AdvancedEditor.render : SimpleEditor.render)(state.editor, editor_emit(emit)))),
             ])
         ]),
         h('span', `Preview (${state.gentime.toPrecision(3)} mS, ${(1000 / state.gentime).toPrecision(3)} FPS)`),
-        wrapContent(state, send, h('div.markup-preview', state.markup)),
+        wrapContent(ScrollSource.Preview, state, emit, h('div.markup-preview', state.markup)),
     ]);
 }
 
-const app: Component<State, Event> = { create, update, render };
-
-export default app;
+export default { create, update, render } as Component<Props, State, Signal>;

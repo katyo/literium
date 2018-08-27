@@ -1,7 +1,8 @@
-import { VNode, Send, a, b, h, keyed } from 'literium';
-import { State, Event, Selection } from './common';
+import { a, b, keyed, Emit } from '@literium/base';
+import { VNode, h } from '@literium/core';
+import { State, Signal, Selection } from './common';
 
-export function render(state: State, send: Send<Event>): VNode {
+export function render(state: State, emit: Emit<Signal>): VNode {
     return h('textarea', {
         props: {
             value: state.content,
@@ -9,18 +10,18 @@ export function render(state: State, send: Send<Event>): VNode {
             selectionEnd: endSelection(state.selection),
         },
         on: {
-            click: (event: MouseEvent, vnode: VNode) => {
-                sendSelection(state, vnode.elm as HTMLInputElement, send);
+            click: (_event: MouseEvent, vnode: VNode) => {
+                emitSelection(state, vnode.elm as HTMLInputElement, emit);
             },
-            scroll: (event: MouseEvent, vnode: VNode) => {
-                sendSelection(state, vnode.elm as HTMLInputElement, send);
+            scroll: (_event: MouseEvent, vnode: VNode) => {
+                emitSelection(state, vnode.elm as HTMLInputElement, emit);
             },
-            focus: (event, vnode: VNode) => {
+            focus: (_event: Event, vnode: VNode) => {
                 setSelection(vnode.elm as HTMLInputElement, state.selection);
             },
             input: (_, vnode) => {
-                send({ $: 'change', _: (vnode.elm as HTMLInputElement).value });
-                sendSelection(state, vnode.elm as HTMLInputElement, send);
+                emit({ $: 'change', _: (vnode.elm as HTMLInputElement).value });
+                emitSelection(state, vnode.elm as HTMLInputElement, emit);
             },
         }
     });
@@ -33,8 +34,8 @@ function getSelection(elm: HTMLInputElement): Selection {
         b([selectionStart, selectionEnd] as [number, number]);
 }
 
-function sendSelection(state: State, node: HTMLInputElement, send: Send<Event>) {
-    send(keyed('select' as 'select', getSelection(node)));
+function emitSelection(_state: State, node: HTMLInputElement, emit: Emit<Signal>) {
+    emit(keyed('select', getSelection(node)));
 }
 
 function setSelection(elm: HTMLInputElement, sel: Selection) {

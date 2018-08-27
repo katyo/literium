@@ -1,6 +1,6 @@
 import { join } from 'path';
-import { writeFile, stat, mkdir } from 'fs';
-import { init } from 'literium-runner/server';
+import { createWriteStream, stat, mkdir } from 'fs';
+import { init } from '@literium/runner/server';
 import { main } from './main';
 
 const distdir = process.env.npm_package_config_output_directory || 'dist';
@@ -20,9 +20,16 @@ stat(distdir, (err, stat) => {
 
 function store() {
     const file = join(distdir, 'client.html');
-    render(main(true), html => {
-        writeFile(file, html, err => {
-
+    render(main)({
+        fast: true,
+    })(([html,]) => {
+        const stm = createWriteStream(file);
+        html.pipe(stm);
+        stm.on('error', err => {
+            console.log('error', err);
+        });
+        stm.on('end', () => {
+            console.log('ok');
         });
     });
 }

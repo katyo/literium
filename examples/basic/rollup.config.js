@@ -5,7 +5,7 @@ import make from 'rollup-plugin-make';
 import sourceMaps from 'rollup-plugin-sourcemaps';
 import typescript from 'rollup-plugin-typescript2';
 import postcss from 'rollup-plugin-postcss';
-import uglify from 'rollup-plugin-uglify';
+import { uglify } from 'rollup-plugin-uglify';
 import replace from 'rollup-plugin-replace';
 import gzip from 'rollup-plugin-gzip';
 import visualize from 'rollup-plugin-visualizer';
@@ -30,13 +30,6 @@ export default {
         include: 'src/**',
     },
     plugins: [
-        typescript({
-            tsconfigOverride: {
-                compilerOptions: {
-                    module: 'es6'
-                }
-            }
-        }),
         postcss({
             extract: true,
             sourceMap: true,
@@ -54,6 +47,13 @@ export default {
         nodeResolve({
             browser: true,
         }),
+        typescript({
+            tsconfigOverride: {
+                compilerOptions: {
+                    module: 'es6'
+                }
+            }
+        }),
         make({
             mangle: file => join(distdir, `${file.replace(distdir + '/', '')}.d`),
         }),
@@ -62,12 +62,12 @@ export default {
             ie8: true,
             mangle: {
                 toplevel: true,
-                safari10: true
+                keep_fnames: false,
             },
             compress: {
-                ecma: 5,
                 toplevel: true,
                 keep_fargs: false,
+                keep_fnames: false,
                 warnings: true,
                 inline: 2,
                 passes: 2,
@@ -80,7 +80,7 @@ export default {
             algorithm: 'zopfli',
             options: {
                 level: 9,
-                numiterations: 10
+                //numiterations: 10
             },
             additional: [
                 join(distdir, `client_${version}.min.css`),

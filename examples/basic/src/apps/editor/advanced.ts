@@ -1,11 +1,12 @@
-import { KeyCode, VNode, Send, h, a, b, keyed } from 'literium';
-import { initHighlight, vdomRender } from 'literium-highlight';
-import { State, Event, Selection, Region } from './common';
+import { Emit, a, b, keyed } from '@literium/base';
+import { KeyCode, VNode, h } from '@literium/core';
+import { initHighlight } from '@literium/highlight';
+import { State, Signal, Selection, Region } from './common';
 import { cancelEvent, hasSpecialKey, getCharacter } from './utils';
 
-const renderHightlight = initHighlight(vdomRender);
+const renderHightlight = initHighlight();
 
-export function render(state: State, send: Send<Event>): VNode {
+export function render(state: State, emit: Emit<Signal>): VNode {
     return h('pre.markup-editor', {
         style: { height: '250px' },
         attrs: { contenteditable: true },
@@ -14,17 +15,17 @@ export function render(state: State, send: Send<Event>): VNode {
             update: (_, vnode) => { setSelection(vnode.elm as HTMLElement, state.selection); },
         },
         on: {
-            click: (event: MouseEvent, vnode: VNode) => {
-                sendSelection(state, vnode.elm as HTMLElement, send);
+            click: (_event: MouseEvent, vnode: VNode) => {
+                emitSelection(state, vnode.elm as HTMLElement, emit);
             },
-            scroll: (event: MouseEvent, vnode: VNode) => {
-                sendSelection(state, vnode.elm as HTMLElement, send);
+            scroll: (_event: MouseEvent, vnode: VNode) => {
+                emitSelection(state, vnode.elm as HTMLElement, emit);
             },
             keypress: (event: KeyboardEvent) => {
                 const char = getCharacter(event);
                 if (!hasSpecialKey(event) && char) {
                     cancelEvent(event);
-                    sendInput(state, char, send);
+                    emitInput(state, char, emit);
                 }
             },
             keyup: (event: KeyboardEvent, vnode: VNode) => {
@@ -33,17 +34,17 @@ export function render(state: State, send: Send<Event>): VNode {
                     case KeyCode.UpArrow:
                     case KeyCode.RightArrow:
                     case KeyCode.DownArrow:
-                        sendSelection(state, vnode.elm as HTMLElement, send);
+                        emitSelection(state, vnode.elm as HTMLElement, emit);
                         break;
                 }
             },
-            keydown: (event: KeyboardEvent, vnode: VNode) => {
+            keydown: (event: KeyboardEvent, _vnode: VNode) => {
                 switch (event.keyCode) {
                     case KeyCode.Enter:
                     case KeyCode.Backspace:
                     case KeyCode.Delete:
                         cancelEvent(event);
-                        sendInput(state, event.keyCode, send);
+                        emitInput(state, event.keyCode, emit);
                         break;
                 }
             }
@@ -51,7 +52,7 @@ export function render(state: State, send: Send<Event>): VNode {
     }, renderHightlight(state.content, 'md'));
 }
 
-function sendInput(state: State, char: string | number, send: Send<Event>) {
+function emitInput(state: State, char: string | number, emit: Emit<Signal>) {
     let { content, selection: sel } = state;
 
     let cursor: number;
@@ -97,12 +98,12 @@ function sendInput(state: State, char: string | number, send: Send<Event>) {
         insert(char);
     }
 
-    send(keyed('change' as 'change', content));
-    send(keyed('select' as 'select', a(cursor) as Selection));
+    emit(keyed('change', content));
+    emit(keyed('select', a(cursor) as Selection));
 }
 
-function sendSelection(state: State, node: HTMLElement, send: Send<Event>) {
-    send(keyed('select' as 'select', getSelection(node)));
+function emitSelection(_state: State, node: HTMLElement, emit: Emit<Signal>) {
+    emit(keyed('select', getSelection(node)));
 }
 
 function setSelection(root: HTMLElement, sel: Selection): void {

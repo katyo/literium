@@ -1,18 +1,16 @@
-import { Component, Send, h } from 'literium';
+import { Emit, AsKeyed } from '@literium/base'
+import { Component, h } from '@literium/core';
+
+export type Props = void;
 
 export interface State {
     count: number;
 }
 
-export interface Incr {
-    $: '++';
-}
-
-export interface Decr {
-    $: '--';
-}
-
-export type Event = Incr | Decr;
+export type Signal = AsKeyed<{
+    '++': void,
+    '--': void,
+}>;
 
 function create() {
     return {
@@ -20,26 +18,24 @@ function create() {
     };
 }
 
-function update(state: State, event: Event) {
+function update(_props: Props, state: State, signal: Signal) {
     const { count } = state;
-    switch (event.$) {
+    switch (signal.$) {
         case '++': return { count: count + 1 };
         case '--': return { count: count - 1 };
     }
 }
 
-function render({ count }: State, send: Send<Event>) {
+function render(_props: Props, { count }: State, emit: Emit<Signal>) {
     return h('div.wrapper-small', [
         h('p', `Counter: ${count}`),
         h('button', {
-            on: { click: () => { send({ $: '++' }); } }
+            on: { click: () => { emit({ $: '++', _: undefined }); } }
         }, "+1"),
         h('button', {
-            on: { click: () => { send({ $: '--' }); } }
+            on: { click: () => { emit({ $: '--', _: undefined }); } }
         }, "-1"),
     ]);
 }
 
-const app: Component<State, Event> = { create, update, render };
-
-export default app;
+export default { create, update, render } as Component<Props, State, Signal>;

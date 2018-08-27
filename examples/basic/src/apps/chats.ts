@@ -1,48 +1,45 @@
-import { Component, Send, h, send_map } from 'literium';
+import { Emit, map_emit, Keyed, AsKeyed } from '@literium/base';
+import { Component, h } from '@literium/core';
 import * as Chat from './chat';
+
+export type Props = void;
 
 export interface State {
     chats: Chat.State[];
 }
 
-export interface ChatEvent {
-    $: 'chat';
-    chat: number;
-    event: Chat.Event;
-}
+export type Signal = AsKeyed<{
+    chat: Keyed<number, Chat.Signal>;
+}>;
 
-export type Event = ChatEvent;
-
-function create(): State {
-    const john = Chat.update(Chat.create(), { $: 'login', user: 'John' });
-    const maria = Chat.update(Chat.create(), { $: 'login', user: 'Maria' });
-    const other = Chat.create();
+function create(props: Props): State {
+    const john = Chat.update(props, Chat.create(props), { $: 'login', _: 'John' });
+    const maria = Chat.update(props, Chat.create(props), { $: 'login', _: 'Maria' });
+    const other = Chat.create(props);
     return { chats: [john, maria, other] };
 }
 
-function update(state: State, event: Event): State {
-    switch (event.$) {
+function update(props: Props, state: State, signal: Signal): State {
+    switch (signal.$) {
         case 'chat':
-            if (event.event.$ == 'reply') {
+            if (signal._._.$ == 'reply') {
                 return {
                     ...state,
-                    chats: state.chats.map(chat => Chat.update(chat, event.event))
+                    chats: state.chats.map(chat => Chat.update(props, chat, signal._._))
                 };
             }
             return {
                 ...state,
                 chats: state.chats.map((chat, $) =>
-                    $ == event.chat ? Chat.update(chat, event.event) : chat)
+                                       $ == signal._.$ ? Chat.update(props, chat, signal._._) : chat)
             };
     }
     return state;
 }
 
-function render({ chats }: State, send: Send<Event>) {
-    const chat_send = ($: number) => send_map(event => ({ $: 'chat', chat: $, event }))(send);
-    return h('div.wrapper-small.grid', chats.map((chat, $) => Chat.render(chat, chat_send($))));
+function render(props:Props, { chats }: State, emit: Emit<Signal>) {
+    const chat_emit = ($: number) => map_emit(signal => ({ $: 'chat', _: { $, _: signal } }))(emit);
+    return h('div.wrapper-small.grid', chats.map((chat, $) => Chat.render(props, chat, chat_emit($))));
 }
 
-const app: Component<State, Event> = { create, update, render };
-
-export default app;
+export default {create, update, render} as Component<Props, State, Signal>;

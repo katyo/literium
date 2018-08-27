@@ -1,4 +1,4 @@
-import { Either, Keyed, a, b } from 'literium';
+import { Either, AsKeyed, a, b } from '@literium/base';
 
 export type Region = [number, number];
 
@@ -9,7 +9,10 @@ export interface State {
     selection: Selection;
 }
 
-export type Event = Keyed<'change', string> | Keyed<'select', Selection>;
+export type Signal = AsKeyed<{
+    change: string;
+    select: Selection
+}>;
 
 export function create(): State {
     return {
@@ -18,11 +21,11 @@ export function create(): State {
     };
 }
 
-export function update(state: State, event: Event): State {
-    switch (event.$) {
-        case 'change': return { ...state, content: event._ };
+export function update(state: State, signal: Signal): State {
+    switch (signal.$) {
+        case 'change': return { ...state, content: signal._ };
         case 'select': {
-            const selection = fixSelection(state, event._);
+            const selection = fixSelection(state, signal._);
             return equalSelection(state.selection, selection) ?
                 state : { ...state, selection };
         }
