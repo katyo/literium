@@ -8,35 +8,49 @@ import {
 
     BlockGfmTables,
     InlineGfm,
-} from 'marklit';
-import {
+
+    GfmBreaksTextSpan,
+    smartyPantsText,
+
+    MetaAbbrevs,
+    InlineAbbrev,
+    AbbrevBlock,
+    abbrevText,
+
+    MetaFootnotes,
+    InlineFootnote,
+    BlockFootnotes,
+    Footnote,
+    FootnotesBlock,
+
     BlockTablesVDom,
     InlineGfmVDom,
+
+    AbbrevVDom,
+    FootnoteVDom,
+    FootnotesBlockVDom,
     
     initMarkup
 } from '@literium/markup';
 import './editor/highlight';
-import {
-    CodeBlockVDom,
-    CodeSpanVDom
-} from '@literium/marklight';
+import { CodeBlockVDom } from '@literium/marklight';
 import * as Editor from './editor/common';
 import * as SimpleEditor from './editor/simple';
 import * as AdvancedEditor from './editor/advanced';
 
-interface Meta extends MetaData {}
+interface Meta extends MetaData, MetaAbbrevs, MetaFootnotes {}
 
-interface InlineToken extends InlineTokenMap<InlineToken> { }
+interface InlineToken extends InlineTokenMap<InlineToken>, InlineAbbrev, InlineFootnote { }
  
-interface BlockToken extends BlockTokenMap<BlockToken, InlineToken> { }
- 
+interface BlockToken extends BlockTokenMap<BlockToken, InlineToken>, BlockFootnotes<BlockToken> { }
+
 interface Context extends ContextMap<BlockToken, InlineToken, Meta> { }
 
 import example_md from './sample.md';
 
 const benchmark = bench();
 
-const renderMarkup = initMarkup<Context>([...BlockGfmTables, ...InlineGfm], [...BlockTablesVDom, ...InlineGfmVDom, CodeBlockVDom(), CodeSpanVDom()] as any);
+const renderMarkup = initMarkup<Context>([...BlockGfmTables, ...InlineGfm, abbrevText(smartyPantsText(GfmBreaksTextSpan)), AbbrevBlock, Footnote, FootnotesBlock], [...BlockTablesVDom, ...InlineGfmVDom, CodeBlockVDom(), AbbrevVDom, FootnoteVDom, FootnotesBlockVDom]);
 
 export const enum ScrollSource {
     Editor,
