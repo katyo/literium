@@ -47,7 +47,7 @@ export function mk_seq<T1, T2, T3, T4, T5, T6>(f1: (_: T1) => T2, f2: (_: T2) =>
 export function mk_seq<T1, T2, T3, T4, T5, T6, T7>(f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6, f6: (_: T6) => T7): (_: T1) => T7;
 export function mk_seq<T1, T2, T3, T4, T5, T6, T7, T8>(f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6, f6: (_: T6) => T7, f7: (_: T7) => T8): (_: T1) => T8;
 export function mk_seq<T1, T2, T3, T4, T5, T6, T7, T8, T9>(f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6, f6: (_: T6) => T7, f7: (_: T7) => T8, f8: (_: T8) => T9): (_: T1) => T9;
-export function mk_seq<S>(...fs: ((_: any) => any)[]): (_: any) => any {
+export function mk_seq(...fs: ((_: any) => any)[]): (_: any) => any {
     return _ => {
         for (const f of fs) {
             _ = f(_);
