@@ -98,14 +98,20 @@ export function bind_method<T, N extends keyof T, F extends T[N] & Function>(sel
     return (self[name] as F).bind(self);
 }
 
-export function flat_map<Arg, Res>(fn: (arg: Arg, idx: number) => Res | Res[]): (list: (Arg | Arg[])[]) => Res[] {
-    return (list: (Arg | Arg[])[]) => {
+export type NonFlat<Type> = Type | Type[];
+
+export interface FlatMap<Arg, Res> {
+    (list: NonFlat<Arg>[]): Res[];
+}
+
+export function flat_map<Arg, Res>(fn: (arg: Arg, idx: number) => NonFlat<Res>): FlatMap<Arg, Res> {
+    return (list: NonFlat<Arg>[]) => {
         const res: Res[] = [];
         let n = 0;
         for (let i = 0; i < list.length; i++) op(list[i]);
         return res;
 
-        function op(item: Arg | Arg[]) {
+        function op(item: NonFlat<Arg>) {
             if (Array.isArray(item)) {
                 for (const sub of item) op(sub);
             } else {
@@ -122,9 +128,13 @@ export function flat_map<Arg, Res>(fn: (arg: Arg, idx: number) => Res | Res[]): 
     };
 }
 
-export const flat_list: <Type>(list: (Type | Type[])[]) => Type[] = flat_map(identity);
+export interface FlatList {
+    <Type>(list: NonFlat<Type>[]): Type[];
+}
 
-export function flat_all<Type>(...args: (Type | Type[])[]): Type[] {
+export const flat_list: FlatList = flat_map(identity);
+
+export function flat_all<Type>(...args: NonFlat<Type>[]): Type[] {
     return flat_list(args);
 }
 
