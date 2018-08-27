@@ -56,3 +56,7 @@ export function paired_to_keyed<Rec>(x: Paired<Rec>): PairedAsKeyed<Rec> {
 export function keyed_to_paired<Rec>({ $, _ }: PairedAsKeyed<Rec>): Paired<Rec> {
     return { [$]: _ } as any as Paired<Rec>;
 }
+
+export type AsKeyed<T> = T extends Keyed<infer Key, infer Value> ? T : PairedAsKeyed<T>;
+
+export type AsPaired<T> = T extends Keyed<infer Key, infer Value> ? KeyedAsPaired<T> : T;
