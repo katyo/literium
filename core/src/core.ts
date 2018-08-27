@@ -21,13 +21,13 @@ export interface Remove<Props, State, Signal> {
     (props: Props, state: Readonly<State>, emit: Emit<Signal>, spawn: Spawn): State;
 }
 
-export interface ViewlessComponent<Props, State, Signal> {
+export interface Module<Props, State, Signal> {
     create: Create<Props, State, Signal>;
     change?: Change<Props, State, Signal>;
     update: Update<Props, State, Signal>;
     remove?: Remove<Props, State, Signal>;
 }
 
-export interface Component<Props, State, Signal> extends ViewlessComponent<Props, State, Signal> {
+export interface Component<Props, State, Signal> extends Module<Props, State, Signal> {
     render: Render<Props, State, Signal>;
 }
