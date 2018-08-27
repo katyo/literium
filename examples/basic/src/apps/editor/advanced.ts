@@ -51,7 +51,7 @@ export function render(state: State, emit: Emit<Signal>): VNode {
                 }
             }
         }
-    }, renderHightlight(state.content, 'md'));
+    }, renderHightlight(state.content, 'md')[0]);
 }
 
 function emitInput(state: State, char: string | number, emit: Emit<Signal>) {

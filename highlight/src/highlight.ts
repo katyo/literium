@@ -3,7 +3,7 @@ import { Options, listLanguages, init, process } from 'highlight-ts';
 import { vdomRender } from './vdom';
 
 export interface Highlight {
-    (src: string, lang?: string | string[]): VNodeChildren;
+    (src: string, lang?: string | string[]): [VNodeChildren, string];
 }
 
 export function initHighlight(options?: Options): Highlight {
@@ -19,7 +19,7 @@ export function initHighlight(options?: Options): Highlight {
                 lang = lang.filter(lang => langs.indexOf(lang) >= 0);
             }
         }
-        const result = process(highlighter, src, lang);
-        return result.value;
+        const { value, language } = process(highlighter, src, lang);
+        return [value, language];
     };
 }

@@ -19,7 +19,7 @@ export function CodeBlockVDom(options?: Options): BlockRenderRuleVDom<BlockCode,
     return [
         ContextTag.Block,
         BlockTag.Code,
-        ({ }, { _, l }) => h('pre', h('code', { class: { hljs: true } }, highlight(_, l)))
+        ({ }, { _, l }) => h('pre', h('code', { class: { hljs: true } }, highlight(_, l)[0]))
     ];
 }
 
@@ -28,14 +28,18 @@ export function CodeBlockWithClassVDom(options?: Options): BlockRenderRuleVDom<B
     return [
         ContextTag.Block,
         BlockTag.Code,
-        ({ }, { _, l }) => h('pre', h('code', { class: { hljs: true, [`language-${l}`]: !!l } }, highlight(_, l)))
+        ({ }, { _, l }) => {
+            const [markup, language] = highlight(_, l);
+            return h('pre', h('code', { class: { hljs: true, [`hljs-${language}`]: true } }, markup))
+        }
     ];
 }
 
 export function CodeSpanVDom(options?: Options): InlineRenderRuleVDom<InlineCode, NoMeta> {
+    const highlight = initHighlight(options);
     return [
         ContextTag.Inline,
         InlineTag.Code,
-        ({ }, { _ }) => h('code', _)
+        ({ }, { _ }) => h('code', highlight(_)[0])
     ];
 }
