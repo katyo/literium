@@ -16,10 +16,10 @@ export type BlockRenderHandleVDom<BlockTokenMap, Meta> = RenderHandle<VNodeChild
 
 export const initRenderVDom = makeRender(joinVNode);
 
-export function wrapVNode($: RenderHandle<VNodeChildren, ContextMap<UnknownToken, UnknownToken, NoMeta>, ContextTag, NoMeta>, chunk: string): VNodeChildren {
+export function wrapVNode(_$: RenderHandle<VNodeChildren, ContextMap<UnknownToken, UnknownToken, NoMeta>, ContextTag, NoMeta>, chunk: string): VNodeChildren {
     return chunk;
 }
 
-export function joinVNode($: RenderHandle<VNodeChildren, ContextMap<UnknownToken, UnknownToken, NoMeta>, ContextTag, NoMeta>, chunks: VNodeChildren[]): VNodeChildren {
-    return flat_all(chunks as VNodeChild[]);
+export function joinVNode(_$: RenderHandle<VNodeChildren, ContextMap<UnknownToken, UnknownToken, NoMeta>, ContextTag, NoMeta>, chunks: VNodeChildren[]): VNodeChildren {
+    return flat_list(chunks);
 }

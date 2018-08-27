@@ -70,7 +70,7 @@ export const FootnotesBlockVDom: BlockRenderRuleVDom<BlockFootnotes<UnknownToken
 export const HeadingVDom: BlockRenderRuleVDom<BlockHeading<UnknownToken>, MetaHeadings> = [
     ContextTag.Block,
     BlockTag.Heading,
-    ($, { n, i, _ }) => h(`h${n}`, renderNest($, _, ContextTag.Inline))
+    ($, { n, _ }) => h(`h${n}`, renderNest($, _, ContextTag.Inline))
 ];
 
 export const HeadingWithIdVDom: BlockRenderRuleVDom<BlockHeading<UnknownToken>, MetaHeadings> = [
