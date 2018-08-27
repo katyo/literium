@@ -30,6 +30,7 @@ export function init(doc: Document = document): Init {
 
         let vnode = read(elm);
         let state = create(props, deferred_emit, spawn);
+        let noemit = false;
 
         view();
         run();
@@ -39,15 +40,17 @@ export function init(doc: Document = document): Init {
         function view() {
             frame = undefined;
             const vnode_ = vnode;
-            vnode = render(props, state, deferred_emit) as VNode;
+            vnode = render(props, state, emit) as VNode;
+            noemit = true;
             patch(vnode_, vnode);
+            noemit = false;
         }
 
         function emit(signal: Signal) {
-            if (!frame) frame = requestAnimationFrame(view);
-            state = update(props, state, signal, deferred_emit, spawn);
-            //console.log('emit:', signal);
-            //console.log('state:', state);
+            if (!noemit) {
+                if (!frame) frame = requestAnimationFrame(view);
+                state = update(props, state, signal, deferred_emit, spawn);
+            }
         }
     };
 }
