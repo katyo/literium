@@ -1,4 +1,4 @@
-import { Emit, a, b, keyed } from '@literium/base';
+import { Emit, a, b, keyed, deferred } from '@literium/base';
 import { KeyCode, VNode, h } from '@literium/core';
 import { initHighlight } from '@literium/highlight';
 import { State, Signal, Selection, Region } from './common';
@@ -6,13 +6,15 @@ import { cancelEvent, hasSpecialKey, getCharacter } from './utils';
 
 const renderHightlight = initHighlight();
 
+const deferredSetSelection = deferred(setSelection);
+
 export function render(state: State, emit: Emit<Signal>): VNode {
     return h('pre.markup-editor', {
         style: { height: '250px' },
         attrs: { contenteditable: true },
         hook: {
-            insert: (vnode) => { setSelection(vnode.elm as HTMLElement, state.selection); },
-            update: (_, vnode) => { setSelection(vnode.elm as HTMLElement, state.selection); },
+            insert: (vnode) => { deferredSetSelection(vnode.elm as HTMLElement, state.selection); },
+            update: (_, vnode) => { deferredSetSelection(vnode.elm as HTMLElement, state.selection); },
         },
         on: {
             click: (_event: MouseEvent, vnode: VNode) => {
@@ -127,11 +129,9 @@ function setSelection(root: HTMLElement, sel: Selection): void {
         const start: [Node, number] = pickPosition(root, Math.min(...sel._));
         const end: [Node, number] = pickPosition(root, Math.max(...sel._));
         setRange(range, start, end);
-        console.log('setSel', start, end);
     } else {
         const point: [Node, number] = pickPosition(root, sel._);
-        setRange(range, point, point)
-        console.log('setCur', point);
+        setRange(range, point, point);
     }
 }
 
