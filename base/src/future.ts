@@ -11,19 +11,9 @@ export function map_emit<Signal, OtherSignal>(fn: (signal: OtherSignal) => Signa
     return (emit: Emit<Signal>) => (signal: OtherSignal) => { emit(fn(signal)); };
 }
 
-export function key_emit<Signal extends Keyed<Key, KeyedValue<Signal, Key>>, Key extends keyof any>(emit: Emit<Signal>, key: Key): Emit<KeyedValue<Signal, Key>> {
-    return map_emit(to_keyed(key))(emit);
+export function key_emit<Key extends keyof any>(key: Key): <Signal extends Keyed<Key, KeyedValue<Signal, Key>>>(emit: Emit<Signal>) => Emit<KeyedValue<Signal, Key>> {
+    return map_emit(to_keyed(key)) as <Signal extends Keyed<Key, KeyedValue<Signal, Key>>>(emit: Emit<Signal>) => Emit<KeyedValue<Signal, Key>>;
 }
-
-/*
-export function sub_emit<Signal, Key extends keyof Signal>(emit: Emit<Partial<Signal>>, key: Key): Emit<Required<Signal>[Key]> {
-    return map_emit((signal: Required<Signal>[Key]) => ({ [key]: signal } as any as Partial<Signal>))(emit);
-}
-
-export function subkey_emit<Signal extends { [K in Key]: Keyed<SubKey, SubSignal> }, Key extends keyof Signal, SubKey, SubSignal>(emit: Emit<Partial<Signal>>, key: Key, subkey: SubKey): Emit<SubSignal> {
-    return key_emit(sub_emit(emit, key) as any as Emit<Keyed<SubKey, SubSignal>>, subkey);
-}
-*/
 
 export interface Done {
     (): void;
@@ -46,7 +36,7 @@ export function future<Type>(val: Type): Future<Type> {
 }
 
 export function never<Type>(): Future<Type> {
-    return (emit: Emit<Type>) => dummy;
+    return (_emit: Emit<Type>) => dummy;
 }
 
 export function wrap_future<R>(fn: () => R): () => Future<R>;
