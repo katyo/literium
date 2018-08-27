@@ -20,6 +20,7 @@ const {
 const distdir = outdir || 'dist';
 
 export default {
+    context: 'this',
     input: `src/client.ts`,
     output: {
         file: join(distdir, `client_${version}.min.js`),
