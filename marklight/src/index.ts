@@ -3,11 +3,8 @@ import {
     ContextTag,
     BlockTag,
     BlockCode,
-    InlineTag,
-    InlineCode,
     NoMeta,
     BlockRenderRuleVDom,
-    InlineRenderRuleVDom
 } from '@literium/markup';
 import {
   Options,
@@ -32,14 +29,5 @@ export function CodeBlockWithClassVDom(options?: Options): BlockRenderRuleVDom<B
             const [markup, language] = highlight(_, l);
             return h('pre', h('code', { class: { hljs: true, [`hljs-${language}`]: true } }, markup))
         }
-    ];
-}
-
-export function CodeSpanVDom(options?: Options): InlineRenderRuleVDom<InlineCode, NoMeta> {
-    const highlight = initHighlight(options);
-    return [
-        ContextTag.Inline,
-        InlineTag.Code,
-        ({ }, { _ }) => h('code', highlight(_)[0])
     ];
 }
