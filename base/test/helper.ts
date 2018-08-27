@@ -54,6 +54,10 @@ describe('helper', () => {
 
     it('flat_map', () => {
         dse(flat_map((a: number) => a + 1)([1, 2, [3, 4], [5, 6], 7]), [2, 3, 4, 5, 6, 7, 8]);
+        dse(do_seq(
+            [1, 2, [3, 4], [5, 6], 7],
+            flat_map(a => a + 1)
+        ), [2, 3, 4, 5, 6, 7, 8]);
     });
 
     it('flat_list', () => {
