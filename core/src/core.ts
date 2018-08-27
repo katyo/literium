@@ -18,7 +18,7 @@ export interface Render<Props, State, Signal> {
 }
 
 export interface Remove<Props, State, Signal> {
-    (props: Props, state: Readonly<State>, spawn: Spawn): void;
+    (props: Props, state: Readonly<State>, emit: Emit<Signal>, spawn: Spawn): State;
 }
 
 export interface ViewlessComponent<Props, State, Signal> {
