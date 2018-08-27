@@ -51,6 +51,8 @@
     "node",
     "backend",
     "frontend",
-    "examples/todomvc"
+    "examples/basic",
+    "examples/todomvc",
+    "examples/blog"
   ]
 }
