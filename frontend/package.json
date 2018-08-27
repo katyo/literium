@@ -1,5 +1,5 @@
 {
-  "name": "literium-frontend",
+  "name": "@literium/frontend",
   "version": "0.2.5",
   "description": "Browser frontend support for Literium WEB-framework.",
   "main": "index.js",
@@ -39,10 +39,11 @@
   },
   "dependencies": {
     "tweetnacl-ts": "^1",
-    "literium-base": "^0.2",
-    "literium-json": "^0.2",
-    "literium-router": "^0.2",
-    "literium-request": "^0.2",
-    "literium": "^0.2"
+    "@literium/base": "file:../base",
+    "@literium/json": "file:../json",
+    "@literium/router": "file:../router",
+    "@literium/request": "file:../request",
+    "@literium/core": "file:../core",
+    "tslib": "^1"
   }
 }

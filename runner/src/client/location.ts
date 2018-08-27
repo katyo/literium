@@ -1,4 +1,4 @@
-import { Emit, Option, is_some, un_some, ok, err, tuple, keyed, un_some_or } from 'literium';
+import { Emit, Option, is_some, un_some, ok, err, tuple, keyed, un_some_or } from '@literium/base';
 import { RouterApi, SetRoute, NavApi, NavInit } from '../location';
 
 export function getBase({ location: { protocol, host } }: Window): string {

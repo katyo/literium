@@ -1,4 +1,5 @@
-import { VNodeChildren, VNodeChild, flat_all } from 'literium';
+import { flat_list } from '@literium/base';
+import { VNodeChildren } from '@literium/core';
 import {
     RenderRule, RenderHandle, makeRender,
     ContextTag, ContextMap,

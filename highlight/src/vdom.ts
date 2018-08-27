@@ -1,4 +1,4 @@
-import { VNodeChildren, VNodeChild, h } from 'literium';
+import { VNodeChildren, VNodeChild, h } from '@literium/core';
 import { Renderer } from 'highlight-ts';
 
 export const vdomRender: Renderer<VNodeChildren> = {

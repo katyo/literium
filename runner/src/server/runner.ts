@@ -3,7 +3,8 @@ import {
     attributesModule as attrsModule, classModule, styleModule
 } from 'snabbdom-ng/html';
 
-import { VNode, VData, Component, Emit, Future, tuple, task_pool, deferred } from 'literium';
+import { Emit, Future, tuple, task_pool, deferred } from '@literium/base';
+import { VNode, VData, Component } from '@literium/core';
 
 import { Readable } from 'stream';
 

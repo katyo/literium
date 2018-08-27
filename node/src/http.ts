@@ -1,6 +1,6 @@
 import { ServerResponse, ServerRequest } from 'http';
 import { Readable } from 'stream';
-import { ok, is_ok, un_ok, Result, FutureResult, un_err, is_some, un_some } from 'literium-base';
+import { ok, is_ok, un_ok, Result, FutureResult, un_err, is_some, un_some } from '@literium/base';
 import { BodyType } from './body';
 
 export const enum Method {

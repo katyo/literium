@@ -1,4 +1,4 @@
-import { Emit, Keyed, Option, Result } from 'literium';
+import { Emit, Keyed, Option, Result } from '@literium/base';
 
 // Smart router API
 export interface RouterApi<Args> {

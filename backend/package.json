@@ -1,5 +1,5 @@
 {
-  "name": "literium-backend",
+  "name": "@literium/backend",
   "version": "0.2.5",
   "description": "NodeJS backend support for Literium WEB-framework.",
   "main": "index.js",
@@ -40,9 +40,10 @@
   },
   "dependencies": {
     "sodium-native": "^2",
-    "literium-base": "^0.2",
-    "literium-json": "^0.2",
-    "literium-node": "^0.2",
-    "literium": "^0.2"
+    "@literium/base": "file:../base",
+    "@literium/json": "file:../json",
+    "@literium/node": "file:../node",
+    "@literium/core": "file:../core",
+    "tslib": "^1"
   }
 }

@@ -1,4 +1,5 @@
-import { VNode, VNodeChildren, h, Keyed, flat_all } from 'literium';
+import { Keyed, flat_all } from '@literium/base';
+import { VNode, VNodeChildren, h } from '@literium/core';
 import { asBool } from './widget';
 import { FormGroupProps, formGroup } from './form';
 

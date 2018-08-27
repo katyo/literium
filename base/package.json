@@ -1,5 +1,5 @@
 {
-  "name": "literium-base",
+  "name": "@literium/base",
   "version": "0.2.5",
   "description": "Core types and functions widely used by Literium web-application framework.",
   "main": "index.js",
@@ -51,6 +51,6 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "tslib": "^1.9"
+    "tslib": "^1"
   }
 }

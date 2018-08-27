@@ -1,5 +1,5 @@
 {
-  "name": "literium-markup",
+  "name": "@literium/markup",
   "version": "0.2.5",
   "description": "Markdown renderer module for Literium web-framework.",
   "main": "index.js",
@@ -43,7 +43,9 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "literium": "^0.2",
-    "marklit": "^0.2"
+    "@literium/base": "file:../base",
+    "@literium/core": "file:../core",
+    "marklit": "^0.2",
+    "tslib": "^1"
   }
 }

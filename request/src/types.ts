@@ -1,4 +1,4 @@
-import { Result } from 'literium-base';
+import { Result } from '@literium/base';
 
 export const enum Method {
     Get = 'GET',

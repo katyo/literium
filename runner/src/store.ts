@@ -1,5 +1,5 @@
-import { dummy, is_ok, un_ok } from 'literium';
-import { Type, parse, build } from 'literium-json';
+import { dummy, is_ok, un_ok } from '@literium/base';
+import { Type, parse, build } from '@literium/json';
 
 export const enum StoreType {
     Session, // saved into the session storage

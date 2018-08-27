@@ -1,4 +1,4 @@
-import { h } from 'literium';
+import { h } from '@literium/core';
 import {
     ContextTag,
     BlockTag,
@@ -8,18 +8,18 @@ import {
     NoMeta,
     BlockRenderRuleVDom,
     InlineRenderRuleVDom
-} from 'literium-markup';
+} from '@literium/markup';
 import {
-    Options,
-    initHighlight
-} from 'literium-highlight';
+  Options,
+  initHighlight
+} from '@literium/highlight';
 
 export function CodeBlockVDom(options?: Options): BlockRenderRuleVDom<BlockCode, NoMeta> {
     const highlight = initHighlight(options);
     return [
         ContextTag.Block,
         BlockTag.Code,
-        ({ }, { _, l }) => h('pre', h('code', highlight(_, l)))
+        ({ }, { _, l }) => h('pre', h('code', { class: { hljs: true } }, highlight(_, l)))
     ];
 }
 
@@ -28,7 +28,7 @@ export function CodeBlockWithClassVDom(options?: Options): BlockRenderRuleVDom<B
     return [
         ContextTag.Block,
         BlockTag.Code,
-        ({ }, { _, l }) => h('pre', h('code', { class: { [`language-${l}`]: !!l } }, highlight(_, l)))
+        ({ }, { _, l }) => h('pre', h('code', { class: { hljs: true, [`language-${l}`]: !!l } }, highlight(_, l)))
     ];
 }
 

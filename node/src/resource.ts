@@ -1,4 +1,4 @@
-import { Option, some, none, some_def, then_some, tuple, mk_seq, do_seq, then_result, future_async, map_future_ok, future_ok, then_future_err } from 'literium-base';
+import { Option, some, none, some_def, then_some, tuple, mk_seq, do_seq, then_option, future_async, map_future_ok, future_ok, then_future_err } from '@literium/base';
 import { extname, resolve, join } from 'path';
 import { open, createReadStream } from 'fs';
 import { StreamBody } from './body';

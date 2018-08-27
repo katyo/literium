@@ -1,8 +1,8 @@
 /// <reference path="sodium-native.d.ts" />
 import { crypto_box_keypair, crypto_box_PUBLICKEYBYTES, crypto_box_SECRETKEYBYTES, crypto_box_seal, crypto_box_seal_open, crypto_box_SEALBYTES } from 'sodium-native';
-import { Result, ok, err, some, constant, then_ok, mk_seq, wrap_future, then_future_ok } from 'literium-base';
-import { Type, base64, utf8, parse, build } from 'literium-json';
-import { BodyType, BinaryBody, StringBody } from 'literium-node';
+import { Result, ok, err, some, constant, then_ok, mk_seq, wrap_future, then_future_ok } from '@literium/base';
+import { Type, base64, utf8, parse, build } from '@literium/json';
+import { BodyType, BinaryBody, StringBody } from '@literium/node';
 
 export interface Codec<T, V> {
     p: (v: V) => Result<T, string>;

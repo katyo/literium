@@ -1,4 +1,5 @@
-import { VNodeChildren, mk_seq } from 'literium';
+import { mk_seq } from '@literium/base';
+import { VNodeChildren } from '@literium/core';
 import {
     HasMeta, HasContexts,
     ContextMeta,

@@ -1,5 +1,5 @@
 {
-  "name": "literium-request",
+  "name": "@literium/request",
   "version": "0.2.5",
   "description": "Request module for Literium web-framework.",
   "main": "request.js",
@@ -57,7 +57,8 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "literium-base": "^0.2",
-    "literium-json": "^0.2"
+    "@literium/base": "file:../base",
+    "@literium/json": "file:../json",
+    "tslib": "^1"
   }
 }

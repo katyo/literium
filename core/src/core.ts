@@ -1,5 +1,5 @@
+import { Emit, Spawn } from '@literium/base';
 import { VNodeChild } from './vdom';
-import { Emit, Spawn } from 'literium-base';
 
 export interface Create<Props, State, Signal> {
     (props: Props, emit: Emit<Signal>, spawn: Spawn): State;

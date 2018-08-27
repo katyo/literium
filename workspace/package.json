@@ -1,5 +1,5 @@
 {
-  "name": "literium-workspace",
+  "name": "@literium/workspace",
   "version": "0.2.5",
   "description": "Project workspace management tool from Literium web-application framework.",
   "bin": {

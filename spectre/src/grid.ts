@@ -1,4 +1,5 @@
-import { VNodeChildren, VNode, h, do_seq, flat_map } from 'literium';
+import { do_seq, flat_map } from '@literium/base';
+import { VNodeChildren, VNode, h } from '@literium/core';
 import { asBool } from './widget';
 
 export interface ContainerProps {

@@ -1,6 +1,6 @@
-import { Option, OkFn, ok, future_ok, map_future, do_seq, some_def, then_some, un_some_else, map_some } from 'literium-base';
-import { Component } from 'literium';
-import { init } from 'literium-runner/server';
+import { Option, OkFn, ok, future_ok, map_future, do_seq, some_def, then_some, un_some_else, map_some } from '@literium/base';
+import { Component } from '@literium/core';
+import { init } from '@literium/runner/server';
 import { StreamBody } from './body';
 import { Method, Request, Response, Handler, okay, not_implemented, with_body } from './http';
 

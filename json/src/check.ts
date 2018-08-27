@@ -1,5 +1,5 @@
 import { Result } from './types';
-import { ok, err, ok_type, then_ok, mk_seq } from 'literium-base';
+import { ok, err, ok_type, then_ok, mk_seq } from '@literium/base';
 
 // Basic checks
 

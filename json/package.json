@@ -1,5 +1,5 @@
 {
-  "name": "literium-json",
+  "name": "@literium/json",
   "version": "0.2.5",
   "description": "Type-safe JSON module for Literium web-framework.",
   "main": "index.js",
@@ -55,6 +55,7 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "literium-base": "^0.2"
+    "@literium/base": "file:../base",
+    "tslib": "^1"
   }
 }

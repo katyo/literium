@@ -1,4 +1,4 @@
-import { h } from 'literium';
+import { h } from '@literium/core';
 import {
     ContextTag,
     NoMeta,

@@ -1,5 +1,5 @@
 {
-  "name": "literium-runner",
+  "name": "@literium/runner",
   "version": "0.2.5",
   "description": "Runner module for Literium web-framework.",
   "main": "index.js",
@@ -55,7 +55,10 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "literium": "^0.2",
-    "literium-json": "^0.2"
+    "snabbdom-ng": "^0.7.1-ng.12",
+    "@literium/base": "file:../base",
+    "@literium/core": "file:../core",
+    "@literium/json": "file:../json",
+    "tslib": "^1"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "literium-router",
+  "name": "@literium/router",
   "version": "0.2.5",
   "description": "Type-safe router module for Literium web-framework.",
   "main": "router.js",
@@ -51,6 +51,7 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "literium-base": "^0.2"
+    "@literium/base": "file:../base",
+    "tslib": "^1"
   }
 }

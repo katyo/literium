@@ -1,6 +1,6 @@
-import { Result, ok, err, constant, map_ok, ok_def_or, do_seq, mk_seq, then_ok } from 'literium-base';
-import { Type, utf8, base64, then, build, parse } from 'literium-json';
-import { BodyType, DataType } from 'literium-request';
+import { Result, ok, err, constant, map_ok, ok_def_or, do_seq, mk_seq, then_ok } from '@literium/base';
+import { Type, utf8, base64, then, build, parse } from '@literium/json';
+import { BodyType, DataType } from '@literium/request';
 import { ByteArray, sealedbox, SealedBoxLength, sealedbox_open, box_keyPair } from 'tweetnacl-ts';
 
 export interface Codec<T, V> {

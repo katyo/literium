@@ -1,5 +1,5 @@
 {
-  "name": "literium-node",
+  "name": "@literium/node",
   "version": "0.2.5",
   "description": "NodeJS support functions for Literium WEB-framework.",
   "main": "index.js",
@@ -40,10 +40,11 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "literium-base": "^0.2",
-    "literium-json": "^0.2",
-    "literium-router": "^0.2",
-    "literium-runner": "^0.2",
-    "literium": "^0.2"
+    "@literium/base": "file:../base",
+    "@literium/json": "file:../json",
+    "@literium/router": "file:../router",
+    "@literium/runner": "file:../runner",
+    "@literium/core": "file:../core",
+    "tslib": "^1"
   }
 }

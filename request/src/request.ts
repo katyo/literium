@@ -1,7 +1,7 @@
 export { Method, Status, Headers, DataType, BodyType, NativeBody, NativeType } from './types';
 export { JsonBody } from './json';
 
-import { Emit, FutureResult, ok, err, do_seq, map_ok, map_err, then_future_ok, future, dummy, deferred, str_to_err } from 'literium-base';
+import { Emit, FutureResult, ok, err, do_seq, map_ok, map_err, then_future_ok, future, dummy, deferred, str_to_err } from '@literium/base';
 import { Method, Status, DataType, BodyType, NativeBody, Headers, FromBodyType } from './types';
 import { request as backend } from './server';
 

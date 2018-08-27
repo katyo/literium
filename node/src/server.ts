@@ -3,7 +3,7 @@ import { Server, createServer, ServerRequest, ServerResponse, request } from 'ht
 import { ChildProcess, spawn as spawn_, SpawnOptions } from 'child_process';
 import { Handler, handler_to_node } from './http';
 import { parse_bind, build_bind } from './bind';
-import { do_seq, future_ok, then_future_ok } from 'literium-base';
+import { do_seq, future_ok, then_future_ok } from '@literium/base';
 
 export function handle_all(handler: Handler, ...handlers: Handler[]): Handler {
     return req => do_seq(

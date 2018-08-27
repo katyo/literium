@@ -1,5 +1,5 @@
 import { h, VNode, VNodeChildren, VData, empty } from './vdom';
-import { flat_all } from 'literium-base';
+import { flat_all } from '@literium/base';
 
 export interface ResourceLink {
     link: string;

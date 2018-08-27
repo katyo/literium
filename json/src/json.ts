@@ -2,7 +2,7 @@ import {
     ok, err, map_ok, map_err, then_ok,
 
     mk_seq, ok_try, err_to_str, Option, some, none, is_some, un_some, do_seq, un_some_or,
-} from 'literium-base';
+} from '@literium/base';
 import { Type, TypeConv, Result } from './types';
 import {
     str_check, num_check, bin_check, re_check, len_check,

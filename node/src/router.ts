@@ -1,6 +1,6 @@
 import { Method, Request, Handler, FutureResponse, not_implemented } from './http';
-import { Routes, match_paired } from 'literium-router';
-import { future_ok } from 'literium-base';
+import { Routes, match_paired } from '@literium/router';
+import { future_ok } from '@literium/base';
 
 export interface RoutedRequest<Args> extends Request {
     args: Args;

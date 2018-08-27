@@ -1,4 +1,4 @@
-import { VNode, h } from 'literium';
+import { VNode, h } from '@literium/core';
 import { asBool } from './widget';
 
 export const enum IconKind {

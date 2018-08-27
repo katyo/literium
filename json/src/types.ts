@@ -1,4 +1,4 @@
-import { Result as _Result } from 'literium-base';
+import { Result as _Result } from '@literium/base';
 
 export type Result<Type> = _Result<Type, string>;
 

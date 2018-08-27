@@ -1,4 +1,8 @@
-import { Keyed, keyed, do_seq, some, some_def, map_some, then_none, then_some } from 'literium';
+import {
+    Keyed, keyed,
+    do_seq,
+    some, some_def, map_some, then_none, then_some
+} from '@literium/base';
 import { RouterApi } from './location';
 
 export interface Locale<Lang extends string> {

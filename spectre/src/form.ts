@@ -1,4 +1,4 @@
-import { VNode, VNodeChildren, VNodeChild, h } from 'literium';
+import { VNode, VNodeChildren, VNodeChild, h } from '@literium/core';
 import { WidgetSize, asBool } from './widget';
 
 export interface FormGroupProps {

@@ -1,4 +1,4 @@
-import { VNodeChildren } from 'literium';
+import { VNodeChildren } from '@literium/core';
 import { Options, init, process } from 'highlight-ts';
 import { vdomRender } from './vdom';
 

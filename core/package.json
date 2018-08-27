@@ -1,5 +1,5 @@
 {
-  "name": "literium",
+  "name": "@literium/core",
   "version": "0.2.5",
   "description": "Ultra lightweight web-application framework.",
   "main": "index.js",
@@ -49,7 +49,8 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "literium-base": "^0.2",
-    "snabbdom-ng": "^0.7.1-ng.12"
+    "@literium/base": "file:../base",
+    "snabbdom-ng": "^0.7.1-ng.12",
+    "tslib": "^1"
   }
 }

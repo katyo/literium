@@ -1,5 +1,5 @@
-import { Option, some, none, Result, ok, FutureResult, mk_seq, ok_try, then_ok, map_err, err_to_str, then_future_ok, wrap_future, map_ok, future_ok } from 'literium-base';
-import * as Json from 'literium-json';
+import { Option, some, none, Result, ok, FutureResult, mk_seq, ok_try, then_ok, map_err, err_to_str, then_future_ok, wrap_future, map_ok, future_ok } from '@literium/base';
+import * as Json from '@literium/json';
 import { read_all_from_stream, data_to_stream } from './stream';
 import { Readable } from 'stream';
 

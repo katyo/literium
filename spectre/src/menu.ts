@@ -1,4 +1,4 @@
-import { VNode, VNodeChildren, h } from 'literium';
+import { VNode, VNodeChildren, h } from '@literium/core';
 
 export interface MenuDivider { }
 

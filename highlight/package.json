@@ -1,5 +1,5 @@
 {
-  "name": "literium-highlight",
+  "name": "@literium/highlight",
   "version": "0.2.5",
   "description": "Syntax highlighter module for Literium web-framework.",
   "main": "index.js",
@@ -42,7 +42,8 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "literium": "^0.2",
-    "highlight-ts": "^9.12"
+    "@literium/core": "file:../core",
+    "highlight-ts": "^9.12.1-1",
+    "tslib": "^1"
   }
 }

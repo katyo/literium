@@ -1,5 +1,5 @@
 import { Readable, Writable, Duplex } from 'stream';
-import { Emit, Result, ok, err, FutureResult } from 'literium-base';
+import { Emit, Result, ok, err, FutureResult } from '@literium/base';
 
 export function data_to_stream(chunk: Buffer): Readable {
     const s = new Duplex();

@@ -1,4 +1,5 @@
-import { VNode, h, flat_all } from 'literium';
+import { flat_all } from '@literium/base';
+import { VNode, h } from '@literium/core';
 import { WidgetFloat, asBool } from './widget';
 import { ButtonProps, button } from './button';
 import { MenuEntry, menu } from './menu';

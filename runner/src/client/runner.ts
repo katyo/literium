@@ -3,7 +3,8 @@ import {
     attributesModule as attrsModule, classModule, styleModule, propsModule, eventListenersModule as eventModule
 } from 'snabbdom-ng';
 
-import { VNode, VData, Done, Component, task_pool, deferred, dummy } from 'literium';
+import { Done, task_pool, deferred, dummy } from '@literium/base';
+import { VNode, VData, Component } from '@literium/core';
 
 export interface Init {
     <Props, State, Signal>(app: Component<Props, State, Signal>): Run<Props, State, Signal>;

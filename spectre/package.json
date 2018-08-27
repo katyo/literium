@@ -1,5 +1,5 @@
 {
-  "name": "literium-spectre",
+  "name": "@literium/spectre",
   "version": "0.2.5",
   "description": "Spectre.css-based widgets library for Literium web-framework.",
   "main": "index.js",
@@ -46,7 +46,9 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "literium": "^0.2",
-    "spectre.css": "^0.5"
+    "@literium/base": "file:../base",
+    "@literium/core": "file:../core",
+    "spectre.css": "^0.5",
+    "tslib": "^1"
   }
 }

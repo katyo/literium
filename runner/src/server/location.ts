@@ -1,4 +1,4 @@
-import { Emit, is_some, un_some, ok, err, keyed, tuple, dummy, un_some_or } from 'literium';
+import { Emit, is_some, un_some, ok, err, keyed, tuple, dummy, un_some_or } from '@literium/base';
 import { RouterApi, SetRoute, NavApi, NavInit } from '../location';
 import { Request } from './request';
 

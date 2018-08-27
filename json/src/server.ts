@@ -1,4 +1,4 @@
-import { then_ok, map_err, ok_try, mk_seq, err_to_str, identity } from 'literium-base';
+import { then_ok, map_err, ok_try, mk_seq, err_to_str, identity } from '@literium/base';
 import { Type } from './types';
 import { str_check, re_check } from './check';
 

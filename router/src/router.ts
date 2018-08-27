@@ -13,7 +13,7 @@ import {
 
     Paired, Keyed, PairedAsKeyed,
     paired_to_keyed, keyed_to_paired
-} from 'literium-base';
+} from '@literium/base';
 
 export interface Route<Args> {
     // match path to arguments

@@ -1,5 +1,5 @@
 {
-  "name": "literium-marklight",
+  "name": "@literium/marklight",
   "version": "0.2.5",
   "description": "Markdown code highlight renderer for Literium web-framework.",
   "main": "index.js",
@@ -43,8 +43,10 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "literium": "^0.2",
-    "literium-markup": "^0.2",
-    "literium-highlight": "^0.2"
+    "marklit": "^0.2",
+    "@literium/core": "file:../core",
+    "@literium/highlight": "file:../highlight",
+    "@literium/markup": "file:../markup",
+    "tslib": "^1"
   }
 }

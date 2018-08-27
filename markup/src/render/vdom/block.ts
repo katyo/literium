@@ -1,4 +1,4 @@
-import { VNodeChild, h } from 'literium';
+import { VNodeChild, h } from '@literium/core';
 import {
     ContextTag,
     NoMeta,

@@ -1,6 +1,6 @@
-import { FutureResult, ok, err, mk_seq, map_future_err, err_to_str, do_seq, wrap_future, constant, then_option, ok_def_or, ok_some_or, future, then_future_ok, ErrFn } from 'literium-base';
-import { Route, build, match } from 'literium-router';
-import { Method, BodyType, DataType, Status, RequestApi } from 'literium-request';
+import { FutureResult, ok, err, mk_seq, map_future_err, err_to_str, do_seq, wrap_future, constant, then_option, ok_def_or, ok_some_or, future, then_future_ok, ErrFn } from '@literium/base';
+import { Route, build, match } from '@literium/router';
+import { Method, BodyType, DataType, Status, RequestApi } from '@literium/request';
 
 export type Result<T> = FutureResult<T, string>;
 

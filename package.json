@@ -7,7 +7,7 @@
     "example": "examples"
   },
   "scripts": {
-    "preinstall": "cd workspace && test -x workspace.js || { npm install && npm run compile && chmod +x workspace.js; }",
+    "preinstall": "cd workspace && test -x workspace.js || { npm install --no-package-lock && npm run compile && chmod +x workspace.js; }",
     "show": "lws show",
     "install": "lws install",
     "clean": "lws purge",
@@ -35,7 +35,7 @@
   },
   "homepage": "https://github.com/katyo/literium#readme",
   "devDependencies": {
-    "literium-workspace": "file:workspace"
+    "@literium/workspace": "file:workspace"
   },
   "packages": [
     "base",
