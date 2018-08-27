@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+/* -*- mode: typescript -*- */
 
-import { join } from 'path';
-import { readFileSync } from 'fs';
+import { join, relative } from 'path';
+import { readFileSync, lstatSync, writeFileSync } from 'fs';
 import { spawnSync } from 'child_process';
 import { moveSync, removeSync, mkdirpSync } from 'fs-extra';
 
@@ -25,6 +26,10 @@ const commands: Record<string, Command> = {
     test: {
         args: '[package]', help: 'Test package(s)',
         run: (packages: PackagesInfo, pkg?: string) => { for_packages(packages, test_package, pkg); }
+    },
+    pack: {
+        args: '[package]', help: 'Pack package(s)',
+        run: (packages: PackagesInfo, pkg?: string) => { for_packages(packages, pack_package, pkg); }
     },
     run: {
         args: '<script> [package] [-- <...arguments>]', help: 'Run script for package(s)',
@@ -54,6 +59,19 @@ const commands: Record<string, Command> = {
             if (!pkg) remove_package_lock('.');
         }
     },
+    modify: {
+        args: '<link-deps,unlink-deps> [package]', help: 'Modify package(s) manifest (package.json)',
+        run: (packages: PackagesInfo, op: string, pkg?: string) => {
+            const op_ = op == 'link-deps' ? PackageJsonOp.LinkDeps :
+                op == 'unlink-deps' ? PackageJsonOp.UnlinkDeps :
+                    undefined;
+            if (op_) {
+                for_packages(packages, modify_package_json(op_), pkg);
+            } else {
+                console.log('Please specify correct operation: link-deps, unlink-deps.');
+            }
+        }
+    }
 };
 
 if (!args.length || !commands[args[0]]) {
@@ -141,10 +159,12 @@ function show_package(packages: PackagesInfo, name: string) {
 }
 
 function run_script(name: string, ...args: string[]): (packages: PackagesInfo, name: string) => void {
-    return (packages: PackagesInfo, name: string) => {
-        const { path, scrs } = packages[name];
-        if (scrs.indexOf(name) != -1) {
+    return (packages: PackagesInfo, pkg: string) => {
+        const { path, scrs } = packages[pkg];
+        if (scrs.indexOf(name) >= 0) {
             invoke_npm(path, 'run', name, ...args);
+        } else {
+            console.log(`# package: ${pkg} has no script: ${name}`);
         }
     };
 }
@@ -157,40 +177,54 @@ function test_package(packages: PackagesInfo, name: string) {
 }
 
 function install_package(packages: PackagesInfo, name: string) {
+    console.log(`# install package ${name}`);
     install_dependencies(packages, name);
 
     const { path } = packages[name];
-    invoke_npm(path, 'install', '--no-package-lock');
-    pack_package(packages, name);
+    invoke_npm(path, 'install');
+    run_script('prepack')(packages, name);
 }
 
 function install_dependencies(packages: PackagesInfo, name: string) {
-    const { path, deps } = packages[name];
+    const { deps } = packages[name];
 
     for (const dep of deps) {
-        const dep_pack = pack_archive(packages, dep);
-        invoke_npm(path, 'install', dep_pack, '--no-save', '--no-package-lock');
+        if (!package_installed(packages, dep)) {
+            install_package(packages, dep);
+        } else {
+            console.log(`# skip install package ${dep}`);
+        }
+    }
+}
+
+function package_installed(packages: PackagesInfo, name: string): boolean {
+    const { path } = packages[name];
+    try {
+        return lstatSync(join(process.cwd(), path, 'node_modules')).isDirectory();
+    } catch (e) {
+        return false;
     }
 }
 
 function pack_archive(packages: PackagesInfo, name: string, local: boolean = false) {
     const { path, vers } = packages[name];
+    name = name.replace(/^@/, '').replace(/\//g, '-');
     return join(process.cwd(), local ? path : '.lws', `${name}-${vers}.tgz`);
 }
 
 function pack_package(packages: PackagesInfo, name: string) {
     const { path } = packages[name];
+    modify_package_json(PackageJsonOp.UnlinkDeps)(packages, name);
     invoke_npm(path, 'pack');
+    modify_package_json(PackageJsonOp.LinkDeps)(packages, name);
     mkdirpSync(join(process.cwd(), '.lws'));
     removeSync(pack_archive(packages, name));
     moveSync(pack_archive(packages, name, true), pack_archive(packages, name));
 }
 
 function purge_package(packages: PackagesInfo, name: string) {
-    const { path, scrs } = packages[name];
-    if (scrs.indexOf('clean') != -1) {
-        invoke_npm(path, 'run', 'clean');
-    }
+    run_script('clean')(packages, name);
+    const { path } = packages[name];
     purge_package_path(path);
 }
 
@@ -207,11 +241,47 @@ function remove_package_lock(path: string) {
     removeSync(join(process.cwd(), path, 'package-lock.json'));
 }
 
+const enum PackageJsonOp {
+    LinkDeps,
+    UnlinkDeps,
+}
+
+function modify_package_json(op: PackageJsonOp): (packages: PackagesInfo, name: string) => void {
+    return (packages, name) => {
+        const pkg = packages[name];
+        const path = join(process.cwd(), pkg.path);
+        const data = read_package_json(path);
+        for (const group of ['dependencies', 'devDependencies', 'peerDependencies'] as (keyof PackageJson)[]) {
+            const deps = data[group] as PackageDeps;
+            if (deps) {
+                for (const dep in deps) {
+                    const dep_pkg = packages[dep];
+                    if (dep_pkg) {
+                        deps[dep] =
+                            op == PackageJsonOp.LinkDeps ?
+                                'file:' + relative(pkg.path, dep_pkg.path) :
+                                op == PackageJsonOp.UnlinkDeps ?
+                                    '^' + dep_pkg.vers :
+                                    deps[dep];
+                    }
+                }
+            }
+        }
+        write_package_json(path, data);
+    };
+}
+
 function invoke_npm(path: string, ...args: string[]) {
     console.log(`$ npm ${args.join(' ')}`);
+    const cwd = process.cwd();
     spawnSync('npm', args, {
-        cwd: join(process.cwd(), path),
+        cwd: join(cwd, path),
         stdio: 'inherit',
+        env: {
+            ...process.env,
+            npm_config_package_lock: false,
+            npm_config_save: false,
+        }
     });
 }
 
@@ -227,8 +297,23 @@ interface PackageJson {
 
 type PackageDeps = Record<string, string>;
 
-function read_package_json(path: string): PackageJson | void {
+function read_package_json(path: string): PackageJson {
+    const file = join(path, 'package.json');
     try {
-        return JSON.parse(readFileSync(join(path, 'package.json'), 'utf8'));
-    } catch (e) { }
+        return JSON.parse(readFileSync(file, 'utf8'));
+    } catch (e) {
+        console.log(`Unable to read: ${file}`);
+        process.exit(-1);
+        throw 0;
+    }
+}
+
+function write_package_json(path: string, data: PackageJson) {
+    const file = join(path, 'package.json');
+    try {
+        writeFileSync(file, JSON.stringify(data, null, '  '), 'utf8');
+    } catch (e) {
+        console.log(`Unable to write: ${file}`);
+        process.exit(-1);
+    }
 }
