@@ -15,6 +15,8 @@ export type JSTypeName<Type> =
     Type extends Function ? 'function' :
     'object';
 
+export type IntersectUnion<U> = (U extends any ? (k: U)=>void : never) extends ((k: infer I)=>void) ? I : never;
+
 export function identity<V>(_: V): V { return _; }
 
 export function constant<V>(_: V): () => V {
