@@ -4,6 +4,7 @@ import {
     NoMeta,
     UnknownToken,
     BlockTag,
+    BlockSpace,
     BlockCode,
     BlockMath,
     BlockHeading,
@@ -132,6 +133,12 @@ export const TextBlockVDom: BlockRenderRuleVDom<BlockText<UnknownToken>, NoMeta>
     ($, { _ }) => renderNest($, _, ContextTag.Inline)
 ];
 
+export const SpaceVDom: BlockRenderRuleVDom<BlockSpace, NoMeta> = [
+    ContextTag.Block,
+    BlockTag.Space,
+    () => ''
+];
+
 export const TableVDom: BlockRenderRuleVDom<BlockTable<UnknownToken>, NoMeta> = [
     ContextTag.Block,
     BlockTag.Table,
@@ -159,8 +166,8 @@ function renderTableCells($: BlockRenderHandleVDom<BlockTable<UnknownToken>, NoM
     return out;
 }
 
-export const BlockVDom = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom];
+export const BlockVDom = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, SpaceVDom];
 
-export const BlockTablesVDom = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, TableVDom];
+export const BlockTablesVDom = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, SpaceVDom, TableVDom];
 
-export const BlockLitVDom = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, TableVDom, FootnotesBlockVDom];
+export const BlockLitVDom = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, TableVDom, SpaceVDom, FootnotesBlockVDom];
