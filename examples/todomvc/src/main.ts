@@ -27,7 +27,7 @@ function create({ store: name }: Props) {
     return { store, todo };
 }
 
-function update(props: Props, state: State, signal: Signal) {
+function update(_props: Props, state: State, signal: Signal) {
     switch (signal.$) {
         case 'todo':
             const todo = Todo.update(state.todo, signal._);
@@ -38,7 +38,9 @@ function update(props: Props, state: State, signal: Signal) {
     return state;
 }
 
-function render(props: Props, state: State, emit: Emit<Signal>) {
+const todo_emit = key_emit('todo');
+
+function render(_props: Props, state: State, emit: Emit<Signal>) {
     return page({
         styles,
         scripts,
@@ -47,7 +49,7 @@ function render(props: Props, state: State, emit: Emit<Signal>) {
         body: { class: { 'learn-bar': true } },
     }, [
             learn(),
-            Todo.render(state.todo, key_emit(emit, 'todo')),
+        Todo.render(state.todo, todo_emit(emit)),
             footer(),
         ]);
 }

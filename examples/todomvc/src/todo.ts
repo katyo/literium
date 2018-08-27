@@ -30,6 +30,8 @@ export type Signal
     | Keyed<'task', Keyed<number, Task.Signal>>
     ;
 
+const task_emit = key_emit('task');
+
 export function create() {
     return {
         tasks: [],
@@ -93,7 +95,7 @@ export function update(state: State, signal: Signal) {
 
 export function render(state: State, emit: Emit<Signal>): VNode {
     const { filter, tasks } = state;
-    const task_emit = key_emit(emit, 'task');
+    const $task_emit = task_emit(emit);
     const incomplete = tasks.filter(task => !task._.completed);
 
     return h('section.todoapp', [
@@ -128,7 +130,7 @@ export function render(state: State, emit: Emit<Signal>): VNode {
                         .filter(task => filter == Filter.Active ? !task._.completed :
                             filter == Filter.Completed ? task._.completed : true)
                         .map(task => with_key(task.$, Task.render(task._,
-                            key_emit(task_emit, task.$))))
+                            key_emit(task.$)($task_emit))))
                 ]),
             ]),
             h('!', "This footer should hidden by default and shown when there are todos"),
