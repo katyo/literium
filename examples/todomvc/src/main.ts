@@ -1,4 +1,4 @@
-import { Emit, Keyed, key_emit } from '@literium/base';
+import { Emit, AsKeyed, key_emit } from '@literium/base';
 import { VNode, Component, h, page } from '@literium/core';
 import * as Todo from './todo';
 import { StoreCell, StoreType, initStore, loadStore, moveStore, saveStore } from '@literium/runner';
@@ -18,8 +18,13 @@ export interface State {
     todo: Todo.State;
 }
 
-export type Signal
-    = Keyed<'todo', Todo.Signal>;
+export const enum Op {
+    Todo,
+}
+
+export type Signal = AsKeyed<{
+    [Op.Todo]: Todo.Signal;
+}>;
 
 function create({ store: name }: Props) {
     const store = initStore(name, Todo.json, Todo.save(Todo.create()));
@@ -29,7 +34,7 @@ function create({ store: name }: Props) {
 
 function update(_props: Props, state: State, signal: Signal) {
     switch (signal.$) {
-        case 'todo':
+        case Op.Todo:
             const todo = Todo.update(state.todo, signal._);
             moveStore(state.store, StoreType.Persist);
             saveStore(state.store, Todo.save(todo));
@@ -38,7 +43,7 @@ function update(_props: Props, state: State, signal: Signal) {
     return state;
 }
 
-const todo_emit = key_emit('todo');
+const todo_emit = key_emit(Op.Todo);
 
 function render(_props: Props, state: State, emit: Emit<Signal>) {
     return page({

@@ -1,4 +1,4 @@
-import { Emit, Keyed, keyed } from '@literium/base';
+import { Emit, AsKeyed, keyed } from '@literium/base';
 import { VNode, KeyCode, h } from '@literium/core';
 import { JSType, dict, str, bin } from '@literium/json';
 
@@ -13,11 +13,19 @@ export interface State extends Data {
     editing: boolean;
 }
 
-export type Signal
-    = Keyed<'edit', boolean>
-    | Keyed<'change', string>
-    | Keyed<'complete', boolean>
-    | Keyed<'remove', void>;
+export const enum Op {
+    Edit,
+    Change,
+    Complete,
+    Remove,
+}
+
+export type Signal = AsKeyed<{
+    [Op.Edit]: boolean;
+    [Op.Change]: string;
+    [Op.Complete]: boolean;
+    [Op.Remove]: void;
+}>;
 
 export function create() {
     return {
@@ -37,17 +45,17 @@ export function save({ content, completed }: State): Data {
 
 export function update(state: State, signal: Signal) {
     switch (signal.$) {
-        case 'edit':
+        case Op.Edit:
             return {
                 ...state,
                 editing: signal._
             };
-        case 'change':
+        case Op.Change:
             return {
                 ...state,
                 content: signal._
             };
-        case 'complete':
+        case Op.Complete:
             return {
                 ...state,
                 completed: signal._
@@ -74,11 +82,11 @@ export function render({ content, completed, editing }: State, emit: Emit<Signal
                         checked: completed,
                     },
                     on: {
-                        change: () => { emit(keyed('complete', !completed)); },
+                        change: () => { emit(keyed(Op.Complete, !completed)); },
                     },
                 }),
-                h('label', { on: { dblclick: () => { emit(keyed('edit', true)); } } }, content),
-                h('button.destroy', { on: { click: () => { emit(keyed('remove', undefined)); } } }),
+                h('label', { on: { dblclick: () => { emit(keyed(Op.Edit, true)); } } }, content),
+                h('button.destroy', { on: { click: () => { emit(keyed(Op.Remove, undefined)); } } }),
             ]),
             h('input.edit', {
                 attrs: { value: content },
@@ -92,13 +100,13 @@ export function render({ content, completed, editing }: State, emit: Emit<Signal
                     }
                 },
                 on: {
-                    blur: () => { emit(keyed('edit', false)); },
-                    change: e => { emit(keyed('change', (e.target as HTMLInputElement).value)); },
+                    blur: () => { emit(keyed(Op.Edit, false)); },
+                    change: e => { emit(keyed(Op.Change, (e.target as HTMLInputElement).value)); },
                     keydown: e => {
                         if (e.keyCode == KeyCode.Enter || e.keyCode == KeyCode.Escape) {
-                            emit(keyed('edit', false));
+                            emit(keyed(Op.Edit, false));
                         } else {
-                            emit(keyed('change', (e.target as HTMLInputElement).value));
+                            emit(keyed(Op.Change, (e.target as HTMLInputElement).value));
                         }
                     },
                 }

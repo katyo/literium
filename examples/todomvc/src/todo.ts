@@ -1,4 +1,4 @@
-import { Emit, Keyed, keyed, key_emit } from '@literium/base';
+import { Emit, Keyed, AsKeyed, keyed, key_emit } from '@literium/base';
 import { VNode, h, with_key, KeyCode } from '@literium/core';
 import * as Task from './task';
 import { JSType, dict, list, nat } from '@literium/json';
@@ -22,15 +22,23 @@ export interface State {
     filter: Filter;
 }
 
-export type Signal
-    = Keyed<'add', string>
-    | Keyed<'complete', void>
-    | Keyed<'filter', Filter>
-    | Keyed<'remove', void>
-    | Keyed<'task', Keyed<number, Task.Signal>>
-    ;
+export const enum Op {
+    Add,
+    Complete,
+    Filter,
+    Remove,
+    Task,
+}
 
-const wrap_task_emit = key_emit('task');
+export type Signal = AsKeyed<{
+    [Op.Add]: string;
+    [Op.Complete]: void;
+    [Op.Filter]: Filter;
+    [Op.Remove]: void;
+    [Op.Task]: Keyed<number, Task.Signal>;
+}>;
+
+const wrap_task_emit = key_emit(Op.Task);
 
 export function create() {
     return {
@@ -53,8 +61,8 @@ export function save({ tasks, filter }: State): Data {
 export function update(state: State, signal: Signal) {
     let { lastKey, tasks } = state;
     switch (signal.$) {
-        case 'task':
-            if (signal._._.$ == 'remove') {
+        case Op.Task:
+            if (signal._._.$ == Task.Op.Remove) {
                 return {
                     ...state,
                     tasks: tasks.filter(task => task.$ != signal._.$)
@@ -69,25 +77,25 @@ export function update(state: State, signal: Signal) {
                         } : task)
                 };
             }
-        case 'add':
+        case Op.Add:
             ++lastKey;
             const task = {
                 $: lastKey,
                 _: Task.update(Task.create(),
-                    keyed('change', signal._))
+                    keyed(Task.Op.Change, signal._))
             };
             return { ...state, tasks: [task, ...tasks], lastKey };
-        case 'complete':
+        case Op.Complete:
             const incomplete = tasks.filter(task => !task._.completed);
             return {
                 ...state,
                 tasks: tasks.map(task => ({
-                    $: task.$, _: Task.update(task._, keyed('complete', !!incomplete.length))
+                    $: task.$, _: Task.update(task._, keyed(Task.Op.Complete, !!incomplete.length))
                 }))
             };
-        case 'filter':
+        case Op.Filter:
             return { ...state, filter: signal._ };
-        case 'remove':
+        case Op.Remove:
             return { ...state, tasks: tasks.filter(task => !task._.completed) };
     }
     return state;
@@ -107,7 +115,7 @@ export function render(state: State, emit: Emit<Signal>): VNode {
                     keydown: e => {
                         const input = e.target as HTMLInputElement;
                         if (input.value != '' && e.keyCode == KeyCode.Enter) {
-                            emit(keyed('add', input.value));
+                            emit(keyed(Op.Add, input.value));
                             input.value = '';
                         }
                     }
@@ -119,7 +127,7 @@ export function render(state: State, emit: Emit<Signal>): VNode {
             h('section.main', [
                 h('input#toggle-all.toggle-all', {
                     attrs: { type: "checkbox", checked: !incomplete.length }, props: { checked: !incomplete.length }, on: {
-                        click: () => { emit(keyed('complete', undefined)); }
+                        click: () => { emit(keyed(Op.Complete, undefined)); }
                     }
                 }),
                 h('label', { attrs: { for: "toggle-all" } }, "Mark all as complete"),
@@ -141,17 +149,17 @@ export function render(state: State, emit: Emit<Signal>): VNode {
                 h('ul.filters', [
                     h('li', h('a', {
                         class: { selected: filter == Filter.All }, attrs: { href: "#/" }, on: {
-                            click: () => { emit(keyed('filter', Filter.All)); }
+                            click: () => { emit(keyed(Op.Filter, Filter.All)); }
                         }
                     }, "All")),
                     h('li', h('a', {
                         class: { selected: filter == Filter.Active }, attrs: { href: "#/active" }, on: {
-                            click: () => { emit(keyed('filter', Filter.Active)); }
+                            click: () => { emit(keyed(Op.Filter, Filter.Active)); }
                         }
                     }, "Active")),
                     h('li', h('a', {
                         class: { selected: filter == Filter.Completed }, attrs: { href: "#/completed" }, on: {
-                            click: () => { emit(keyed('filter', Filter.Completed)); }
+                            click: () => { emit(keyed(Op.Filter, Filter.Completed)); }
                         }
                     }, "Completed")),
                 ]),
@@ -159,7 +167,7 @@ export function render(state: State, emit: Emit<Signal>): VNode {
                 ...(tasks.length > incomplete.length ? [
                     h('button.clear-completed', {
                         on: {
-                            click: () => { emit(keyed('remove', undefined)); }
+                            click: () => { emit(keyed(Op.Remove, undefined)); }
                         }
                     }, `Clear completed (${tasks.length - incomplete.length})`)
                 ] : []),
