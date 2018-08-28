@@ -1,4 +1,4 @@
-import { Emit, AsKeyed, keyed, wrap_emit } from '@literium/base';
+import { Emit, AsKeyed, keyed, key_emit } from '@literium/base';
 import { VNode, VData, VNodeChildren, Component, h, vnode_log, bench } from '@literium/core';
 import {
     MetaData,
@@ -154,7 +154,7 @@ function wrapContent(src: ScrollSource, state: State, emit: Emit<Signal>, vnode:
     return vnode;
 }
 
-const editor_emit = wrap_emit('editor');
+const editor_emit = key_emit('editor');
 
 function render(_props: Props, state: State, emit: Emit<Signal>): VNode {
     return h('div.wrapper-small', [

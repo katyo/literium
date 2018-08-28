@@ -1,4 +1,4 @@
-import { Emit, Spawn, PairedAsKeyed, wrap_emit } from '@literium/base';
+import { Emit, Spawn, PairedAsKeyed, key_emit } from '@literium/base';
 import { Component, h, page } from '@literium/core';
 import { hasJsScript } from '@literium/runner';
 
@@ -50,7 +50,7 @@ export type Signal = PairedAsKeyed<{
     app: any /* app state */
 }>;
 
-const emit_app = wrap_emit('app');
+const emit_app = key_emit('app');
 
 function create(props: Props, emit: Emit<Signal>, spawn: Spawn) {
     return {

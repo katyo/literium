@@ -11,8 +11,12 @@ export function map_emit<Signal, OtherSignal>(fn: (signal: OtherSignal) => Signa
     return (emit: Emit<Signal>) => (signal: OtherSignal) => { emit(fn(signal)); };
 }
 
-export function key_emit<Key extends keyof any>(key: Key): <Signal extends Keyed<Key, KeyedValue<Signal, Key>>>(emit: Emit<Signal>) => Emit<KeyedValue<Signal, Key>> {
-    return map_emit(to_keyed(key)) as <Signal extends Keyed<Key, KeyedValue<Signal, Key>>>(emit: Emit<Signal>) => Emit<KeyedValue<Signal, Key>>;
+export function key_emit<Signal>(emit: Emit<Signal>): <Key extends keyof any, Signal extends Keyed<Key, KeyedValue<Signal, Key>>>(key: Key) => Emit<KeyedValue<Signal, Key>>;
+export function key_emit<Key extends keyof any>(key: Key): <Signal extends Keyed<Key, KeyedValue<Signal, Key>>>(emit: Emit<Signal>) => Emit<KeyedValue<Signal, Key>>;
+export function key_emit(arg: keyof any | Emit<any>): (arg2: keyof any | Emit<any>) => Emit<KeyedValue<any, keyof any>> {
+    return typeof arg == 'function' ?
+        (key: keyof any) => map_emit(to_keyed(key))(arg)
+        : map_emit(to_keyed(arg));
 }
 
 export interface Done {

@@ -30,7 +30,7 @@ export type Signal
     | Keyed<'task', Keyed<number, Task.Signal>>
     ;
 
-const task_emit = key_emit('task');
+const wrap_task_emit = key_emit('task');
 
 export function create() {
     return {
@@ -74,7 +74,7 @@ export function update(state: State, signal: Signal) {
             const task = {
                 $: lastKey,
                 _: Task.update(Task.create(),
-                    keyed('change' as 'change', signal._))
+                    keyed('change', signal._))
             };
             return { ...state, tasks: [task, ...tasks], lastKey };
         case 'complete':
@@ -82,7 +82,7 @@ export function update(state: State, signal: Signal) {
             return {
                 ...state,
                 tasks: tasks.map(task => ({
-                    $: task.$, _: Task.update(task._, keyed('complete' as 'complete', !!incomplete.length))
+                    $: task.$, _: Task.update(task._, keyed('complete', !!incomplete.length))
                 }))
             };
         case 'filter':
@@ -95,7 +95,7 @@ export function update(state: State, signal: Signal) {
 
 export function render(state: State, emit: Emit<Signal>): VNode {
     const { filter, tasks } = state;
-    const $task_emit = task_emit(emit);
+    const task_emit = key_emit(wrap_task_emit(emit));
     const incomplete = tasks.filter(task => !task._.completed);
 
     return h('section.todoapp', [
@@ -130,7 +130,7 @@ export function render(state: State, emit: Emit<Signal>): VNode {
                         .filter(task => filter == Filter.Active ? !task._.completed :
                             filter == Filter.Completed ? task._.completed : true)
                         .map(task => with_key(task.$, Task.render(task._,
-                            key_emit(task.$)($task_emit))))
+                            task_emit(task.$))))
                 ]),
             ]),
             h('!', "This footer should hidden by default and shown when there are todos"),
