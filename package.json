@@ -52,7 +52,6 @@
     "backend",
     "frontend",
     "examples/basic",
-    "examples/todomvc",
-    "examples/blog"
+    "examples/todomvc"
   ]
 }
