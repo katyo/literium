@@ -182,7 +182,6 @@ function install_package(packages: PackagesInfo, name: string) {
 
     const { path } = packages[name];
     invoke_npm(path, 'install');
-    run_script('prepack')(packages, name);
 }
 
 function install_dependencies(packages: PackagesInfo, name: string) {

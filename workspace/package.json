@@ -8,8 +8,7 @@
   "scripts": {
     "compile": "tsc --outDir .",
     "clean": "rm -rf *.d.ts *.js *.js.map",
-    "prepack": "npm run compile",
-    "postpack": "npm run clean"
+    "prepare": "npm run compile"
   },
   "repository": {
     "type": "git",

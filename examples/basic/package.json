@@ -8,7 +8,7 @@
     "clean": "rm -rf dist",
     "start": "ts-node src/server.ts start 8182",
     "stop": "ts-node src/server.ts stop 8182",
-    "postinstall": "npm run compile"
+    "prepare": "npm run compile"
   },
   "repository": {
     "type": "git",
