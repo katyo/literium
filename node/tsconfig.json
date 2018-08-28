@@ -25,6 +25,7 @@
     "src/server.ts",
     "src/router.ts",
     "src/runner.ts",
+    "src/proxy.ts",
     "src/index.ts"
   ]
 }

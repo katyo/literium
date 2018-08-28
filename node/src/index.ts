@@ -6,3 +6,4 @@ export * from './bind';
 export * from './server';
 export * from './router';
 export * from './runner';
+export * from './proxy';

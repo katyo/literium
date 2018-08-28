@@ -16,6 +16,7 @@ export const enum Method {
 export interface Request {
     url: string;
     method: Method;
+    headers(): string[];
     header(name: string): string[];
     body<T>(typ: BodyType<T>): FutureResult<T, string>;
 }
@@ -24,6 +25,7 @@ function request_from_node(req: ServerRequest): Request {
     return {
         url: req.url || '',
         method: req.method as Method, /* TODO: Check method */
+        headers: () => Object.keys(req.headers),
         header: (name: string) => {
             const value = req.headers[name];
             return typeof value == 'string' ? [value] : value || [];
@@ -56,7 +58,7 @@ function response_to_node({ status, message, headers, body }: Response, res: Ser
 export type FutureResponse = FutureResult<Response, string>;
 
 function respond(res: ServerResponse): (fut: FutureResponse) => void {
-    return <T>(fut: FutureResponse) => {
+    return (fut: FutureResponse) => {
         fut(r => {
             if (is_ok(r)) {
                 const data = un_ok(r);
