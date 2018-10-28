@@ -18,22 +18,24 @@ extern crate warp;
 
 #[macro_use]
 pub mod access;
-mod auth;
+pub mod auth;
 pub mod base64;
-mod binary;
-mod config;
-mod crypto;
+pub mod binary;
+pub mod config;
+pub mod crypto;
 pub mod filters;
+pub mod listen;
 pub mod reply;
-mod timestamp;
+pub mod timestamp;
 
 pub use self::access::*;
 pub use self::auth::*;
 pub use self::binary::*;
-pub use self::config::*;
+pub use self::config::PersistConfig;
 pub use self::crypto::*;
 pub use self::filters::*;
-pub use self::timestamp::*;
+pub use self::listen::ListenAddr;
+pub use self::timestamp::TimeStamp;
 
 #[cfg(test)]
 mod test {
@@ -42,14 +44,14 @@ mod test {
 
     #[test]
     fn test() {
-        let root = index();
+        let root = path::end();
         let blog = path("blog");
         let post = blog.and(path::param::<u32>());
 
         let root = root.map(|| "Root");
-        let blog = blog.and(index()).map(|| "Blog posts");
+        let blog = blog.and(path::end()).map(|| "Blog posts");
         let post = post
-            .and(index())
+            .and(path::end())
             .map(|id: u32| format!("Blog post #{}", id));
 
         let all = root.or(blog).unify().map(String::from).or(post).unify();
