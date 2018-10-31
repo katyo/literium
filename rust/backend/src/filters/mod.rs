@@ -1,6 +1,6 @@
 /*!
 
-## Filters
+## Literium-specific filters
 
 The filters which widely used by literium web-framework.
 
@@ -12,8 +12,9 @@ extern crate serde;
 extern crate serde_derive;
 extern crate literium;
 extern crate warp;
+extern crate pretty_env_logger;
 
-use literium::{x_json, encrypt_base64_sealed_json, gen_keys};
+use literium::{x_json, seal_x_json, CryptoKeys};
 use warp::{Filter, post2, path, any, test::request};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -22,7 +23,9 @@ struct MyData {
 }
 
 fn main() {
-    let keys = gen_keys();
+    pretty_env_logger::init();
+
+    let keys = CryptoKeys::gen();
 
     let app = post2()
         .and(path("sensible"))
@@ -36,7 +39,7 @@ fn main() {
         .method("POST")
         .path("/sensible/data")
         .header("content-type", "application/x-base64-sealed-json")
-        .body(encrypt_base64_sealed_json(&src, &keys).unwrap())
+        .body(seal_x_json(&src, &keys).unwrap())
         .filter(&app)
         .unwrap();
 
@@ -46,7 +49,7 @@ fn main() {
     assert_eq!(request()
         .method("POST")
         .path("/sensible/data")
-        .body(encrypt_base64_sealed_json(&src, &keys).unwrap())
+        .body(seal_x_json(&src, &keys).unwrap())
         .filter(&app)
         .unwrap_err()
         .cause().unwrap().to_string(), "Missing request header \'content-type\'");
@@ -56,10 +59,98 @@ fn main() {
         .method("POST")
         .path("/sensible/data")
         .header("content-type", "application/json")
-        .body(encrypt_base64_sealed_json(&src, &keys).unwrap())
+        .body(seal_x_json(&src, &keys).unwrap())
         .filter(&app)
         .unwrap_err()
         .cause().unwrap().to_string(), "Unsupported content-type");
+}
+```
+
+### Using base64 encoded sealed json authorization
+
+```
+extern crate futures;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate literium;
+extern crate warp;
+#[macro_use]
+extern crate log;
+extern crate pretty_env_logger;
+
+use std::marker::PhantomData;
+use std::sync::{Arc, RwLock};
+use futures::{Future, future::ok};
+use literium::{
+    CryptoKeys, x_auth, seal_x_json, crypto::HasPublicKey,
+    auth::{UserId, SessionId, HasUserSession, HasUserData, AuthData},
+    HasConfig, HasBackend, TimeStamp, auth::dummy::{UserData, Users, UserAuth},
+};
+use warp::{Filter, get2, path, any, test::request};
+
+#[derive(Clone)]
+pub struct State {
+    config: Arc<CryptoKeys>,
+    users: Users,
+}
+
+impl HasConfig for State {
+    type Config = Arc<CryptoKeys>;
+
+    fn get_config(&self) -> &Self::Config {
+        &self.config
+    }
+}
+
+impl HasBackend for State {
+    type Backend = Users;
+
+    fn get_backend(&self) -> &Self::Backend {
+        &self.users
+    }
+}
+
+fn main() {
+    pretty_env_logger::init();
+
+    let server_keys = CryptoKeys::gen();
+
+    let client_keys = CryptoKeys::gen();
+
+    let user = UserData::new(1, "yumi");
+
+    let users = Users::new().with_user(user.clone());
+
+    let session = users.new_user_session(user.id, client_keys.get_public_key().clone()).wait().unwrap();
+
+    let state = State { config: Arc::new(server_keys), users };
+
+    let auth_data = AuthData {
+        user: user.id,
+        sess: 1,
+        token: session.token.clone(),
+        serno: session.serno
+    };
+    let auth_header = seal_x_json(&auth_data, &state.get_config()).unwrap();
+
+    let app = get2()
+        .and(path("sensible"))
+        .and(path("data"))
+        // get auth
+        .and(x_auth(state.clone()))
+        .map(|user: UserAuth| {
+            user.name.clone()
+        });
+
+    let name = request()
+        .method("GET")
+        .path("/sensible/data")
+        .header("x-auth", auth_header)
+        .filter(&app)
+        .unwrap();
+
+    assert_eq!(name, user.name);
 }
 ```
 
@@ -68,8 +159,8 @@ fn main() {
 mod sealed_auth;
 mod sealed_json;
 
-pub use self::sealed_auth::*;
-pub use self::sealed_json::*;
+pub use self::sealed_auth::base64_sealed_auth;
+pub use self::sealed_json::base64_sealed_json;
 
 /// Shortcut for [`base64_sealed_auth`]
 pub use self::base64_sealed_auth as x_auth;

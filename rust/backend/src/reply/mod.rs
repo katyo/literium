@@ -1,6 +1,6 @@
 /*!
 
-## Replies
+## Literium-specific replies
 
 The replies which widely used by literium web-framework.
 
@@ -13,7 +13,7 @@ extern crate serde_derive;
 extern crate literium;
 extern crate warp;
 
-use literium::{reply, decrypt_base64_sealed_json, gen_keys};
+use literium::{reply, open_x_json, CryptoKeys};
 use warp::{Filter, get2, path, any, test::request};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -22,7 +22,7 @@ struct MyData {
 }
 
 fn main() {
-    let keys = gen_keys();
+    let keys = CryptoKeys::gen();
 
     let src = MyData { field: "abcdef".into() };
 
@@ -40,7 +40,7 @@ fn main() {
         .method("GET")
         .path("/sensible/data")
         .reply(&app)
-        .map(|body| decrypt_base64_sealed_json(&body, keys))
+        .map(|body| open_x_json(&body, keys))
         .into_body()
         .unwrap();
 

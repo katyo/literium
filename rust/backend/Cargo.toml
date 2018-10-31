@@ -20,4 +20,11 @@ futures = "0.1"
 tokio = "0.1"
 supercow = "0.1"
 warp = "0.1"
-#warp = { git = "https://github.com/seanmonstar/warp" }
+
+[dev-dependencies]
+pretty_env_logger = "0.2"
+
+[features]
+default = ["native_auth"]
+native_auth = []
+oauth2_auth = []

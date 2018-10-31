@@ -20,7 +20,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate literium;
 
-use literium::PersistConfig;
+use literium::FileConfig;
 use std::path::PathBuf;
 use std::fs::remove_file;
 
@@ -46,7 +46,7 @@ impl Default for SiteConfig {
 }
 
 fn main() {
-    let mut cfg = PersistConfig::<MyConfig>::load("Server.toml")
+    let mut cfg = FileConfig::<MyConfig>::load("Server.toml")
         .unwrap();
 
     assert_eq!(&cfg.site.database, "127.0.0.1:3030");
@@ -57,7 +57,7 @@ fn main() {
 
     cfg.save().unwrap();
 
-    let cfg2 = PersistConfig::<MyConfig>::load("Server.toml")
+    let cfg2 = FileConfig::<MyConfig>::load("Server.toml")
         .unwrap();
 
     assert_eq!(&cfg.site.database, "127.0.1.1:3344");
@@ -69,12 +69,12 @@ fn main() {
 ```
 
 */
-pub struct PersistConfig<T> {
+pub struct FileConfig<T> {
     path: PathBuf,
     data: T,
 }
 
-impl<T> Deref for PersistConfig<T> {
+impl<T> Deref for FileConfig<T> {
     type Target = T;
 
     fn deref(&self) -> &T {
@@ -82,13 +82,13 @@ impl<T> Deref for PersistConfig<T> {
     }
 }
 
-impl<T> DerefMut for PersistConfig<T> {
+impl<T> DerefMut for FileConfig<T> {
     fn deref_mut(&mut self) -> &mut T {
         &mut self.data
     }
 }
 
-impl<T> PersistConfig<T> {
+impl<T> FileConfig<T> {
     /// Create default config
     pub fn init<P, E>(path: P) -> Self
     where

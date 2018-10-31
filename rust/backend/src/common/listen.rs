@@ -6,8 +6,10 @@ use std::path::PathBuf;
 use std::str::FromStr;
 
 use futures::Stream;
-use serde::de::{self, Deserializer, Visitor};
-use serde::Deserialize;
+use serde::{
+    de::{self, Deserializer, Visitor},
+    Deserialize,
+};
 use url::{Host, ParseError, Url};
 
 use tokio::{

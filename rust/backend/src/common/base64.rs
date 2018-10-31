@@ -42,16 +42,16 @@ fn main() {
 
 */
 
-use super::FromBinary;
+use super::{AsBinary, FromBinary};
 use base64lib::{decode, encode};
 use serde::{de, Deserialize, Deserializer, Serializer};
 
 pub fn serialize<S, T>(bytes: &T, serializer: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
-    T: AsRef<[u8]>,
+    T: AsBinary,
 {
-    let b = encode(bytes.as_ref());
+    let b = encode(bytes.as_binary());
     serializer.serialize_str(&b)
 }
 

@@ -1,5 +1,5 @@
 use bytes::Buf;
-use crypto::{decrypt_base64_sealed_json, DecryptError, HasPublicKey, HasSecretKey};
+use crypto::{decrypt_base64_sealed_json, CryptoError, HasPublicKey, HasSecretKey};
 use mime::Mime;
 use serde::de::DeserializeOwned;
 use warp::{
@@ -9,6 +9,7 @@ use warp::{
     reject::custom,
     Filter, Rejection,
 };
+use HasConfig;
 
 const MIME_SUBTYPE: &str = "x-base64-sealed-json";
 
@@ -17,12 +18,15 @@ const MIME_SUBTYPE: &str = "x-base64-sealed-json";
 /// `Content-Type` header should ends with "x-base64-sealed-json".
 ///
 /// For example `Content-Type: application/x-base64-sealed-json`.
-pub fn base64_sealed_json<T, K>(keys: K) -> impl Filter<Extract = (T,), Error = Rejection> + Clone
+pub fn base64_sealed_json<T, State>(
+    state: State,
+) -> impl Filter<Extract = (T,), Error = Rejection> + Clone
 where
     T: DeserializeOwned + Send,
-    K: HasPublicKey + HasSecretKey + Send + Clone,
+    State: HasConfig + Send + Clone,
+    State::Config: HasPublicKey + HasSecretKey,
 {
-    let keys = any().map(move || keys.clone());
+    let state = any().map(move || state.clone());
 
     any()
         .and(header("content-type"))
@@ -34,21 +38,23 @@ where
             {
                 Ok(())
             } else {
-                Err(custom(DecryptError::Mime))
+                Err(custom(CryptoError::BadMime))
             }
         }).and(concat())
-        .and(keys)
-        .and_then(|_, body: FullBody, keys| decrypt_base64_sealed_json(body.bytes(), keys))
+        .and(state)
+        .and_then(|_, body: FullBody, state: State| {
+            decrypt_base64_sealed_json(body.bytes(), state.get_config())
+        })
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crypto::gen_keys;
+    use crypto::CryptoKeys;
 
     #[test]
     fn test() {
-        let keys = gen_keys();
+        let keys = CryptoKeys::gen();
         let _h = any().and(base64_sealed_json::<u32, _>(keys));
     }
 }

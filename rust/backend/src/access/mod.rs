@@ -2,6 +2,16 @@
 
 ## Role-based access control
 
+In order to simplify access control in applications the role-based permissions management is used.
+
+It means that:
+
+* Each user has one or several number of roles
+* Each role has some permissions
+* Each permission controls access to some resource in some way
+* By default user has no any permissions
+* User has some permission when it has a role which has this permission
+
 Usage example:
 
 ```
@@ -104,7 +114,7 @@ mod types;
 #[macro_use]
 mod macros;
 
-pub use self::types::*;
+pub use self::types::{HasUserRoles, IsUserRole, IsUserRoles};
 
 #[cfg(test)]
 mod test {

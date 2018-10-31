@@ -1,8 +1,6 @@
-use base64;
 use crypto::{random_bytes, PublicKey};
-use std::collections::HashMap;
 use std::time::Duration;
-use timestamp::TimeStamp;
+use {base64, TimeStamp};
 
 /// Unique user identifier
 pub type UserId = u32;
@@ -14,53 +12,71 @@ pub type SessionId = u32;
 ///
 /// The data which server publishes for clients,
 /// and clients uses it to initiate authentication.
-#[derive(Serialize)]
-pub struct ServerData<AuthMethodData> {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuthInfo<MethodInfo> {
     /// Current time of server
-    pub time_stamp: TimeStamp,
+    pub ctime: TimeStamp,
 
     /// Public key of server
     #[serde(with = "base64")]
-    pub public_key: PublicKey,
+    pub pbkey: PublicKey,
 
     /// Available auth methods with configs
-    pub auth_method: HashMap<String, AuthMethodData>,
+    ///
+    /// This field must be represented as an externally tagged enum (which is default for serde),
+    /// where tag is a method name and fields represents method info.
+    pub authm: MethodInfo,
+}
+
+impl<MethodInfo> AuthInfo<MethodInfo> {
+    pub fn new(pbkey: PublicKey, authm: MethodInfo) -> Self {
+        Self {
+            ctime: TimeStamp::now(),
+            pbkey,
+            authm,
+        }
+    }
 }
 
 /// Authentication request
 ///
-/// The request which client sends to server
-/// to do authentication.
-#[derive(Deserialize)]
-pub struct AuthRequest<UserIdentData> {
+/// The request which client sends to server to do authentication.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AuthRequest<UserIdent> {
     /// Current time of client synchronized to server
-    pub time_stamp: TimeStamp,
+    pub ctime: TimeStamp,
 
     /// Public key of client
     #[serde(with = "base64")]
-    pub public_key: PublicKey,
+    pub pbkey: PublicKey,
 
     /// Method-specific identification data
     ///
-    /// Use #[serde(tag = "auth_method", content = "ident_data")]
-    /// for `UserIdentData` enum.
+    /// This field must be represented as an internally tagged enum (`#[serde(tag = "authm")]`),
+    /// where tag is a method name and fields represents identification data.
     #[serde(flatten)]
-    pub ident_data: UserIdentData,
+    pub ident: UserIdent,
 }
 
 /// Authentication response
 ///
 /// The response which server sends to client
 /// on success authentication.
-#[derive(Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthResponse<UserInfo> {
+    /// Unique identifier of user
     pub user: UserId,
 
-    pub session: SessionId,
+    /// Session identifier unique for user
+    pub sess: SessionId,
 
+    /// Unique session token for authorized requests
     #[serde(with = "base64")]
     pub token: Vec<u8>,
 
+    /// Extra user data like name and roles
+    ///
+    /// It should be a struct because it will be flatten (merged with response).
     #[serde(flatten)]
     pub extra: UserInfo,
 }
@@ -68,42 +84,44 @@ pub struct AuthResponse<UserInfo> {
 /// User session data
 ///
 /// The data which stored on server
-#[derive(Serialize, Deserialize)]
-pub struct SessionData<ExtraData> {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionData {
+    /// Unique user identifier
     pub user: UserId,
 
-    pub session: SessionId,
+    /// Session identifier (unique for user)
+    pub sess: SessionId,
 
-    pub public_key: PublicKey,
+    /// Client public key
+    pub pbkey: PublicKey,
 
+    /// Unique session token
     pub token: Vec<u8>,
 
-    pub serial: u32,
+    /// Last request serial number
+    pub serno: u32,
 
+    /// Session creation time
     pub ctime: TimeStamp,
 
+    /// Last access time
     pub atime: TimeStamp,
-
-    #[serde(flatten)]
-    pub extra: ExtraData,
 }
 
-impl<ExtraData> SessionData<ExtraData> {
+impl SessionData {
     /// Create new session data
-    pub fn new(user: UserId, public_key: PublicKey) -> Self
-    where
-        ExtraData: Default,
-    {
+    ///
+    /// Create new session data using user identifier and client public key
+    pub fn new(user: UserId, pbkey: PublicKey) -> Self {
         let now = TimeStamp::now();
         Self {
             user,
-            session: Default::default(),
-            public_key,
+            sess: Default::default(),
+            pbkey,
             token: random_bytes(20),
-            serial: 1,
+            serno: 1,
             ctime: now,
             atime: now,
-            extra: Default::default(),
         }
     }
 
@@ -114,7 +132,7 @@ impl<ExtraData> SessionData<ExtraData> {
 
     /// Refresh existing session data
     pub fn renew(&mut self) {
-        self.serial += 1;
+        self.serno += 1;
         self.atime = TimeStamp::now();
     }
 }
@@ -122,40 +140,36 @@ impl<ExtraData> SessionData<ExtraData> {
 /// User session info
 ///
 /// The data which shows to client
-#[derive(Serialize)]
-pub struct SessionInfo<Extra> {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionInfo {
+    /// Unique identifier of user
     pub user: UserId,
 
-    pub session: SessionId,
+    /// Session identifier unique for user
+    pub sess: SessionId,
 
+    /// Session creation time
     pub ctime: TimeStamp,
 
+    /// Last access time
     pub atime: TimeStamp,
-
-    #[serde(flatten)]
-    pub extra: Extra,
 }
 
-impl<'a, ExtraData, ExtraInfo> From<&'a SessionData<ExtraData>> for SessionInfo<ExtraInfo>
-where
-    ExtraInfo: From<&'a ExtraData>,
-{
+impl<'a> From<&'a SessionData> for SessionInfo {
     fn from(
         SessionData {
             user,
-            session,
+            sess,
             ctime,
             atime,
-            extra,
             ..
-        }: &'a SessionData<ExtraData>,
+        }: &'a SessionData,
     ) -> Self {
         Self {
             user: *user,
-            session: *session,
+            sess: *sess,
             ctime: *ctime,
             atime: *atime,
-            extra: extra.into(),
         }
     }
 }
@@ -164,21 +178,25 @@ where
 ///
 /// The data which client sends in `X-Auth` header
 /// to do authorized requests.
-#[derive(Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuthData {
+    /// Unique user identifier
     pub user: UserId,
 
-    pub session: SessionId,
+    /// Session identifier (unique for user)
+    pub sess: SessionId,
 
+    /// Unique session token
     #[serde(with = "base64")]
     pub token: Vec<u8>,
 
-    pub serial: u32,
+    /// Request serial number
+    pub serno: u32,
 }
 
-impl<ExtraData> PartialEq<SessionData<ExtraData>> for AuthData {
+impl PartialEq<SessionData> for AuthData {
     /// Validate
-    fn eq(&self, other: &SessionData<ExtraData>) -> bool {
-        self.serial == other.serial && self.token == other.token
+    fn eq(&self, other: &SessionData) -> bool {
+        self.serno == other.serno && self.token == other.token
     }
 }
