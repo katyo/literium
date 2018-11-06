@@ -134,6 +134,11 @@ impl<T> FileConfig<T> {
             .map_err(PersistError::IoError)?;
         Ok(())
     }
+
+    /// Get inner config
+    pub fn into_inner(self) -> T {
+        self.data
+    }
 }
 
 /// Persist config error
