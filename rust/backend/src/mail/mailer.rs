@@ -15,11 +15,10 @@ use new_tokio_smtp::{
     chain::{chain, OnError},
     command::{
         auth::{Login, Plain},
-        Data, Mail, Noop, Recipient,
+        Data, EitherCmd, Mail, Noop, Recipient, SelectCmd,
     },
-    error::MissingCapabilities,
-    Cmd, Connection, ConnectionConfig, DefaultTlsSetup, EhloData, ExecFuture, ForwardPath, Io,
-    ReversePath, DEFAULT_SMTP_MSA_PORT,
+    Cmd, Connection, ConnectionConfig, DefaultTlsSetup, ForwardPath, ReversePath,
+    DEFAULT_SMTP_MSA_PORT,
 };
 use std::io;
 use std::net::SocketAddr;
@@ -308,50 +307,4 @@ fn make_conn_conf(config: &SmtpConfig) -> Result<ConnConf, MailerError> {
     };
 
     Ok(builder.build())
-}
-
-#[derive(Debug, Clone)]
-enum EitherCmd<A, B> {
-    A(A),
-    B(B),
-}
-
-impl<A, B> Cmd for EitherCmd<A, B>
-where
-    A: Cmd,
-    B: Cmd,
-{
-    fn check_cmd_availability(&self, caps: Option<&EhloData>) -> Result<(), MissingCapabilities> {
-        match self {
-            EitherCmd::A(a) => a.check_cmd_availability(caps),
-            EitherCmd::B(b) => b.check_cmd_availability(caps),
-        }
-    }
-    fn exec(self, con: Io) -> ExecFuture {
-        match self {
-            EitherCmd::A(a) => a.exec(con),
-            EitherCmd::B(b) => b.exec(con),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-struct SelectCmd<A, B>(A, B);
-
-impl<A, B> Cmd for SelectCmd<A, B>
-where
-    A: Cmd,
-    B: Cmd,
-{
-    fn check_cmd_availability(&self, caps: Option<&EhloData>) -> Result<(), MissingCapabilities> {
-        self.0.check_cmd_availability(caps)?;
-        self.1.check_cmd_availability(caps)
-    }
-    fn exec(self, con: Io) -> ExecFuture {
-        if self.0.check_cmd_availability(con.ehlo_data()).is_ok() {
-            Box::new(self.0.exec(con))
-        } else {
-            Box::new(self.1.exec(con))
-        }
-    }
 }
