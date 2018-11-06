@@ -5,9 +5,13 @@ extern crate bytes;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+#[cfg(feature = "send_mail")]
+extern crate emailmessage;
 extern crate futures;
 extern crate http;
 extern crate mime;
+#[cfg(feature = "send_mail")]
+extern crate new_tokio_smtp;
 extern crate serde_json;
 extern crate sodiumoxide;
 extern crate supercow;
@@ -23,6 +27,9 @@ pub mod auth;
 pub mod crypto;
 pub mod filters;
 pub mod reply;
+
+#[cfg(feature = "send_mail")]
+pub mod mail;
 
 pub use self::access::{HasUserRoles, IsUserRole};
 pub use self::common::{

@@ -66,6 +66,11 @@ impl TimeStamp {
     pub fn abs_delta(&self, time: &Self) -> Self {
         (*self - *time).abs()
     }
+
+    /// Check if value is zero
+    pub fn is_zero(&self) -> bool {
+        self.0 == 0
+    }
 }
 
 impl Add for TimeStamp {
