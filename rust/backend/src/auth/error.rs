@@ -13,6 +13,7 @@ pub enum AuthError {
     Outdated,
     BadMethod,
     BadIdent,
+    NeedRetry,
 }
 
 impl AuthError {
@@ -24,6 +25,7 @@ impl AuthError {
                 BackendError => StatusCode::INTERNAL_SERVER_ERROR,
                 BadMethod => StatusCode::BAD_REQUEST,
                 BadSession | BadUser | LostSession | Outdated | BadIdent => StatusCode::FORBIDDEN,
+                NeedRetry => StatusCode::CREATED,
             };
             Ok(with_status(error.to_string(), code))
         } else {
@@ -45,6 +47,7 @@ impl Display for AuthError {
             Outdated => f.write_str("Outdated info"),
             BadMethod => f.write_str("Bad auth method"),
             BadIdent => f.write_str("Bad user ident"),
+            NeedRetry => f.write_str("Retry auth"),
         }
     }
 }

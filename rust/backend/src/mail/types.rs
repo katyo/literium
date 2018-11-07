@@ -1,5 +1,6 @@
 pub use emailmessage::{
-    header, Mailbox, Mailboxes, Message as MailMessage, MultiPart, Part, SinglePart,
+    header, Address as MailAddress, Body as MailBody, Mailbox, Mailboxes, Message as MailMessage,
+    MultiPart, Part, SinglePart,
 };
 
 use TimeStamp;

@@ -57,6 +57,10 @@ impl IsUserData for UserData {
     fn user_name(&self) -> &str {
         &self.name
     }
+
+    fn from_name<'a, S: Into<Cow<'a, str>>>(name: S) -> Self {
+        UserData::new(0, name.into())
+    }
 }
 
 impl HasPasswordHash for UserData {

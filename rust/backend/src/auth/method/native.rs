@@ -4,18 +4,21 @@ use sodiumoxide::crypto::pwhash;
 use std::marker::PhantomData;
 use BoxFuture;
 
+/// Native auth method information
 #[derive(Debug, Serialize)]
 pub enum AuthInfo {
     #[serde(rename = "native")]
     Native {},
 }
 
+/// Native auth user identification
 #[derive(Debug, Deserialize)]
 pub enum UserIdent {
     #[serde(rename = "native")]
     Native { name: String, pass: String },
 }
 
+/// Native auth method
 #[derive(Clone, Copy)]
 pub struct NativeAuth<Backend> {
     _backend: PhantomData<Backend>,

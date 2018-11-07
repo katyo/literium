@@ -31,6 +31,8 @@ mod traits;
 mod native;
 #[cfg(feature = "oauth2_auth")]
 mod oauth2;
+#[cfg(feature = "otpass_auth")]
+mod otpass;
 
 pub use self::traits::*;
 
@@ -38,3 +40,5 @@ pub use self::traits::*;
 pub use self::native::*;
 #[cfg(feature = "oauth2_auth")]
 pub use self::oauth2::*;
+#[cfg(feature = "otpass_auth")]
+pub use self::otpass::*;

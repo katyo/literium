@@ -70,9 +70,15 @@ pub trait HasUserAuth: HasUserSession + HasUserData {
 }
 
 /// Basic user data
-pub trait IsUserData {
+pub trait IsUserData: Sized {
+    /// Get unique user identifier
     fn user_id(&self) -> UserId;
+
+    /// Get unique user name
     fn user_name(&self) -> &str;
+
+    /// Create user data using unique name
+    fn from_name<'a, S: Into<Cow<'a, str>>>(name: S) -> Self;
 }
 
 /// User data which has password
