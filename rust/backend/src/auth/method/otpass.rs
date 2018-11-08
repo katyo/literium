@@ -1,22 +1,27 @@
-use auth::{AuthError, HasUserData, IsAuthMethod, IsUserData};
-use crypto::{random_bytes, HasPublicKey, HasSecretKey};
+use auth::{
+    gen_password, AuthError, HasUserAccess, IsAuthMethod, IsUserData, UserAccess,
+    ARABIC_NUMBERS_AND_LATIN_LETTERS,
+};
 use futures::{
     future::{err, ok, Either},
     Future,
 };
 #[cfg(feature = "send_mail")]
 use mail::{header, HasMailer, IsMailer, MailMessage, Mailbox, MultiPart, SinglePart};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
-use std::marker::PhantomData;
+use std::ops::RangeInclusive;
 use std::sync::{Arc, RwLock};
-use {BoxFuture, HasConfig, TimeStamp};
+use {BoxFuture, TimeStamp};
 
 /// One-time password auth options
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OTPassOptions {
     /// Password length in chars
     pub pass_size: usize,
+    /// Password dictionary
+    pub pass_dict: Cow<'static, [RangeInclusive<char>]>,
     /// Dead time in milliseconds
     pub dead_time: TimeStamp,
     /// Retries limit
@@ -27,15 +32,11 @@ impl Default for OTPassOptions {
     fn default() -> Self {
         Self {
             pass_size: 5,
+            pass_dict: Cow::Borrowed(&ARABIC_NUMBERS_AND_LATIN_LETTERS),
             dead_time: TimeStamp::default().with_secs(5),
             retry_lim: 3,
         }
     }
-}
-
-/// Config has one-time password auth options
-pub trait HasOTPassOptions {
-    fn otpass_options(&self) -> &OTPassOptions;
 }
 
 /// One-time password auth method information
@@ -104,54 +105,54 @@ pub struct AuthToken {
 impl AuthToken {
     fn new(ctime: TimeStamp, options: &OTPassOptions) -> Self {
         AuthToken {
-            pass: gen_password(options.pass_size),
+            pass: gen_password(options.pass_size, &options.pass_dict),
             ctime,
             retry: 0,
         }
     }
 }
 
-#[derive(Clone)]
-pub struct OTPassAuth<Backend> {
-    tokens: Arc<RwLock<HashMap<OTPassIdent, AuthToken>>>,
-    _backend: PhantomData<Backend>,
+type Tokens = HashMap<OTPassIdent, AuthToken>;
+
+struct State {
+    options: OTPassOptions,
+    tokens: RwLock<Tokens>,
 }
 
-impl<Backend> OTPassAuth<Backend> {
-    pub fn new() -> Self {
-        Self {
-            tokens: Arc::new(RwLock::new(HashMap::new())),
-            _backend: PhantomData,
-        }
+#[derive(Clone)]
+pub struct OTPassAuth(Arc<State>);
+
+impl OTPassAuth {
+    pub fn new(options: OTPassOptions) -> Self {
+        OTPassAuth(Arc::new(State {
+            options,
+            tokens: RwLock::new(HashMap::new()),
+        }))
     }
 
-    fn clear_tokens(&self, at: TimeStamp, options: &OTPassOptions) {
+    fn clear_tokens(&self, at: TimeStamp) {
         // clear dead tokens
-        let dt = at - options.dead_time;
-        self.tokens
+        let dt = at - self.0.options.dead_time;
+        self.0
+            .tokens
             .write()
             .unwrap()
             .retain(|_, token| token.ctime > dt);
     }
 
-    fn create_token(&self, state: &Backend, ident: &OTPassIdent) -> Option<String>
-    where
-        Backend: HasConfig,
-        Backend::Config: HasOTPassOptions,
-    {
+    fn create_token<S>(&self, _state: &S, ident: &OTPassIdent) -> Option<String> {
         let at = TimeStamp::now();
-        let options = state.get_config().otpass_options();
-        self.clear_tokens(at, options);
+        self.clear_tokens(at);
 
         {
-            let tokens = self.tokens.read().unwrap();
+            let tokens = self.0.tokens.read().unwrap();
             if tokens.contains_key(&ident) {
                 return None;
             }
         }
 
-        let mut tokens = self.tokens.write().unwrap();
-        let token = AuthToken::new(at, options);
+        let mut tokens = self.0.tokens.write().unwrap();
+        let token = AuthToken::new(at, &self.0.options);
         let pass = token.pass.clone();
 
         tokens.insert(ident.clone(), token);
@@ -159,20 +160,15 @@ impl<Backend> OTPassAuth<Backend> {
         Some(pass)
     }
 
-    fn verify_token(&self, state: &Backend, ident: &OTPassIdent, pass: &String) -> bool
-    where
-        Backend: HasConfig,
-        Backend::Config: HasOTPassOptions,
-    {
+    fn verify_token<S>(&self, _state: &S, ident: &OTPassIdent, pass: &String) -> bool {
         let at = TimeStamp::now();
-        let options = state.get_config().otpass_options();
-        self.clear_tokens(at, options);
+        self.clear_tokens(at);
 
         let mut no_retry = false;
         let mut is_match = false;
 
         {
-            let tokens = self.tokens.read().unwrap();
+            let tokens = self.0.tokens.read().unwrap();
             // get token
             if let Some(token) = tokens.get(&ident) {
                 // check password
@@ -180,7 +176,7 @@ impl<Backend> OTPassAuth<Backend> {
                     is_match = true;
                 }
                 // check retries limit
-                if token.retry >= options.retry_lim {
+                if token.retry >= self.0.options.retry_lim {
                     no_retry = true;
                 }
             } else {
@@ -188,7 +184,7 @@ impl<Backend> OTPassAuth<Backend> {
             }
         }
 
-        let mut tokens = self.tokens.write().unwrap();
+        let mut tokens = self.0.tokens.write().unwrap();
 
         if is_match || no_retry {
             tokens.remove(&ident);
@@ -203,19 +199,16 @@ impl<Backend> OTPassAuth<Backend> {
 
 macro_rules! method_impl {
     ($($traits:tt)*) => {
-        impl<Backend> IsAuthMethod for OTPassAuth<Backend>
+        impl<S> IsAuthMethod<S> for OTPassAuth
         where
-            Backend: HasUserData + $($traits)* + HasConfig + Send + Clone + 'static,
-            Backend::Config: HasPublicKey + HasSecretKey + HasOTPassOptions,
-            Backend::UserData: 'static,
+            S: HasUserAccess + $($traits)* + Send + Clone + 'static,
         {
             type AuthInfo = AuthInfo;
             type UserIdent = UserIdent;
-            type Backend = Backend;
 
             fn get_auth_info(
                 &self,
-                _state: &Self::Backend,
+                _state: &S,
             ) -> BoxFuture<Self::AuthInfo, AuthError> {
                 Box::new(ok(AuthInfo::OTPass {
                     #[cfg(feature = "send_mail")]
@@ -227,9 +220,9 @@ macro_rules! method_impl {
 
             fn try_user_auth(
                 &self,
-                state: &Self::Backend,
+                state: &S,
                 UserIdent::OTPass { ident, pass }: &Self::UserIdent,
-            ) -> BoxFuture<<Self::Backend as HasUserData>::UserData, AuthError> {
+            ) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError> {
                 if let Some(pass) = pass {
                     if self.verify_token(state, ident, pass) {
                         complete_auth(state, ident)
@@ -260,18 +253,16 @@ method_impl!(HasMailer);
 #[cfg(all(not(feature = "send_mail"), feature = "send_sms"))]
 method_impl!(HasSmser);
 
-fn complete_auth<Backend>(
-    state: &Backend,
+fn complete_auth<S>(
+    state: &S,
     ident: &OTPassIdent,
-) -> BoxFuture<Backend::UserData, AuthError>
+) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError>
 where
-    Backend: HasUserData + HasMailer + HasConfig + Send + Clone + 'static,
-    Backend::Config: HasPublicKey + HasSecretKey,
-    Backend::UserData: 'static,
+    S: HasUserAccess + Send + Clone + 'static,
 {
     let ident = ident.to_string();
     Box::new(
-        state
+        (state.as_ref() as &S::UserAccess)
             .find_user_data(&ident)
             .and_then({
                 let state = state.clone();
@@ -279,8 +270,8 @@ where
                     if let Some(user) = user {
                         Either::A(ok(user))
                     } else {
-                        let user = Backend::UserData::from_name(ident);
-                        Either::B(state.put_user_data(user))
+                        let user = <S::UserAccess as UserAccess>::User::from_name(ident);
+                        Either::B((state.as_ref() as &S::UserAccess).put_user_data(user))
                     }
                 }
             }).map_err(|_| AuthError::BackendError),
@@ -288,15 +279,13 @@ where
 }
 
 #[cfg(feature = "send_mail")]
-fn send_email_auth<Backend>(
-    state: &Backend,
+fn send_email_auth<S>(
+    state: &S,
     email: &Mailbox,
     pass: String,
-) -> BoxFuture<Backend::UserData, AuthError>
+) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError>
 where
-    Backend: HasUserData + HasMailer + HasConfig,
-    Backend::Config: HasPublicKey + HasSecretKey,
-    Backend::UserData: 'static,
+    S: HasUserAccess + HasMailer,
 {
     let message = MailMessage::create()
         .to(email.clone())
@@ -323,8 +312,7 @@ where
                 .into(),
         );
     Box::new(
-        state
-            .get_mailer()
+        (state.as_ref() as &S::Mailer)
             .send_mail(message)
             .map_err(|_| AuthError::BackendError)
             .and_then(|_| Err(AuthError::NeedRetry)),
@@ -332,15 +320,13 @@ where
 }
 
 #[cfg(feature = "send_sms")]
-fn send_phone_auth<Backend>(
-    state: &Backend,
+fn send_phone_auth<S>(
+    state: &S,
     phone: &String,
     pass: String,
-) -> BoxFuture<Backend::UserData, AuthError>
+) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError>
 where
-    Backend: HasUserData + HasSmser + HasConfig,
-    Backend::Config: HasPublicKey + HasSecretKey,
-    Backend::UserData: 'static,
+    S: HasUserAccess + HasSmser,
 {
     let message = format!("Auth token: {}", pass);
     Box::new(
@@ -350,26 +336,4 @@ where
             .map_err(|_| AuthError::BackendError)
             .and_then(|_| Err(AuthError::NeedRetry)),
     )
-}
-
-fn gen_password(length: usize) -> String {
-    random_bytes(length).into_iter().map(byte_to_char).collect()
-}
-
-fn byte_to_char(byte: u8) -> char {
-    let ranges = [b'0'..=b'9', b'A'..=b'Z', b'a'..=b'z'];
-    let length = ranges.iter().fold(0, |length, range| length + range.len());
-    let index = byte as usize * length / 256;
-    ranges
-        .iter()
-        .fold(Err(index), |found, range| {
-            if let Err(index) = found {
-                return if index < range.len() {
-                    Ok((*range.start() + index as u8) as char)
-                } else {
-                    Err(index - range.len())
-                };
-            }
-            found
-        }).unwrap()
 }

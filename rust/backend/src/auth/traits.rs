@@ -23,20 +23,20 @@ impl IsSessionData for SessionData {
 }
 
 /// Access to user sessions
-pub trait HasUserSession: IsBackend {
+pub trait SessionAccess: IsBackend {
     /// Session data type
-    type SessionData: IsSessionData + Send;
+    type Session: IsSessionData + Send + 'static;
 
     /// Create new user session
     fn new_user_session(
         &self,
         user: UserId,
         pbkey: PublicKey,
-    ) -> BoxFuture<Self::SessionData, Self::Error>
+    ) -> BoxFuture<Self::Session, Self::Error>
     where
-        Self::SessionData: From<SessionData>,
+        Self::Session: From<SessionData>,
     {
-        self.put_user_session(Self::SessionData::from(SessionData::new(user, pbkey)))
+        self.put_user_session(Self::Session::from(SessionData::new(user, pbkey)))
     }
 
     /// Find user session by user id and creation time
@@ -44,29 +44,48 @@ pub trait HasUserSession: IsBackend {
         &self,
         user: UserId,
         ctime: TimeStamp,
-    ) -> BoxFuture<Option<Self::SessionData>, Self::Error>;
+    ) -> BoxFuture<Option<Self::Session>, Self::Error>;
 
     /// Get user session data by identifier
     fn get_user_session(
         &self,
         user: UserId,
         session: SessionId,
-    ) -> BoxFuture<Option<Self::SessionData>, Self::Error>;
+    ) -> BoxFuture<Option<Self::Session>, Self::Error>;
 
     /// Save modified user session data
-    fn put_user_session(
-        &self,
-        session: Self::SessionData,
-    ) -> BoxFuture<Self::SessionData, Self::Error>;
+    fn put_user_session(&self, session: Self::Session) -> BoxFuture<Self::Session, Self::Error>;
 }
 
-/// Get user auth from session and user data
-pub trait HasUserAuth: HasUserSession + HasUserData {
-    /// Auth data type
-    type AuthData;
+/// State has access to user sessions
+pub trait HasSessionAccess
+where
+    Self: AsRef<<Self as HasSessionAccess>::SessionAccess>,
+{
+    /// User session accessor
+    type SessionAccess: SessionAccess;
+}
 
-    /// Get auth data
-    fn get_auth_data(&self, session: &Self::SessionData, user: &Self::UserData) -> Self::AuthData;
+/// Server-side user auth data
+pub trait IsUserAuth<S>
+where
+    Self: Send,
+    S: HasSessionAccess + HasUserAccess,
+{
+    /// Create auth data from session and user data
+    fn new_user_auth(
+        session: &<<S as HasSessionAccess>::SessionAccess as SessionAccess>::Session,
+        user: &<<S as HasUserAccess>::UserAccess as UserAccess>::User,
+    ) -> Self;
+}
+
+/// State has server-side user auth data
+pub trait HasUserAuth
+where
+    Self: HasSessionAccess + HasUserAccess + Sized,
+{
+    /// User auth data type
+    type UserAuth: IsUserAuth<Self> + Send + 'static;
 }
 
 /// Basic user data
@@ -90,26 +109,51 @@ pub trait HasPasswordHash {
 }
 
 /// Access to user data
-pub trait HasUserData: IsBackend {
+pub trait UserAccess: IsBackend {
     /// User data type
-    type UserData: IsUserData + Send;
+    type User: IsUserData + Send + 'static;
 
     /// Get user data by name
     fn find_user_data<'a, S: Into<Cow<'a, str>>>(
         &self,
         name: S,
-    ) -> BoxFuture<Option<Self::UserData>, Self::Error>;
+    ) -> BoxFuture<Option<Self::User>, Self::Error>;
 
     /// Get user data by id
-    fn get_user_data(&self, user: UserId) -> BoxFuture<Option<Self::UserData>, Self::Error>;
+    fn get_user_data(&self, user: UserId) -> BoxFuture<Option<Self::User>, Self::Error>;
 
     /// Save user data
-    fn put_user_data(&self, user: Self::UserData) -> BoxFuture<Self::UserData, Self::Error>;
+    fn put_user_data(&self, user: Self::User) -> BoxFuture<Self::User, Self::Error>;
 }
 
-/// Get info from from user data
-pub trait HasUserInfo: HasUserData + HasUserSession {
-    type UserInfo;
+/// State has access to user data
+pub trait HasUserAccess
+where
+    Self: AsRef<<Self as HasUserAccess>::UserAccess>,
+{
+    /// User data accessor
+    type UserAccess: UserAccess;
+}
 
-    fn get_user_info(&self, user: &Self::UserData) -> BoxFuture<Self::UserInfo, Self::Error>;
+/// Client-side user info
+pub trait IsUserInfo<S>
+where
+    S: HasUserAccess,
+{
+    /// Create user info from user data
+    ///
+    /// Also you can extract additional data using access to state.
+    fn new_user_info(
+        state: &S,
+        user: &<<S as HasUserAccess>::UserAccess as UserAccess>::User,
+    ) -> BoxFuture<Self, <<S as HasUserAccess>::UserAccess as IsBackend>::Error>;
+}
+
+/// State hash client-side auth info
+pub trait HasUserInfo
+where
+    Self: HasUserAccess + Sized,
+{
+    /// User info type
+    type UserInfo: IsUserInfo<Self>;
 }

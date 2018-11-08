@@ -3,7 +3,7 @@ use super::{
     SmtpSecurity,
 };
 use emailmessage::header;
-use {BoxFuture, HasConfig};
+use BoxFuture;
 
 use bytes::IntoBuf;
 use futures::{
@@ -22,20 +22,23 @@ use new_tokio_smtp::{
 };
 use std::io;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::Duration;
 use tokio::{clock::now, spawn, timer::Delay};
 
 /// Send email message
 pub fn send_mail<State>(state: State, message: MailMessage) -> BoxFuture<(), MailerError>
 where
-    State: HasConfig,
-    State::Config: HasMailer,
+    State: HasMailer,
 {
-    state.get_config().get_mailer().send_mail(message)
+    state.as_ref().send_mail(message)
 }
 
 /// SMTP mailer
-pub struct SmtpMailer {
+#[derive(Clone)]
+pub struct SmtpMailer(Arc<MailerState>);
+
+struct MailerState {
     // From/Sender header to override it in outgoing messages
     from: Option<Mailbox>,
     // sender accept message and 'complete' sender
@@ -63,7 +66,7 @@ impl SmtpMailer {
             info!("Stop mailer");
         }));
 
-        Ok(SmtpMailer { from, sender })
+        Ok(SmtpMailer(Arc::new(MailerState { from, sender })))
     }
 }
 
@@ -71,7 +74,7 @@ impl IsMailer for SmtpMailer {
     fn send_mail(&self, mut message: MailMessage) -> BoxFuture<(), MailerError> {
         let (result_sender, result_receiver) = oneshot::channel();
 
-        if let Some(from) = &self.from {
+        if let Some(from) = &self.0.from {
             // Change `From:` header
             let headers = message.headers_mut();
             headers.set(header::From(Mailboxes::new().with(from.clone())));
@@ -81,7 +84,8 @@ impl IsMailer for SmtpMailer {
         debug!("\n{}", message.headers());
 
         Box::new(
-            self.sender
+            self.0
+                .sender
                 .clone()
                 .send((message, result_sender))
                 .map_err(|_| MailerError::ServerError)

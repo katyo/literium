@@ -79,36 +79,56 @@ extern crate warp;
 extern crate log;
 extern crate pretty_env_logger;
 
-use std::marker::PhantomData;
-use std::sync::{Arc, RwLock};
-use futures::{Future, future::ok};
+use futures::Future;
 use literium::{
-    CryptoKeys, x_auth, seal_x_json, crypto::HasPublicKey,
-    auth::{UserId, SessionId, HasUserSession, HasUserData, AuthData},
-    HasConfig, HasBackend, TimeStamp, auth::dummy::{UserData, Users, UserAuth},
+    auth::dummy::{Sessions, UserAuth, UserData, Users},
+    auth::{
+        AuthData, HasUserAuth, HasUserAccess, HasSessionAccess, SessionAccess,
+    },
+    seal_x_json, x_auth, CryptoKeys, HasSecretKey, PublicKey,
 };
-use warp::{Filter, get2, path, any, test::request};
+use std::sync::Arc;
+use warp::{get2, path, test::request, Filter};
 
 #[derive(Clone)]
 pub struct State {
     config: Arc<CryptoKeys>,
     users: Users,
+    sessions: Sessions,
 }
 
-impl HasConfig for State {
-    type Config = Arc<CryptoKeys>;
-
-    fn get_config(&self) -> &Self::Config {
+impl AsRef<CryptoKeys> for State {
+    fn as_ref(&self) -> &CryptoKeys {
         &self.config
     }
 }
 
-impl HasBackend for State {
-    type Backend = Users;
+impl HasSecretKey for State {
+    type KeyData = CryptoKeys;
+}
 
-    fn get_backend(&self) -> &Self::Backend {
+impl AsRef<Users> for State {
+    fn as_ref(&self) -> &Users {
         &self.users
     }
+}
+
+impl HasUserAccess for State {
+    type UserAccess = Users;
+}
+
+impl AsRef<Sessions> for State {
+    fn as_ref(&self) -> &Sessions {
+        &self.sessions
+    }
+}
+
+impl HasSessionAccess for State {
+    type SessionAccess = Sessions;
+}
+
+impl HasUserAuth for State {
+    type UserAuth = UserAuth;
 }
 
 fn main() {
@@ -122,26 +142,33 @@ fn main() {
 
     let users = Users::new().with_user(user.clone());
 
-    let session = users.new_user_session(user.id, client_keys.get_public_key().clone()).wait().unwrap();
+    let sessions = Sessions::new();
 
-    let state = State { config: Arc::new(server_keys), users };
+    let session = sessions
+        .new_user_session(user.id, (client_keys.as_ref() as &PublicKey).clone())
+        .wait()
+        .unwrap();
+
+    let state = State {
+        config: Arc::new(server_keys),
+        users,
+        sessions,
+    };
 
     let auth_data = AuthData {
         user: user.id,
         sess: 1,
         token: session.token.clone(),
-        serno: session.serno
+        serno: session.serno,
     };
-    let auth_header = seal_x_json(&auth_data, &state.get_config()).unwrap();
+    let auth_header = seal_x_json(&auth_data, &state.as_ref() as &CryptoKeys).unwrap();
 
     let app = get2()
         .and(path("sensible"))
         .and(path("data"))
         // get auth
         .and(x_auth(state.clone()))
-        .map(|user: UserAuth| {
-            user.name.clone()
-        });
+        .map(|user: UserAuth| user.name.clone());
 
     let name = request()
         .method("GET")
@@ -156,13 +183,16 @@ fn main() {
 
 */
 
+#[cfg(feature = "auth")]
 mod sealed_auth;
 mod sealed_json;
 
+#[cfg(feature = "auth")]
 pub use self::sealed_auth::base64_sealed_auth;
 pub use self::sealed_json::base64_sealed_json;
 
 /// Shortcut for [`base64_sealed_auth`]
+#[cfg(feature = "auth")]
 pub use self::base64_sealed_auth as x_auth;
 
 /// Shortcut for [`base64_sealed_json`]

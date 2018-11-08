@@ -7,8 +7,8 @@ This module provides dummy implementation of users backend for examples and test
 */
 
 use super::{
-    method::create_password, HasPasswordHash, HasUserAuth, HasUserData, HasUserInfo,
-    HasUserSession, IsUserData, SessionData, SessionId, UserId,
+    create_password, HasPasswordHash, HasSessionAccess, HasUserAccess, IsSessionData, IsUserAuth,
+    IsUserData, IsUserInfo, SessionAccess, SessionData, SessionId, UserAccess, UserId,
 };
 use futures::future::result;
 use std::borrow::Cow;
@@ -90,11 +90,10 @@ impl fmt::Display for DummyError {
     }
 }
 
-/// Users backend
+/// Dummy users backend
 #[derive(Clone)]
 pub struct Users {
     users: Arc<RwLock<Vec<UserData>>>,
-    sessions: Arc<RwLock<Vec<UserSession>>>,
 }
 
 impl IsBackend for Users {
@@ -106,7 +105,6 @@ impl Users {
     pub fn new() -> Self {
         Self {
             users: Arc::new(RwLock::new(Vec::new())),
-            sessions: Arc::new(RwLock::new(Vec::new())),
         }
     }
 
@@ -114,6 +112,67 @@ impl Users {
     pub fn with_user(self, user: UserData) -> Self {
         self.users.write().unwrap().push(user);
         self
+    }
+}
+
+impl UserAccess for Users {
+    type User = UserData;
+
+    fn find_user_data<'a, S: Into<Cow<'a, str>>>(
+        &self,
+        name: S,
+    ) -> BoxFuture<Option<Self::User>, Self::Error> {
+        let name = name.into();
+        Box::new(result(
+            self.users
+                .read()
+                .map(|users| {
+                    users
+                        .iter()
+                        .find(|data| data.name == name)
+                        .map(Clone::clone)
+                }).map_err(|_| DummyError),
+        ))
+    }
+
+    fn get_user_data(&self, user: UserId) -> BoxFuture<Option<Self::User>, Self::Error> {
+        Box::new(result(
+            self.users
+                .read()
+                .map(|users| users.iter().find(|data| data.id == user).map(Clone::clone))
+                .map_err(|_| DummyError),
+        ))
+    }
+
+    fn put_user_data(&self, mut user: Self::User) -> BoxFuture<Self::User, Self::Error> {
+        Box::new(result(
+            self.users
+                .write()
+                .map(|mut users| {
+                    if let Some(index) = users.iter().position(|data| data.id == user.id) {
+                        users[index] = user.clone();
+                    } else {
+                        user.id = users.len() as u32 + 1;
+                        users.push(user.clone());
+                    }
+                    user
+                }).map_err(|_| DummyError),
+        ))
+    }
+}
+
+/// Dummy sessions backend
+#[derive(Clone)]
+pub struct Sessions {
+    sessions: Arc<RwLock<Vec<UserSession>>>,
+}
+
+impl Sessions {
+    /// Create sessions backend
+    pub fn new() -> Self {
+        Self {
+            sessions: Arc::new(RwLock::new(Vec::new())),
+        }
     }
 
     /// Add session
@@ -123,14 +182,18 @@ impl Users {
     }
 }
 
-impl HasUserSession for Users {
-    type SessionData = UserSession;
+impl IsBackend for Sessions {
+    type Error = DummyError;
+}
+
+impl SessionAccess for Sessions {
+    type Session = UserSession;
 
     fn find_user_session(
         &self,
         user: UserId,
         ctime: TimeStamp,
-    ) -> BoxFuture<Option<Self::SessionData>, Self::Error> {
+    ) -> BoxFuture<Option<Self::Session>, Self::Error> {
         Box::new(result(
             self.sessions
                 .read()
@@ -147,7 +210,7 @@ impl HasUserSession for Users {
         &self,
         user: UserId,
         sess: SessionId,
-    ) -> BoxFuture<Option<Self::SessionData>, Self::Error> {
+    ) -> BoxFuture<Option<Self::Session>, Self::Error> {
         Box::new(result(
             self.sessions
                 .read()
@@ -162,8 +225,8 @@ impl HasUserSession for Users {
 
     fn put_user_session(
         &self,
-        mut session: Self::SessionData,
-    ) -> BoxFuture<Self::SessionData, Self::Error> {
+        mut session: Self::Session,
+    ) -> BoxFuture<Self::Session, Self::Error> {
         Box::new(result(
             self.sessions
                 .write()
@@ -183,66 +246,24 @@ impl HasUserSession for Users {
     }
 }
 
-impl HasUserData for Users {
-    type UserData = UserData;
-
-    fn find_user_data<'a, S: Into<Cow<'a, str>>>(
-        &self,
-        name: S,
-    ) -> BoxFuture<Option<Self::UserData>, Self::Error> {
-        let name = name.into();
-        Box::new(result(
-            self.users
-                .read()
-                .map(|users| {
-                    users
-                        .iter()
-                        .find(|data| data.name == name)
-                        .map(Clone::clone)
-                }).map_err(|_| DummyError),
-        ))
-    }
-
-    fn get_user_data(&self, user: UserId) -> BoxFuture<Option<Self::UserData>, Self::Error> {
-        Box::new(result(
-            self.users
-                .read()
-                .map(|users| users.iter().find(|data| data.id == user).map(Clone::clone))
-                .map_err(|_| DummyError),
-        ))
-    }
-
-    fn put_user_data(&self, mut user: Self::UserData) -> BoxFuture<Self::UserData, Self::Error> {
-        Box::new(result(
-            self.users
-                .write()
-                .map(|mut users| {
-                    if let Some(index) = users.iter().position(|data| data.id == user.id) {
-                        users[index] = user.clone();
-                    } else {
-                        user.id = users.len() as u32 + 1;
-                        users.push(user.clone());
-                    }
-                    user
-                }).map_err(|_| DummyError),
-        ))
-    }
-}
-
 pub struct UserAuth {
     pub user: UserId,
     pub sess: SessionId,
     pub name: String,
 }
 
-impl HasUserAuth for Users {
-    type AuthData = UserAuth;
-
-    fn get_auth_data(&self, session: &Self::SessionData, user: &Self::UserData) -> Self::AuthData {
+impl<S> IsUserAuth<S> for UserAuth
+where
+    S: HasSessionAccess + HasUserAccess,
+{
+    fn new_user_auth(
+        session: &<<S as HasSessionAccess>::SessionAccess as SessionAccess>::Session,
+        user: &<<S as HasUserAccess>::UserAccess as UserAccess>::User,
+    ) -> Self {
         UserAuth {
-            user: user.id,
-            sess: session.sess,
-            name: user.name.clone(),
+            user: user.user_id(),
+            sess: session.session_data().sess,
+            name: user.user_name().into(),
         }
     }
 }
@@ -254,12 +275,16 @@ pub struct UserInfo {
     pub name: String,
 }
 
-impl HasUserInfo for Users {
-    type UserInfo = UserInfo;
-
-    fn get_user_info(&self, data: &Self::UserData) -> BoxFuture<Self::UserInfo, Self::Error> {
+impl<S> IsUserInfo<S> for UserInfo
+where
+    S: HasUserAccess,
+{
+    fn new_user_info(
+        _state: &S,
+        user: &<<S as HasUserAccess>::UserAccess as UserAccess>::User,
+    ) -> BoxFuture<Self, <<S as HasUserAccess>::UserAccess as IsBackend>::Error> {
         Box::new(result(Ok(UserInfo {
-            name: data.name.clone(),
+            name: user.user_name().into(),
         })))
     }
 }

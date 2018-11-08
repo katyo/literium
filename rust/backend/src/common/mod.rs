@@ -10,5 +10,5 @@ pub use self::binary::{AsBinary, FromBinary};
 pub use self::config::FileConfig;
 pub use self::listen::ListenAddr;
 pub use self::timestamp::TimeStamp;
-pub use self::traits::{HasBackend, HasConfig, IsBackend};
-pub use self::types::{BoxFuture, JsonValue};
+pub use self::traits::IsBackend;
+pub use self::types::BoxFuture;

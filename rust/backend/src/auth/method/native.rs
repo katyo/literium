@@ -1,7 +1,5 @@
-use auth::{AuthError, HasPasswordHash, HasUserData, IsAuthMethod};
+use auth::{verify_password, AuthError, HasPasswordHash, HasUserAccess, IsAuthMethod, UserAccess};
 use futures::{future, Future};
-use sodiumoxide::crypto::pwhash;
-use std::marker::PhantomData;
 use BoxFuture;
 
 /// Native auth method information
@@ -20,49 +18,38 @@ pub enum UserIdent {
 
 /// Native auth method
 #[derive(Clone, Copy)]
-pub struct NativeAuth<Backend> {
-    _backend: PhantomData<Backend>,
-}
+pub struct NativeAuth;
 
-impl<Backend> NativeAuth<Backend> {
-    pub fn new() -> Self {
-        Self {
-            _backend: PhantomData,
-        }
-    }
-}
-
-impl<Backend> IsAuthMethod for NativeAuth<Backend>
+impl<S> IsAuthMethod<S> for NativeAuth
 where
-    Backend: HasUserData,
-    Backend::UserData: HasPasswordHash + 'static,
+    S: HasUserAccess,
+    <S::UserAccess as UserAccess>::User: HasPasswordHash,
 {
     type AuthInfo = AuthInfo;
     type UserIdent = UserIdent;
-    type Backend = Backend;
 
-    fn get_auth_info(&self, _state: &Self::Backend) -> BoxFuture<Self::AuthInfo, AuthError> {
+    fn get_auth_info(&self, _state: &S) -> BoxFuture<Self::AuthInfo, AuthError> {
         Box::new(future::ok(AuthInfo::Native {}))
     }
 
     fn try_user_auth(
         &self,
-        state: &Self::Backend,
+        state: &S,
         ident: &Self::UserIdent,
-    ) -> BoxFuture<<Self::Backend as HasUserData>::UserData, AuthError> {
+    ) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError> {
         match ident {
             UserIdent::Native { name, pass } => {
-                let actual_hash = hash_password(pass);
+                let pass = pass.clone();
                 Box::new(
-                    state
+                    (state.as_ref() as &S::UserAccess)
                         .find_user_data(name)
                         .map_err(|error| {
                             error!("Error on find_user_data(): {}", error);
                             AuthError::BackendError
                         }).and_then(move |user| {
                             user.and_then(|user| {
-                                let res = if let Some(expected_hash) = user.get_password_hash() {
-                                    check_password(&actual_hash, expected_hash)
+                                let res = if let Some(hash) = user.get_password_hash() {
+                                    verify_password(&pass, &hash)
                                 } else {
                                     false
                                 };
@@ -77,26 +64,4 @@ where
             }
         }
     }
-}
-
-/// Hash password utily
-pub fn create_password<S: AsRef<str>>(password: S) -> Vec<u8> {
-    (&hash_password(password)[..]).into()
-}
-
-/// Check password utily
-pub fn verify_password<S: AsRef<str>, H: AsRef<[u8]>>(password: S, hash: H) -> bool {
-    check_password(&hash_password(password), hash)
-}
-
-fn check_password<H: AsRef<[u8]>>(password: &pwhash::HashedPassword, hash: H) -> bool {
-    pwhash::pwhash_verify(password, hash.as_ref())
-}
-
-fn hash_password<S: AsRef<str>>(password: S) -> pwhash::HashedPassword {
-    pwhash::pwhash(
-        password.as_ref().as_bytes(),
-        pwhash::OPSLIMIT_INTERACTIVE,
-        pwhash::MEMLIMIT_INTERACTIVE,
-    ).unwrap()
 }

@@ -1,14 +1,15 @@
-use super::{HasPublicKey, HasSecretKey};
 use base64lib::{decode, encode};
 use serde::{de, ser, Deserialize, Serialize};
 use sodiumoxide::crypto::box_::gen_keypair;
 use std::error::Error;
 use std::fmt;
 use std::str::FromStr;
-use HasConfig;
+
+use super::{HasPublicKey, HasSecretKey};
 
 pub use sodiumoxide::{
     crypto::box_::{PublicKey, SecretKey},
+    init as initialize,
     randombytes::randombytes as random_bytes,
 };
 
@@ -106,22 +107,28 @@ impl CryptoKeys {
     }
 }
 
-impl HasPublicKey for CryptoKeys {
-    fn get_public_key(&self) -> &PublicKey {
+impl AsRef<CryptoKeys> for CryptoKeys {
+    fn as_ref(&self) -> &CryptoKeys {
+        self
+    }
+}
+
+impl AsRef<PublicKey> for CryptoKeys {
+    fn as_ref(&self) -> &PublicKey {
         &self.public_key
     }
 }
 
-impl HasSecretKey for CryptoKeys {
-    fn get_secret_key(&self) -> &SecretKey {
+impl AsRef<SecretKey> for CryptoKeys {
+    fn as_ref(&self) -> &SecretKey {
         &self.secret_key
     }
 }
 
-impl HasConfig for CryptoKeys {
-    type Config = Self;
+impl HasPublicKey for CryptoKeys {
+    type KeyData = CryptoKeys;
+}
 
-    fn get_config(&self) -> &Self {
-        self
-    }
+impl HasSecretKey for CryptoKeys {
+    type KeyData = CryptoKeys;
 }

@@ -1,6 +1,6 @@
 use super::{
-    AuthError, AuthInfo, AuthRequest, AuthResponse, HasAuthMethod, HasUserData, HasUserInfo,
-    HasUserSession, IsAuthMethod, IsSessionData, IsUserData, SessionData,
+    AuthError, AuthInfo, AuthRequest, AuthResponse, HasAuthMethod, HasSessionAccess, HasUserAccess,
+    HasUserInfo, IsAuthMethod, IsSessionData, IsUserData, IsUserInfo, SessionAccess, SessionData,
 };
 use futures::{
     future::{err, Either},
@@ -8,17 +8,13 @@ use futures::{
 };
 use serde::Serialize;
 use warp::{Filter, Rejection, Reply};
-use {reply, x_json, HasBackend, HasConfig, HasPublicKey, HasSecretKey, TimeStamp};
+use {reply, x_json, HasPublicKey, HasSecretKey, TimeStamp};
 
 /// Handle get server auth data
-pub fn get_auth_info<State>(
-    state: State,
-) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
+pub fn get_auth_info<S>(state: S) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
-    State: HasConfig + HasBackend + Send + Sync + Clone + 'static,
-    State::Config: HasPublicKey + HasAuthMethod,
-    State::Backend: HasUserData,
-    <State::Config as HasAuthMethod>::AuthMethod: IsAuthMethod<Backend = State::Backend>,
+    S: HasPublicKey + HasUserAccess + HasAuthMethod + Send + Sync + Clone + 'static,
+    S::AuthMethod: IsAuthMethod<S>,
 {
     warp::get2()
         .and_then(move || {
@@ -28,56 +24,61 @@ where
         }).recover(AuthError::recover)
 }
 
-fn get_auth_info_fn<State>(
-    state: State,
-) -> impl Future<
-    Item = AuthInfo<<<State::Config as HasAuthMethod>::AuthMethod as IsAuthMethod>::AuthInfo>,
-    Error = AuthError,
->
+fn get_auth_info_fn<S>(
+    state: S,
+) -> impl Future<Item = AuthInfo<<S::AuthMethod as IsAuthMethod<S>>::AuthInfo>, Error = AuthError>
 where
-    State: HasConfig + HasBackend + Clone + 'static,
-    State::Config: HasPublicKey + HasAuthMethod,
-    State::Backend: HasUserData,
-    <State::Config as HasAuthMethod>::AuthMethod: IsAuthMethod<Backend = State::Backend>,
+    S: HasPublicKey + HasUserAccess + HasAuthMethod + Send + Sync + Clone + 'static,
+    S::AuthMethod: IsAuthMethod<S>,
 {
-    state
-        .get_config()
-        .get_auth_method()
-        .get_auth_info(&state.get_backend())
-        .map(move |info| AuthInfo::new(state.get_config().get_public_key().clone(), info))
+    (state.as_ref() as &S::AuthMethod)
+        .get_auth_info(&state)
+        .map(move |info| AuthInfo::new((state.as_ref() as &S::KeyData).as_ref().clone(), info))
 }
 
 /// Handle auth requests
-pub fn do_user_auth<State>(
-    state: State,
-) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
+pub fn do_user_auth<S>(state: S) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
-    State: HasConfig + HasBackend + Send + Sync + Clone + 'static,
-    State::Config: HasPublicKey + HasSecretKey + HasAuthMethod,
-    State::Backend: HasUserData + HasUserSession + HasUserInfo,
-    <State::Config as HasAuthMethod>::AuthMethod: IsAuthMethod<Backend = State::Backend>,
-    <State::Backend as HasUserInfo>::UserInfo: Serialize + Send,
-    <State::Backend as HasUserSession>::SessionData: From<SessionData>,
+    S: HasPublicKey
+        + HasSecretKey
+        + HasUserAccess
+        + HasSessionAccess
+        + HasUserInfo
+        + HasAuthMethod
+        + Send
+        + Sync
+        + Clone
+        + 'static,
+    S::AuthMethod: IsAuthMethod<S>,
+    S::UserInfo: Serialize + Send,
+    <S::SessionAccess as SessionAccess>::Session: From<SessionData>,
 {
     warp::post2()
         .and(x_json(state.clone()))
         .and_then(move |req| {
             do_user_auth_fn(state.clone(), req)
-                .map(|data| reply::x_json(&data, state.clone()))
+                .map(|data| reply::x_json(data, state.clone()))
                 .map_err(warp::reject::custom)
         }).recover(AuthError::recover)
 }
 
-fn do_user_auth_fn<State>(
-    state: State,
-    req: AuthRequest<<<State::Config as HasAuthMethod>::AuthMethod as IsAuthMethod>::UserIdent>,
-) -> impl Future<Item = AuthResponse<<State::Backend as HasUserInfo>::UserInfo>, Error = AuthError>
+fn do_user_auth_fn<S>(
+    state: S,
+    req: AuthRequest<<S::AuthMethod as IsAuthMethod<S>>::UserIdent>,
+) -> impl Future<Item = AuthResponse<S::UserInfo>, Error = AuthError>
 where
-    State: HasConfig + HasBackend + Send + Sync + Clone + 'static,
-    State::Config: HasPublicKey + HasSecretKey + HasAuthMethod,
-    State::Backend: HasUserData + HasUserSession + HasUserInfo,
-    <State::Config as HasAuthMethod>::AuthMethod: IsAuthMethod<Backend = State::Backend>,
-    <State::Backend as HasUserSession>::SessionData: From<SessionData>,
+    S: HasSecretKey
+        + HasUserAccess
+        + HasSessionAccess
+        + HasUserInfo
+        + HasAuthMethod
+        + Send
+        + Sync
+        + Clone
+        + 'static,
+    S::AuthMethod: IsAuthMethod<S>,
+    S::UserInfo: Serialize + Send,
+    <S::SessionAccess as SessionAccess>::Session: From<SessionData>,
 {
     if TimeStamp::now().abs_delta(&req.ctime) > TimeStamp::default().with_secs(3) {
         return Either::A(err(AuthError::Outdated));
@@ -87,32 +88,26 @@ where
     let pbkey = req.pbkey;
 
     Either::B(
-        state
-            .get_config()
-            .get_auth_method()
-            .try_user_auth(&state.get_backend(), &req.ident)
+        (state.as_ref() as &S::AuthMethod)
+            .try_user_auth(&state, &req.ident)
             .map_err(|error| {
                 error!("Backend error on check_user_ident(): {}", error);
                 AuthError::BackendError
             }).and_then(move |user| {
-                state
-                    .get_backend()
+                (state.as_ref() as &S::SessionAccess)
                     .find_user_session(user.user_id(), ctime)
                     .map_err(|error| {
                         error!("Backend error on find_user_session(): {}", error);
                         AuthError::BackendError
                     }).and_then(|_| Err(AuthError::Outdated))
                     .or_else(move |_| {
-                        state
-                            .get_backend()
+                        (state.as_ref() as &S::SessionAccess)
                             .new_user_session(user.user_id(), pbkey)
                             .map_err(|error| {
                                 error!("Backend error on new_user_session(): {}", error);
                                 AuthError::BackendError
                             }).and_then(move |session| {
-                                state
-                                    .get_backend()
-                                    .get_user_info(&user)
+                                S::UserInfo::new_user_info(&state, &user)
                                     .map_err(|error| {
                                         error!("Backend error on get_user_info(): {}", error);
                                         AuthError::BackendError

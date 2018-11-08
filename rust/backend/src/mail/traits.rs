@@ -15,8 +15,9 @@ impl IsMailer for () {
 }
 
 /// Backend has mail sending features
-pub trait HasMailer {
+pub trait HasMailer
+where
+    Self: AsRef<<Self as HasMailer>::Mailer>,
+{
     type Mailer: IsMailer;
-
-    fn get_mailer(&self) -> Self::Mailer;
 }

@@ -23,6 +23,7 @@ extern crate warp;
 #[macro_use]
 mod common;
 pub mod access;
+#[cfg(feature = "auth")]
 pub mod auth;
 pub mod crypto;
 pub mod filters;
@@ -33,14 +34,16 @@ pub mod mail;
 
 pub use self::access::{HasUserRoles, IsUserRole};
 pub use self::common::{
-    base64, BoxFuture, FileConfig, FromBinary, HasBackend, HasConfig, IsBackend, JsonValue,
-    ListenAddr, TimeStamp,
+    base64, BoxFuture, FileConfig, FromBinary, IsBackend, ListenAddr, TimeStamp,
 };
 pub use self::crypto::{
     open_x_json, random_bytes, seal_x_json, CryptoKeys, HasPublicKey, HasSecretKey, PublicKey,
     SecretKey,
 };
-pub use self::filters::{x_auth, x_json};
+
+#[cfg(feature = "auth")]
+pub use self::filters::x_auth;
+pub use self::filters::x_json;
 
 #[cfg(test)]
 mod test {

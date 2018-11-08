@@ -27,7 +27,8 @@ emailmessage = { version = "0.2", optional = true, features = ["serde"] }
 pretty_env_logger = "0.2"
 
 [features]
-default = ["send_mail", "native_auth", "otpass_auth"]
+default = ["auth", "send_mail", "native_auth", "otpass_auth"]
+auth = []
 native_auth = []
 otpass_auth = []
 oauth2_auth = []

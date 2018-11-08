@@ -1,5 +1,5 @@
 use bytes::Buf;
-use crypto::{decrypt_base64_sealed_json, CryptoError, HasPublicKey, HasSecretKey};
+use crypto::{decrypt_base64_sealed_json, CryptoError, HasSecretKey};
 use mime::Mime;
 use serde::de::DeserializeOwned;
 use warp::{
@@ -9,7 +9,6 @@ use warp::{
     reject::custom,
     Filter, Rejection,
 };
-use HasConfig;
 
 const MIME_SUBTYPE: &str = "x-base64-sealed-json";
 
@@ -18,13 +17,11 @@ const MIME_SUBTYPE: &str = "x-base64-sealed-json";
 /// `Content-Type` header should ends with "x-base64-sealed-json".
 ///
 /// For example `Content-Type: application/x-base64-sealed-json`.
-pub fn base64_sealed_json<T, State>(
-    state: State,
-) -> impl Filter<Extract = (T,), Error = Rejection> + Clone
+pub fn base64_sealed_json<T, S>(state: S) -> impl Filter<Extract = (T,), Error = Rejection> + Clone
 where
     T: DeserializeOwned + Send,
-    State: HasConfig + Send + Clone,
-    State::Config: HasPublicKey + HasSecretKey,
+    S: HasSecretKey + Send + Clone,
+    //S::KeyData: AsRef<PublicKey> + AsRef<SecretKey>,
 {
     let state = any().map(move || state.clone());
 
@@ -42,8 +39,8 @@ where
             }
         }).and(concat())
         .and(state)
-        .and_then(|_, body: FullBody, state: State| {
-            decrypt_base64_sealed_json(body.bytes(), state.get_config())
+        .and_then(|_, body: FullBody, state: S| {
+            decrypt_base64_sealed_json(body.bytes(), state.as_ref())
         })
 }
 

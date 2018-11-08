@@ -3,10 +3,12 @@ use futures::{
     Future,
 };
 
-use auth::{AuthData, AuthError, HasUserAuth, HasUserData, HasUserSession, IsSessionData};
-use crypto::{decrypt_base64_sealed_json, HasPublicKey, HasSecretKey};
+use auth::{
+    AuthData, AuthError, HasSessionAccess, HasUserAccess, HasUserAuth, IsSessionData, IsUserAuth,
+    SessionAccess, UserAccess,
+};
+use crypto::{open_x_json, HasSecretKey};
 use warp::{any, header, reject::custom, Filter, Rejection};
-use {HasBackend, HasConfig};
 
 /// Get user identification from header
 ///
@@ -15,29 +17,24 @@ use {HasBackend, HasConfig};
 /// This function extracts auth data, checks session and returns user data which can be used to check permissions and etc.
 pub fn base64_sealed_auth<State>(
     state: State,
-) -> impl Filter<Extract = (<State::Backend as HasUserAuth>::AuthData,), Error = Rejection> + Clone
+) -> impl Filter<Extract = (State::UserAuth,), Error = Rejection> + Clone
 where
-    State: HasBackend + HasConfig + Send + Sync + Clone,
-    State::Config: HasPublicKey + HasSecretKey,
-    State::Backend: HasUserSession + HasUserData + HasUserAuth,
-    <State::Backend as HasUserAuth>::AuthData: Send,
+    State: HasSecretKey + HasUserAccess + HasSessionAccess + HasUserAuth + Send + Sync + Clone,
 {
     let state = any().map(move || state.clone());
 
     any()
         .and(header("x-auth"))
         .and(state.clone())
-        .and_then(|data: String, state: State| decrypt_base64_sealed_json(data, state.get_config()))
+        .and_then(|data: String, state: State| open_x_json(data, state.as_ref() as &State::KeyData))
         .and(state.clone())
         .and_then(|data: AuthData, state: State| {
             debug!("Received auth data: {:?}", data);
-            state
-                .clone()
-                .get_backend()
+            (state.clone().as_ref() as &State::SessionAccess)
                 .get_user_session(data.user, data.sess)
                 .map_err(|_| AuthError::BackendError)
                 .and_then(
-                    move |session: Option<<State::Backend as HasUserSession>::SessionData>| {
+                    move |session: Option<<State::SessionAccess as SessionAccess>::Session>| {
                         let mut session = if let Some(session) = session {
                             session
                         } else {
@@ -53,8 +50,7 @@ where
                         }
                         session.session_data_mut().renew();
                         Either::B(
-                            state
-                                .get_backend()
+                            (state.as_ref() as &State::SessionAccess)
                                 .put_user_session(session)
                                 .map_err(|error| {
                                     error!("Backend error: {}", error);
@@ -65,15 +61,13 @@ where
                 ).map_err(custom)
         }).and(state)
         .and_then(
-            |session: <State::Backend as HasUserSession>::SessionData, state: State| {
-                state
-                    .clone()
-                    .get_backend()
+            |session: <State::SessionAccess as SessionAccess>::Session, state: State| {
+                (state.clone().as_ref() as &State::UserAccess)
                     .get_user_data(session.session_data().user)
                     .map_err(|_| AuthError::BackendError)
                     .and_then(|user| {
-                        user.map(move |user: <State::Backend as HasUserData>::UserData| {
-                            state.get_backend().get_auth_data(&session, &user)
+                        user.map(move |user: <State::UserAccess as UserAccess>::User| {
+                            State::UserAuth::new_user_auth(&session, &user)
                         }).ok_or_else(|| AuthError::BadUser)
                     }).map_err(custom)
             },

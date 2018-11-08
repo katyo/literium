@@ -1,32 +1,28 @@
-use std::ops::Deref;
-use std::rc::Rc;
-use std::sync::Arc;
-
-use auth::{AuthError, HasUserData};
+use auth::{AuthError, HasUserAccess, UserAccess};
 use futures::Future;
 use serde::{de::DeserializeOwned, Serialize};
 use BoxFuture;
 
 /// Authentication method interface
-pub trait IsAuthMethod {
+pub trait IsAuthMethod<S>
+where
+    S: HasUserAccess,
+{
     /// Auth info type
     type AuthInfo: Serialize + Send + 'static;
 
     /// User identification type
     type UserIdent: DeserializeOwned + Send + 'static;
 
-    /// Users backend type
-    type Backend: HasUserData;
-
     /// Auth method may provide some data to client
-    fn get_auth_info(&self, state: &Self::Backend) -> BoxFuture<Self::AuthInfo, AuthError>;
+    fn get_auth_info(&self, state: &S) -> BoxFuture<Self::AuthInfo, AuthError>;
 
     /// Auth method should made some checks itself
     fn try_user_auth(
         &self,
-        state: &Self::Backend,
+        state: &S,
         ident: &Self::UserIdent,
-    ) -> BoxFuture<<Self::Backend as HasUserData>::UserData, AuthError>;
+    ) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError>;
 }
 
 #[derive(Debug, Serialize)]
@@ -50,17 +46,16 @@ pub enum EitherUserIdent<A, B> {
     B(B),
 }
 
-impl<Backend, A, B> IsAuthMethod for (A, B)
+impl<S, A, B> IsAuthMethod<S> for (A, B)
 where
-    Backend: HasUserData,
-    A: IsAuthMethod<Backend = Backend>,
-    B: IsAuthMethod<Backend = Backend>,
+    S: HasUserAccess,
+    A: IsAuthMethod<S>,
+    B: IsAuthMethod<S>,
 {
     type AuthInfo = BothAuthInfo<A::AuthInfo, B::AuthInfo>;
     type UserIdent = EitherUserIdent<A::UserIdent, B::UserIdent>;
-    type Backend = Backend;
 
-    fn get_auth_info(&self, state: &Self::Backend) -> BoxFuture<Self::AuthInfo, AuthError> {
+    fn get_auth_info(&self, state: &S) -> BoxFuture<Self::AuthInfo, AuthError> {
         Box::new(
             self.0
                 .get_auth_info(state)
@@ -71,9 +66,9 @@ where
 
     fn try_user_auth(
         &self,
-        state: &Self::Backend,
+        state: &S,
         ident: &Self::UserIdent,
-    ) -> BoxFuture<<Self::Backend as HasUserData>::UserData, AuthError> {
+    ) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError> {
         match ident {
             EitherUserIdent::A(a) => self.0.try_user_auth(state, a),
             EitherUserIdent::B(b) => self.1.try_user_auth(state, b),
@@ -81,18 +76,17 @@ where
     }
 }
 
-impl<Backend, A, B, C> IsAuthMethod for (A, B, C)
+impl<S, A, B, C> IsAuthMethod<S> for (A, B, C)
 where
-    Backend: HasUserData,
-    A: IsAuthMethod<Backend = Backend>,
-    B: IsAuthMethod<Backend = Backend>,
-    C: IsAuthMethod<Backend = Backend>,
+    S: HasUserAccess,
+    A: IsAuthMethod<S>,
+    B: IsAuthMethod<S>,
+    C: IsAuthMethod<S>,
 {
     type AuthInfo = BothAuthInfo<A::AuthInfo, BothAuthInfo<B::AuthInfo, C::AuthInfo>>;
     type UserIdent = EitherUserIdent<A::UserIdent, EitherUserIdent<B::UserIdent, C::UserIdent>>;
-    type Backend = Backend;
 
-    fn get_auth_info(&self, state: &Self::Backend) -> BoxFuture<Self::AuthInfo, AuthError> {
+    fn get_auth_info(&self, state: &S) -> BoxFuture<Self::AuthInfo, AuthError> {
         Box::new(
             self.0
                 .get_auth_info(state)
@@ -107,9 +101,9 @@ where
 
     fn try_user_auth(
         &self,
-        state: &Self::Backend,
+        state: &S,
         ident: &Self::UserIdent,
-    ) -> BoxFuture<<Self::Backend as HasUserData>::UserData, AuthError> {
+    ) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError> {
         match ident {
             EitherUserIdent::A(a) => self.0.try_user_auth(state, a),
             EitherUserIdent::B(EitherUserIdent::A(b)) => self.1.try_user_auth(state, b),
@@ -118,13 +112,13 @@ where
     }
 }
 
-impl<Backend, A, B, C, D> IsAuthMethod for (A, B, C, D)
+impl<S, A, B, C, D> IsAuthMethod<S> for (A, B, C, D)
 where
-    Backend: HasUserData,
-    A: IsAuthMethod<Backend = Backend>,
-    B: IsAuthMethod<Backend = Backend>,
-    C: IsAuthMethod<Backend = Backend>,
-    D: IsAuthMethod<Backend = Backend>,
+    S: HasUserAccess,
+    A: IsAuthMethod<S>,
+    B: IsAuthMethod<S>,
+    C: IsAuthMethod<S>,
+    D: IsAuthMethod<S>,
 {
     type AuthInfo = BothAuthInfo<
         A::AuthInfo,
@@ -134,9 +128,8 @@ where
         A::UserIdent,
         EitherUserIdent<B::UserIdent, EitherUserIdent<C::UserIdent, D::UserIdent>>,
     >;
-    type Backend = Backend;
 
-    fn get_auth_info(&self, state: &Self::Backend) -> BoxFuture<Self::AuthInfo, AuthError> {
+    fn get_auth_info(&self, state: &S) -> BoxFuture<Self::AuthInfo, AuthError> {
         Box::new(
             self.0
                 .get_auth_info(state)
@@ -155,9 +148,9 @@ where
 
     fn try_user_auth(
         &self,
-        state: &Self::Backend,
+        state: &S,
         ident: &Self::UserIdent,
-    ) -> BoxFuture<<Self::Backend as HasUserData>::UserData, AuthError> {
+    ) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError> {
         match ident {
             EitherUserIdent::A(a) => self.0.try_user_auth(state, a),
             EitherUserIdent::B(EitherUserIdent::A(b)) => self.1.try_user_auth(state, b),
@@ -171,14 +164,14 @@ where
     }
 }
 
-impl<Backend, A, B, C, D, E> IsAuthMethod for (A, B, C, D, E)
+impl<S, A, B, C, D, E> IsAuthMethod<S> for (A, B, C, D, E)
 where
-    Backend: HasUserData,
-    A: IsAuthMethod<Backend = Backend>,
-    B: IsAuthMethod<Backend = Backend>,
-    C: IsAuthMethod<Backend = Backend>,
-    D: IsAuthMethod<Backend = Backend>,
-    E: IsAuthMethod<Backend = Backend>,
+    S: HasUserAccess,
+    A: IsAuthMethod<S>,
+    B: IsAuthMethod<S>,
+    C: IsAuthMethod<S>,
+    D: IsAuthMethod<S>,
+    E: IsAuthMethod<S>,
 {
     type AuthInfo = BothAuthInfo<
         A::AuthInfo,
@@ -194,9 +187,8 @@ where
             EitherUserIdent<C::UserIdent, EitherUserIdent<D::UserIdent, E::UserIdent>>,
         >,
     >;
-    type Backend = Backend;
 
-    fn get_auth_info(&self, state: &Self::Backend) -> BoxFuture<Self::AuthInfo, AuthError> {
+    fn get_auth_info(&self, state: &S) -> BoxFuture<Self::AuthInfo, AuthError> {
         Box::new(
             self.0
                 .get_auth_info(state)
@@ -219,9 +211,9 @@ where
 
     fn try_user_auth(
         &self,
-        state: &Self::Backend,
+        state: &S,
         ident: &Self::UserIdent,
-    ) -> BoxFuture<<Self::Backend as HasUserData>::UserData, AuthError> {
+    ) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError> {
         match ident {
             EitherUserIdent::A(a) => self.0.try_user_auth(state, a),
             EitherUserIdent::B(EitherUserIdent::A(b)) => self.1.try_user_auth(state, b),
@@ -238,15 +230,15 @@ where
     }
 }
 
-impl<Backend, A, B, C, D, E, F> IsAuthMethod for (A, B, C, D, E, F)
+impl<S, A, B, C, D, E, F> IsAuthMethod<S> for (A, B, C, D, E, F)
 where
-    Backend: HasUserData,
-    A: IsAuthMethod<Backend = Backend>,
-    B: IsAuthMethod<Backend = Backend>,
-    C: IsAuthMethod<Backend = Backend>,
-    D: IsAuthMethod<Backend = Backend>,
-    E: IsAuthMethod<Backend = Backend>,
-    F: IsAuthMethod<Backend = Backend>,
+    S: HasUserAccess,
+    A: IsAuthMethod<S>,
+    B: IsAuthMethod<S>,
+    C: IsAuthMethod<S>,
+    D: IsAuthMethod<S>,
+    E: IsAuthMethod<S>,
+    F: IsAuthMethod<S>,
 {
     type AuthInfo = BothAuthInfo<
         A::AuthInfo,
@@ -268,9 +260,8 @@ where
             >,
         >,
     >;
-    type Backend = Backend;
 
-    fn get_auth_info(&self, state: &Self::Backend) -> BoxFuture<Self::AuthInfo, AuthError> {
+    fn get_auth_info(&self, state: &S) -> BoxFuture<Self::AuthInfo, AuthError> {
         Box::new(
             self.0
                 .get_auth_info(state)
@@ -297,9 +288,9 @@ where
 
     fn try_user_auth(
         &self,
-        state: &Self::Backend,
+        state: &S,
         ident: &Self::UserIdent,
-    ) -> BoxFuture<<Self::Backend as HasUserData>::UserData, AuthError> {
+    ) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError> {
         match ident {
             EitherUserIdent::A(a) => self.0.try_user_auth(state, a),
             EitherUserIdent::B(EitherUserIdent::A(b)) => self.1.try_user_auth(state, b),
@@ -320,34 +311,10 @@ where
 }
 
 /// Access to auth method
-pub trait HasAuthMethod {
+pub trait HasAuthMethod
+where
+    Self: HasUserAccess + AsRef<<Self as HasAuthMethod>::AuthMethod> + Sized,
+{
     /// Auth method type
-    type AuthMethod: IsAuthMethod;
-
-    /// Get auth method
-    fn get_auth_method(&self) -> &Self::AuthMethod;
-}
-
-impl<'a, T: HasAuthMethod> HasAuthMethod for &'a T {
-    type AuthMethod = T::AuthMethod;
-
-    fn get_auth_method(&self) -> &Self::AuthMethod {
-        (*self).get_auth_method()
-    }
-}
-
-impl<T: HasAuthMethod> HasAuthMethod for Arc<T> {
-    type AuthMethod = T::AuthMethod;
-
-    fn get_auth_method(&self) -> &Self::AuthMethod {
-        self.deref().get_auth_method()
-    }
-}
-
-impl<T: HasAuthMethod> HasAuthMethod for Rc<T> {
-    type AuthMethod = T::AuthMethod;
-
-    fn get_auth_method(&self) -> &Self::AuthMethod {
-        self.deref().get_auth_method()
-    }
+    type AuthMethod: IsAuthMethod<Self>;
 }
