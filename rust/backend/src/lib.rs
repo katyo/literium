@@ -9,6 +9,12 @@ extern crate serde_derive;
 extern crate emailmessage;
 extern crate futures;
 extern crate http;
+#[cfg(feature = "http_client")]
+extern crate hyper;
+#[cfg(feature = "http_client")]
+extern crate native_tls;
+#[cfg(feature = "http_client")]
+extern crate hyper_tls;
 extern crate mime;
 #[cfg(feature = "send_mail")]
 extern crate new_tokio_smtp;
@@ -40,6 +46,9 @@ pub use self::common::{
 };
 #[cfg(feature = "name_resolver")]
 pub use self::common::NameResolver;
+#[cfg(feature = "http_client")]
+pub use self::common::HttpClient;
+
 pub use self::crypto::{
     open_x_json, random_bytes, seal_x_json, CryptoKeys, HasPublicKey, HasSecretKey, PublicKey,
     SecretKey,

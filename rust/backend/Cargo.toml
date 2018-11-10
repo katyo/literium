@@ -22,6 +22,9 @@ supercow = "0.1"
 warp = "0.1"
 new-tokio-smtp = { version = "0.8", optional = true }
 emailmessage = { version = "0.2", optional = true, features = ["serde"] }
+hyper = { version = "0.12", optional = true }
+native-tls = { version = "0.2", optional = true }
+hyper-tls = { version = "0.3", optional = true }
 trust-dns-resolver = { version = "0.10", optional = true }
 
 [dev-dependencies]
@@ -34,4 +37,5 @@ native_auth = []
 otpass_auth = []
 oauth2_auth = []
 name_resolver = ["trust-dns-resolver"]
+http_client = ["hyper", "native-tls", "hyper-tls", "name_resolver"]
 send_mail = ["emailmessage", "new-tokio-smtp"]
