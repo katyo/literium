@@ -12,6 +12,8 @@ extern crate http;
 extern crate mime;
 #[cfg(feature = "send_mail")]
 extern crate new_tokio_smtp;
+#[cfg(feature = "name_resolver")]
+extern crate trust_dns_resolver;
 extern crate serde_json;
 extern crate sodiumoxide;
 extern crate supercow;
@@ -36,6 +38,8 @@ pub use self::access::{HasUserRoles, IsUserRole};
 pub use self::common::{
     base64, BoxFuture, FileConfig, FromBinary, IsBackend, ListenAddr, TimeStamp,
 };
+#[cfg(feature = "name_resolver")]
+pub use self::common::NameResolver;
 pub use self::crypto::{
     open_x_json, random_bytes, seal_x_json, CryptoKeys, HasPublicKey, HasSecretKey, PublicKey,
     SecretKey,

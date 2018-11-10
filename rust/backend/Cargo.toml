@@ -22,6 +22,7 @@ supercow = "0.1"
 warp = "0.1"
 new-tokio-smtp = { version = "0.8", optional = true }
 emailmessage = { version = "0.2", optional = true, features = ["serde"] }
+trust-dns-resolver = { version = "0.10", optional = true }
 
 [dev-dependencies]
 pretty_env_logger = "0.2"
@@ -32,4 +33,5 @@ auth = []
 native_auth = []
 otpass_auth = []
 oauth2_auth = []
+name_resolver = ["trust-dns-resolver"]
 send_mail = ["emailmessage", "new-tokio-smtp"]
