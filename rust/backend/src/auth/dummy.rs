@@ -118,9 +118,9 @@ where
         user: &<<S as HasUserAccess>::UserAccess as IsUserAccess>::User,
     ) -> Self {
         UserAuth {
-            user: user.user_id(),
+            user: user.get_user_id(),
             sess: session.session_data().sess,
-            name: user.user_name().into(),
+            name: user.get_user_name().into(),
         }
     }
 }
@@ -141,7 +141,7 @@ where
         user: &<<S as HasUserAccess>::UserAccess as IsUserAccess>::User,
     ) -> BoxFuture<Self, <<S as HasUserAccess>::UserAccess as IsBackend>::Error> {
         Box::new(result(Ok(UserInfo {
-            name: user.user_name().into(),
+            name: user.get_user_name().into(),
         })))
     }
 }

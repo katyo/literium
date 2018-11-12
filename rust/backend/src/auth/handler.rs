@@ -96,14 +96,14 @@ where
                 AuthError::BackendError
             }).and_then(move |user| {
                 (state.as_ref() as &S::SessionAccess)
-                    .find_user_session(user.user_id(), ctime)
+                    .find_user_session(user.get_user_id(), ctime)
                     .map_err(|error| {
                         error!("Backend error on find_user_session(): {}", error);
                         AuthError::BackendError
                     }).and_then(|_| Err(AuthError::Outdated))
                     .or_else(move |_| {
                         (state.as_ref() as &S::SessionAccess)
-                            .new_user_session(user.user_id(), pbkey)
+                            .new_user_session(user.get_user_id(), pbkey)
                             .map_err(|error| {
                                 error!("Backend error on new_user_session(): {}", error);
                                 AuthError::BackendError
@@ -115,7 +115,7 @@ where
                                     }).map(move |extra| {
                                         let data = session.session_data();
                                         AuthResponse {
-                                            user: user.user_id(),
+                                            user: user.get_user_id(),
                                             sess: data.sess,
                                             token: data.token.clone(),
                                             extra,

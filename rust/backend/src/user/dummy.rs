@@ -44,15 +44,19 @@ impl UserData {
 }
 
 impl IsUserData for UserData {
-    fn user_id(&self) -> UserId {
+    fn get_user_id(&self) -> UserId {
         self.id
     }
 
-    fn user_name(&self) -> &str {
+    fn get_user_name(&self) -> &str {
         &self.name
     }
 
-    fn from_name<'a, S: Into<Cow<'a, str>>>(name: S) -> Self {
+    fn set_user_name<S: Into<String>>(&mut self, name: S) {
+        self.name = name.into();
+    }
+
+    fn create_new<S: Into<String>>(name: S) -> Self {
         UserData::new(0, name.into())
     }
 }

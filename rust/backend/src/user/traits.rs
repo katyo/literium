@@ -1,17 +1,21 @@
-use super::{AccountId, UserId};
+use super::{AccountId, Gender, UserId};
 use std::borrow::Cow;
-use {BoxFuture, IsBackend};
+use url::Url;
+use {BoxFuture, IsBackend, MailAddress, TimeStamp};
 
 /// Basic user data
 pub trait IsUserData: Sized {
     /// Get unique user identifier
-    fn user_id(&self) -> UserId;
+    fn get_user_id(&self) -> UserId;
 
     /// Get unique user name
-    fn user_name(&self) -> &str;
+    fn get_user_name(&self) -> &str;
+
+    /// Get unique user name
+    fn set_user_name<S: Into<String>>(&mut self, name: S);
 
     /// Create user data using unique name
-    fn from_name<'a, S: Into<Cow<'a, str>>>(name: S) -> Self;
+    fn create_new<S: Into<String>>(name: S) -> Self;
 }
 
 /// User data which has password
