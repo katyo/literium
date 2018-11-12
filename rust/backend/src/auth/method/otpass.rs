@@ -1,5 +1,5 @@
 use auth::{
-    gen_password, AuthError, HasUserAccess, IsAuthMethod, IsUserData, UserAccess,
+    gen_password, AuthError, HasUserAccess, IsAuthMethod, IsUserAccess, IsUserData,
     ARABIC_NUMBERS_AND_LATIN_LETTERS,
 };
 use futures::{
@@ -119,10 +119,12 @@ struct State {
     tokens: RwLock<Tokens>,
 }
 
+/// One-Time password auth method
 #[derive(Clone)]
 pub struct OTPassAuth(Arc<State>);
 
 impl OTPassAuth {
+    /// Create one-time password auth method instance
     pub fn new(options: OTPassOptions) -> Self {
         OTPassAuth(Arc::new(State {
             options,
@@ -222,7 +224,7 @@ macro_rules! method_impl {
                 &self,
                 state: &S,
                 UserIdent::OTPass { ident, pass }: &Self::UserIdent,
-            ) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError> {
+            ) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError> {
                 if let Some(pass) = pass {
                     if self.verify_token(state, ident, pass) {
                         complete_auth(state, ident)
@@ -256,7 +258,7 @@ method_impl!(HasSmser);
 fn complete_auth<S>(
     state: &S,
     ident: &OTPassIdent,
-) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError>
+) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError>
 where
     S: HasUserAccess + Send + Clone + 'static,
 {
@@ -270,7 +272,7 @@ where
                     if let Some(user) = user {
                         Either::A(ok(user))
                     } else {
-                        let user = <S::UserAccess as UserAccess>::User::from_name(ident);
+                        let mut user = <S::UserAccess as IsUserAccess>::User::from_name(ident);
                         Either::B((state.as_ref() as &S::UserAccess).put_user_data(user))
                     }
                 }
@@ -283,7 +285,7 @@ fn send_email_auth<S>(
     state: &S,
     email: &Mailbox,
     pass: String,
-) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError>
+) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError>
 where
     S: HasUserAccess + HasMailer,
 {
@@ -324,7 +326,7 @@ fn send_phone_auth<S>(
     state: &S,
     phone: &String,
     pass: String,
-) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError>
+) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError>
 where
     S: HasUserAccess + HasSmser,
 {

@@ -4,8 +4,8 @@ use futures::{
 };
 
 use auth::{
-    AuthData, AuthError, HasSessionAccess, HasUserAccess, HasUserAuth, IsSessionData, IsUserAuth,
-    SessionAccess, UserAccess,
+    AuthData, AuthError, HasSessionAccess, HasUserAccess, HasUserAuth, IsSessionAccess,
+    IsSessionData, IsUserAccess, IsUserAuth,
 };
 use crypto::{open_x_json, HasSecretKey};
 use warp::{any, header, reject::custom, Filter, Rejection};
@@ -34,7 +34,7 @@ where
                 .get_user_session(data.user, data.sess)
                 .map_err(|_| AuthError::BackendError)
                 .and_then(
-                    move |session: Option<<State::SessionAccess as SessionAccess>::Session>| {
+                    move |session: Option<<State::SessionAccess as IsSessionAccess>::Session>| {
                         let mut session = if let Some(session) = session {
                             session
                         } else {
@@ -61,12 +61,12 @@ where
                 ).map_err(custom)
         }).and(state)
         .and_then(
-            |session: <State::SessionAccess as SessionAccess>::Session, state: State| {
+            |session: <State::SessionAccess as IsSessionAccess>::Session, state: State| {
                 (state.clone().as_ref() as &State::UserAccess)
                     .get_user_data(session.session_data().user)
                     .map_err(|_| AuthError::BackendError)
                     .and_then(|user| {
-                        user.map(move |user: <State::UserAccess as UserAccess>::User| {
+                        user.map(move |user: <State::UserAccess as IsUserAccess>::User| {
                             State::UserAuth::new_user_auth(&session, &user)
                         }).ok_or_else(|| AuthError::BadUser)
                     }).map_err(custom)

@@ -7,8 +7,9 @@ This module provides dummy implementation of users backend for examples and test
 */
 
 use super::{
-    create_password, HasPasswordHash, HasSessionAccess, HasUserAccess, IsSessionData, IsUserAuth,
-    IsUserData, IsUserInfo, SessionAccess, SessionData, SessionId, UserAccess, UserId,
+    create_password, HasPasswordHash, HasSessionAccess, HasUserAccess, IsSessionAccess,
+    IsSessionData, IsUserAccess, IsUserAuth, IsUserData, IsUserInfo, SessionData, SessionId,
+    UserId,
 };
 use futures::future::result;
 use std::borrow::Cow;
@@ -115,7 +116,7 @@ impl Users {
     }
 }
 
-impl UserAccess for Users {
+impl IsUserAccess for Users {
     type User = UserData;
 
     fn find_user_data<'a, S: Into<Cow<'a, str>>>(
@@ -186,7 +187,7 @@ impl IsBackend for Sessions {
     type Error = DummyError;
 }
 
-impl SessionAccess for Sessions {
+impl IsSessionAccess for Sessions {
     type Session = UserSession;
 
     fn find_user_session(
@@ -257,8 +258,8 @@ where
     S: HasSessionAccess + HasUserAccess,
 {
     fn new_user_auth(
-        session: &<<S as HasSessionAccess>::SessionAccess as SessionAccess>::Session,
-        user: &<<S as HasUserAccess>::UserAccess as UserAccess>::User,
+        session: &<<S as HasSessionAccess>::SessionAccess as IsSessionAccess>::Session,
+        user: &<<S as HasUserAccess>::UserAccess as IsUserAccess>::User,
     ) -> Self {
         UserAuth {
             user: user.user_id(),
@@ -281,7 +282,7 @@ where
 {
     fn new_user_info(
         _state: &S,
-        user: &<<S as HasUserAccess>::UserAccess as UserAccess>::User,
+        user: &<<S as HasUserAccess>::UserAccess as IsUserAccess>::User,
     ) -> BoxFuture<Self, <<S as HasUserAccess>::UserAccess as IsBackend>::Error> {
         Box::new(result(Ok(UserInfo {
             name: user.user_name().into(),

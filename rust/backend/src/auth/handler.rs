@@ -1,6 +1,6 @@
 use super::{
     AuthError, AuthInfo, AuthRequest, AuthResponse, HasAuthMethod, HasSessionAccess, HasUserAccess,
-    HasUserInfo, IsAuthMethod, IsSessionData, IsUserData, IsUserInfo, SessionAccess, SessionData,
+    HasUserInfo, IsAuthMethod, IsSessionAccess, IsSessionData, IsUserData, IsUserInfo, SessionData,
 };
 use futures::{
     future::{err, Either},
@@ -51,7 +51,7 @@ where
         + 'static,
     S::AuthMethod: IsAuthMethod<S>,
     S::UserInfo: Serialize + Send,
-    <S::SessionAccess as SessionAccess>::Session: From<SessionData>,
+    <S::SessionAccess as IsSessionAccess>::Session: From<SessionData>,
 {
     warp::post2()
         .and(x_json(state.clone()))
@@ -78,7 +78,7 @@ where
         + 'static,
     S::AuthMethod: IsAuthMethod<S>,
     S::UserInfo: Serialize + Send,
-    <S::SessionAccess as SessionAccess>::Session: From<SessionData>,
+    <S::SessionAccess as IsSessionAccess>::Session: From<SessionData>,
 {
     if TimeStamp::now().abs_delta(&req.ctime) > TimeStamp::default().with_secs(3) {
         return Either::A(err(AuthError::Outdated));

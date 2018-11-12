@@ -23,7 +23,7 @@ impl IsSessionData for SessionData {
 }
 
 /// Access to user sessions
-pub trait SessionAccess: IsBackend {
+pub trait IsSessionAccess: IsBackend {
     /// Session data type
     type Session: IsSessionData + Send + 'static;
 
@@ -63,7 +63,7 @@ where
     Self: AsRef<<Self as HasSessionAccess>::SessionAccess>,
 {
     /// User session accessor
-    type SessionAccess: SessionAccess;
+    type SessionAccess: IsSessionAccess;
 }
 
 /// Server-side user auth data
@@ -74,8 +74,8 @@ where
 {
     /// Create auth data from session and user data
     fn new_user_auth(
-        session: &<<S as HasSessionAccess>::SessionAccess as SessionAccess>::Session,
-        user: &<<S as HasUserAccess>::UserAccess as UserAccess>::User,
+        session: &<<S as HasSessionAccess>::SessionAccess as IsSessionAccess>::Session,
+        user: &<<S as HasUserAccess>::UserAccess as IsUserAccess>::User,
     ) -> Self;
 }
 
@@ -109,7 +109,7 @@ pub trait HasPasswordHash {
 }
 
 /// Access to user data
-pub trait UserAccess: IsBackend {
+pub trait IsUserAccess: IsBackend {
     /// User data type
     type User: IsUserData + Send + 'static;
 
@@ -132,7 +132,7 @@ where
     Self: AsRef<<Self as HasUserAccess>::UserAccess>,
 {
     /// User data accessor
-    type UserAccess: UserAccess;
+    type UserAccess: IsUserAccess;
 }
 
 /// Client-side user info
@@ -145,7 +145,7 @@ where
     /// Also you can extract additional data using access to state.
     fn new_user_info(
         state: &S,
-        user: &<<S as HasUserAccess>::UserAccess as UserAccess>::User,
+        user: &<<S as HasUserAccess>::UserAccess as IsUserAccess>::User,
     ) -> BoxFuture<Self, <<S as HasUserAccess>::UserAccess as IsBackend>::Error>;
 }
 

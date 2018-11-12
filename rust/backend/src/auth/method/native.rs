@@ -1,4 +1,6 @@
-use auth::{verify_password, AuthError, HasPasswordHash, HasUserAccess, IsAuthMethod, UserAccess};
+use auth::{
+    verify_password, AuthError, HasPasswordHash, HasUserAccess, IsAuthMethod, IsUserAccess,
+};
 use futures::{future, Future};
 use BoxFuture;
 
@@ -23,7 +25,7 @@ pub struct NativeAuth;
 impl<S> IsAuthMethod<S> for NativeAuth
 where
     S: HasUserAccess,
-    <S::UserAccess as UserAccess>::User: HasPasswordHash,
+    <S::UserAccess as IsUserAccess>::User: HasPasswordHash,
 {
     type AuthInfo = AuthInfo;
     type UserIdent = UserIdent;
@@ -36,7 +38,7 @@ where
         &self,
         state: &S,
         ident: &Self::UserIdent,
-    ) -> BoxFuture<<S::UserAccess as UserAccess>::User, AuthError> {
+    ) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError> {
         match ident {
             UserIdent::Native { name, pass } => {
                 let pass = pass.clone();
