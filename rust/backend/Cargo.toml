@@ -33,11 +33,11 @@ trust-dns-resolver = { version = "0.10", optional = true }
 pretty_env_logger = "0.2"
 
 [features]
-default = ["auth", "send_mail", "native_auth", "otpass_auth"]
+default = ["send_mail", "name_resolver", "http_client", "native_auth", "otpass_auth", "oauth2_auth"]
 auth = []
-native_auth = []
-otpass_auth = []
-oauth2_auth = []
+native_auth = ["auth"]
+otpass_auth = ["auth"]
+oauth2_auth = ["auth", "http_client"]
 name_resolver = ["trust-dns-resolver"]
 http_client = ["hyper", "native-tls", "hyper-tls", "name_resolver"]
 send_mail = ["emailmessage", "new-tokio-smtp"]

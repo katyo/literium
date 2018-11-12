@@ -38,6 +38,7 @@ pub mod auth;
 pub mod crypto;
 pub mod filters;
 pub mod reply;
+pub mod third;
 pub mod user;
 
 #[cfg(feature = "send_mail")]

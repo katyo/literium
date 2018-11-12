@@ -30,6 +30,7 @@ impl FromStr for Gender {
     }
 }
 
+/*
 /// User personality information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Personality {
@@ -73,3 +74,4 @@ impl Personality {
         }
     }
 }
+*/
