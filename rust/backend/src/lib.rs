@@ -13,19 +13,20 @@ extern crate http;
 #[cfg(feature = "http_client")]
 extern crate hyper;
 #[cfg(feature = "http_client")]
-extern crate native_tls;
-#[cfg(feature = "http_client")]
 extern crate hyper_tls;
 extern crate mime;
+#[cfg(feature = "http_client")]
+extern crate native_tls;
 #[cfg(feature = "send_mail")]
 extern crate new_tokio_smtp;
-#[cfg(feature = "name_resolver")]
-extern crate trust_dns_resolver;
 extern crate serde_json;
+extern crate serde_qs;
 extern crate sodiumoxide;
 extern crate supercow;
 extern crate tokio;
 extern crate toml;
+#[cfg(feature = "name_resolver")]
+extern crate trust_dns_resolver;
 extern crate url;
 extern crate warp;
 
@@ -45,7 +46,10 @@ pub use self::access::{HasUserRoles, IsUserRole};
 #[cfg(feature = "name_resolver")]
 pub use self::common::NameResolver;
 #[cfg(feature = "http_client")]
-pub use self::common::HttpClient;
+pub use self::common::{
+    request, HasHttpClient, HttpBody, HttpChunk, HttpClient, HttpRequest, HttpResponse,
+    IsHttpClient,
+};
 pub use self::common::{
     serde_extra, BoxFuture, FileConfig, IsBackend, ListenAddr, TimeStamp, ISO8601, RFC2822,
 };
