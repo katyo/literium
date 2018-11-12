@@ -13,10 +13,10 @@ pub mod client;
 pub use self::binary::{AsBinary, FromBinary};
 pub use self::config::FileConfig;
 pub use self::listen::ListenAddr;
-pub use self::timestamp::TimeStamp;
-pub use self::traits::IsBackend;
-pub use self::types::BoxFuture;
 #[cfg(feature = "name_resolver")]
 pub use self::resolver::NameResolver;
 #[cfg(feature = "http_client")]
 pub use self::client::HttpClient;
+pub use self::timestamp::{TimeStamp, ISO8601, RFC2822};
+pub use self::traits::IsBackend;
+pub use self::types::BoxFuture;

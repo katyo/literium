@@ -3,6 +3,7 @@ extern crate log;
 extern crate base64 as base64lib;
 extern crate bytes;
 extern crate serde;
+extern crate time;
 #[macro_use]
 extern crate serde_derive;
 #[cfg(feature = "send_mail")]
@@ -45,7 +46,9 @@ pub use self::access::{HasUserRoles, IsUserRole};
 pub use self::common::NameResolver;
 #[cfg(feature = "http_client")]
 pub use self::common::HttpClient;
-pub use self::common::{serde_extra, BoxFuture, FileConfig, IsBackend, ListenAddr, TimeStamp};
+pub use self::common::{
+    serde_extra, BoxFuture, FileConfig, IsBackend, ListenAddr, TimeStamp, ISO8601, RFC2822,
+};
 
 pub use self::crypto::{
     open_x_json, random_bytes, seal_x_json, CryptoKeys, HasPublicKey, HasSecretKey, PublicKey,

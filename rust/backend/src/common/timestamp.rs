@@ -1,7 +1,10 @@
-use std::ops::{Add, Sub};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
-
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::ops::{Add, Sub};
+use std::time::Duration;
+use time::{at_utc, now_utc, strftime, strptime, ParseError, Timespec, Tm};
+
+pub const RFC2822: &str = "%a, %d %b %Y %T %z";
+pub const ISO8601: &str = "%Y-%m-%dT%T%z";
 
 /// Unix-time in milliseconds
 ///
@@ -12,10 +15,19 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 pub struct TimeStamp(i64);
 
 impl TimeStamp {
-    /// Create value with current time
+    /// Create value with current UTC time
     pub fn now() -> Self {
-        let dt = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-        (dt.as_secs() * 1000 + dt.subsec_nanos() as u64 / 1000_000).into()
+        now_utc().into()
+    }
+
+    /// Parse time string using specified format
+    pub fn parse<S: AsRef<str>, F: AsRef<str>>(src: &S, fmt: &F) -> Result<Self, ParseError> {
+        strptime(src.as_ref(), fmt.as_ref()).map(Self::from)
+    }
+
+    /// Format time string using specified format
+    pub fn format<F: AsRef<str>>(&self, fmt: &F) -> Result<String, ParseError> {
+        strftime(fmt.as_ref(), &(*self).into())
     }
 
     /// Add microseconds to time
@@ -138,6 +150,32 @@ impl From<Duration> for TimeStamp {
 impl Into<Duration> for TimeStamp {
     fn into(self) -> Duration {
         Duration::from_millis(self.into())
+    }
+}
+
+impl From<Tm> for TimeStamp {
+    fn from(tm: Tm) -> Self {
+        tm.to_timespec().into()
+    }
+}
+
+impl Into<Tm> for TimeStamp {
+    fn into(self) -> Tm {
+        at_utc(self.into())
+    }
+}
+
+impl From<Timespec> for TimeStamp {
+    fn from(tm: Timespec) -> Self {
+        TimeStamp(tm.sec * 1_000 + (tm.nsec / 1_000_000) as i64)
+    }
+}
+
+impl Into<Timespec> for TimeStamp {
+    fn into(self) -> Timespec {
+        let sec = self.0 / 1_000;
+        let nsec = (self.0 % 1_000) as i32 * 1_000_000;
+        Timespec::new(sec, nsec)
     }
 }
 
