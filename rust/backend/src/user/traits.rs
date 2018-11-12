@@ -16,9 +16,7 @@ pub trait IsUserData: Sized {
 
 /// User data which has password
 pub trait HasPasswordHash {
-    type PasswordHash: AsRef<[u8]>;
-
-    fn get_password_hash(&self) -> Option<&Self::PasswordHash>;
+    fn get_password_hash(&self) -> Option<&[u8]>;
     fn set_password_hash<S: AsRef<[u8]>>(&mut self, new: Option<S>);
 }
 

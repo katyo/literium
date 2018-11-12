@@ -58,14 +58,8 @@ impl IsUserData for UserData {
 }
 
 impl HasPasswordHash for UserData {
-    type PasswordHash = Vec<u8>;
-
-    fn get_password_hash(&self) -> Option<&Self::PasswordHash> {
-        if let Some(hash) = &self.hash {
-            Some(hash)
-        } else {
-            None
-        }
+    fn get_password_hash(&self) -> Option<&[u8]> {
+        self.hash.as_ref().map(AsRef::as_ref)
     }
 
     fn set_password_hash<S: AsRef<[u8]>>(&mut self, new: Option<S>) {
