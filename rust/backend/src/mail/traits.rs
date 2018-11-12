@@ -1,4 +1,4 @@
-use super::{MailMessage, MailerError};
+use super::{MailAddress, MailMessage, MailerError};
 use futures::future;
 use BoxFuture;
 
@@ -20,4 +20,10 @@ where
     Self: AsRef<<Self as HasMailer>::Mailer>,
 {
     type Mailer: IsMailer;
+}
+
+/// Something which has email address
+pub trait HasMailAddress {
+    fn get_mail_address(&self) -> Option<&MailAddress>;
+    fn set_mail_address(&mut self, address: Option<MailAddress>);
 }

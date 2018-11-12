@@ -41,6 +41,8 @@ pub mod reply;
 
 #[cfg(feature = "send_mail")]
 pub mod mail;
+#[cfg(feature = "send_mail")]
+pub use mail::{HasMailAddress, MailAddress};
 
 pub use self::access::{HasUserRoles, IsUserRole};
 #[cfg(feature = "name_resolver")]
