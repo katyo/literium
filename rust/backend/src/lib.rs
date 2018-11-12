@@ -41,13 +41,11 @@ pub mod reply;
 pub mod mail;
 
 pub use self::access::{HasUserRoles, IsUserRole};
-pub use self::common::{
-    base64, BoxFuture, FileConfig, FromBinary, IsBackend, ListenAddr, TimeStamp,
-};
 #[cfg(feature = "name_resolver")]
 pub use self::common::NameResolver;
 #[cfg(feature = "http_client")]
 pub use self::common::HttpClient;
+pub use self::common::{serde_extra, BoxFuture, FileConfig, IsBackend, ListenAddr, TimeStamp};
 
 pub use self::crypto::{
     open_x_json, random_bytes, seal_x_json, CryptoKeys, HasPublicKey, HasSecretKey, PublicKey,

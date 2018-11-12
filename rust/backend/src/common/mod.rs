@@ -1,7 +1,7 @@
-pub mod base64;
 mod binary;
 pub mod config;
 pub mod listen;
+pub mod serde_extra;
 mod timestamp;
 mod traits;
 mod types;
