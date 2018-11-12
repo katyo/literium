@@ -6,12 +6,13 @@ This module provides dummy implementation of user data storage backend for examp
 
 */
 
+use auth::method::OTPassIdent;
 use dummy::DummyError;
 use futures::future::result;
 use std::borrow::Cow;
 use std::sync::{Arc, RwLock};
 use user::{create_password, HasPasswordHash, IsUserAccess, IsUserData, UserId};
-use {BoxFuture, IsBackend};
+use {BoxFuture, CanUpdateFrom, IsBackend, MailAddress};
 
 /// User data type
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,6 +22,9 @@ pub struct UserData {
 
     /// User name
     pub name: String,
+
+    /// Email address
+    pub email: Option<MailAddress>,
 
     /// Password hash
     pub hash: Option<Vec<u8>>,
@@ -32,6 +36,7 @@ impl UserData {
         Self {
             id,
             name: name.into(),
+            email: None,
             hash: None,
         }
     }
@@ -68,6 +73,14 @@ impl HasPasswordHash for UserData {
 
     fn set_password_hash<S: AsRef<[u8]>>(&mut self, new: Option<S>) {
         self.hash = new.map(|s| Vec::from(s.as_ref()));
+    }
+}
+
+impl CanUpdateFrom<OTPassIdent> for UserData {
+    fn update_from(&mut self, ident: &OTPassIdent) {
+        match ident {
+            OTPassIdent::Email(email) => self.email = Some(email.email.clone()),
+        }
     }
 }
 

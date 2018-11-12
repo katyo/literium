@@ -16,3 +16,8 @@ pub trait CanAccept<Event> {
         self.on_event(event);
     }
 }
+
+/// Update something from something other
+pub trait CanUpdateFrom<T> {
+    fn update_from(&mut self, data: &T);
+}

@@ -13,7 +13,7 @@ use std::sync::{Arc, RwLock};
 use user::{
     gen_password, HasUserAccess, IsUserAccess, IsUserData, ARABIC_NUMBERS_AND_LATIN_LETTERS,
 };
-use {BoxFuture, TimeStamp};
+use {BoxFuture, CanUpdateFrom, TimeStamp};
 
 /// One-time password auth options
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -204,6 +204,7 @@ macro_rules! method_impl {
         impl<S> IsAuthMethod<S> for OTPassAuth
         where
             S: HasUserAccess + $($traits)* + Send + Clone + 'static,
+            <S::UserAccess as IsUserAccess>::User: CanUpdateFrom<OTPassIdent>,
         {
             type AuthInfo = AuthInfo;
             type UserIdent = UserIdent;
@@ -261,18 +262,22 @@ fn complete_auth<S>(
 ) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError>
 where
     S: HasUserAccess + Send + Clone + 'static,
+    <S::UserAccess as IsUserAccess>::User: CanUpdateFrom<OTPassIdent>,
 {
-    let ident = ident.to_string();
+    let name = ident.to_string();
+    let ident = ident.clone();
     Box::new(
         (state.as_ref() as &S::UserAccess)
-            .find_user_data(&ident)
+            .find_user_data(&name)
             .and_then({
                 let state = state.clone();
                 move |user| {
                     if let Some(user) = user {
                         Either::A(ok(user))
                     } else {
-                        let mut user = <S::UserAccess as IsUserAccess>::User::from_name(ident);
+                        let mut user = <S::UserAccess as IsUserAccess>::User::create_new(name);
+                        // update info
+                        user.update_from(&ident);
                         Either::B((state.as_ref() as &S::UserAccess).put_user_data(user))
                     }
                 }

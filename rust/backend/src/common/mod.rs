@@ -22,5 +22,5 @@ pub use self::listen::ListenAddr;
 #[cfg(feature = "name_resolver")]
 pub use self::resolver::NameResolver;
 pub use self::timestamp::{TimeStamp, ISO8601, RFC2822};
-pub use self::traits::IsBackend;
+pub use self::traits::{CanAccept, CanUpdateFrom, IsBackend};
 pub use self::types::BoxFuture;
