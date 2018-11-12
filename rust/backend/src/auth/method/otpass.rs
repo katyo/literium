@@ -1,7 +1,4 @@
-use auth::{
-    gen_password, AuthError, HasUserAccess, IsAuthMethod, IsUserAccess, IsUserData,
-    ARABIC_NUMBERS_AND_LATIN_LETTERS,
-};
+use auth::{AuthError, IsAuthMethod};
 use futures::{
     future::{err, ok, Either},
     Future,
@@ -13,6 +10,9 @@ use std::collections::HashMap;
 use std::fmt;
 use std::ops::RangeInclusive;
 use std::sync::{Arc, RwLock};
+use user::{
+    gen_password, HasUserAccess, IsUserAccess, IsUserData, ARABIC_NUMBERS_AND_LATIN_LETTERS,
+};
 use {BoxFuture, TimeStamp};
 
 /// One-time password auth options

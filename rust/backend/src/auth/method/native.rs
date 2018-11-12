@@ -1,7 +1,6 @@
-use auth::{
-    verify_password, AuthError, HasPasswordHash, HasUserAccess, IsAuthMethod, IsUserAccess,
-};
+use auth::{AuthError, IsAuthMethod};
 use futures::{future, Future};
+use user::{verify_password, HasPasswordHash, HasUserAccess, IsUserAccess};
 use BoxFuture;
 
 /// Native auth method information

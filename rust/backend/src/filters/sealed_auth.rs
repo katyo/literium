@@ -4,10 +4,10 @@ use futures::{
 };
 
 use auth::{
-    AuthData, AuthError, HasSessionAccess, HasUserAccess, HasUserAuth, IsSessionAccess,
-    IsSessionData, IsUserAccess, IsUserAuth,
+    AuthData, AuthError, HasSessionAccess, HasUserAuth, IsSessionAccess, IsSessionData, IsUserAuth,
 };
 use crypto::{open_x_json, HasSecretKey};
+use user::{HasUserAccess, IsUserAccess};
 use warp::{any, header, reject::custom, Filter, Rejection};
 
 /// Get user identification from header

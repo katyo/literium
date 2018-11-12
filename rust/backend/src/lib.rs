@@ -38,6 +38,7 @@ pub mod auth;
 pub mod crypto;
 pub mod filters;
 pub mod reply;
+pub mod user;
 
 #[cfg(feature = "send_mail")]
 pub mod mail;
@@ -47,13 +48,13 @@ pub use mail::{HasMailAddress, MailAddress};
 pub use self::access::{HasUserRoles, IsUserRole};
 #[cfg(feature = "name_resolver")]
 pub use self::common::NameResolver;
+pub use self::common::{
+    dummy, serde_extra, BoxFuture, FileConfig, IsBackend, ListenAddr, TimeStamp, ISO8601, RFC2822,
+};
 #[cfg(feature = "http_client")]
 pub use self::common::{
     request, HasHttpClient, HttpBody, HttpChunk, HttpClient, HttpRequest, HttpResponse,
     IsHttpClient,
-};
-pub use self::common::{
-    serde_extra, BoxFuture, FileConfig, IsBackend, ListenAddr, TimeStamp, ISO8601, RFC2822,
 };
 
 pub use self::crypto::{

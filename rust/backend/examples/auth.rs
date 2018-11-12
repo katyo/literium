@@ -6,15 +6,21 @@ extern crate tokio;
 extern crate warp;
 
 use futures::lazy;
-use literium::auth::{
-    do_user_auth,
-    dummy::{Sessions, UserData, UserInfo, Users},
-    get_auth_info,
-    method::{NativeAuth, OTPassAuth},
-    HasAuthMethod, HasSessionAccess, HasUserAccess, HasUserInfo,
+use literium::{
+    auth::{
+        do_user_auth,
+        dummy::{Sessions, UserInfo},
+        get_auth_info,
+        method::{NativeAuth, OTPassAuth},
+        HasAuthMethod, HasSessionAccess, HasUserInfo,
+    },
+    mail::{HasMailer, SmtpConfig, SmtpMailer},
+    user::{
+        dummy::{UserData, Users},
+        HasUserAccess,
+    },
+    CryptoKeys, HasPublicKey, HasSecretKey,
 };
-use literium::mail::{HasMailer, SmtpConfig, SmtpMailer};
-use literium::{CryptoKeys, HasPublicKey, HasSecretKey};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::run;

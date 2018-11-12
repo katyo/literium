@@ -1,12 +1,13 @@
 use super::{
-    AuthError, AuthInfo, AuthRequest, AuthResponse, HasAuthMethod, HasSessionAccess, HasUserAccess,
-    HasUserInfo, IsAuthMethod, IsSessionAccess, IsSessionData, IsUserData, IsUserInfo, SessionData,
+    AuthError, AuthInfo, AuthRequest, AuthResponse, HasAuthMethod, HasSessionAccess, HasUserInfo,
+    IsAuthMethod, IsSessionAccess, IsSessionData, IsUserInfo, SessionData,
 };
 use futures::{
     future::{err, Either},
     Future,
 };
 use serde::Serialize;
+use user::{HasUserAccess, IsUserData};
 use warp::{Filter, Rejection, Reply};
 use {reply, x_json, HasPublicKey, HasSecretKey, TimeStamp};
 

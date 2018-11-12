@@ -1,9 +1,7 @@
 use crypto::{random_bytes, PublicKey};
 use std::time::Duration;
+use user::UserId;
 use {serde_extra::base64, TimeStamp};
-
-/// Unique user identifier
-pub type UserId = u32;
 
 /// Unique session indentifier
 pub type SessionId = u32;

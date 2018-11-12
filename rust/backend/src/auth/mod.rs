@@ -1,6 +1,6 @@
 /*!
 
-## Authorization and authentication basics
+## Authorization and authentication
 
 ### User authorization (login, sign-in)
 
@@ -58,13 +58,11 @@ pub mod dummy;
 mod error;
 mod handler;
 pub mod method;
-mod password;
 mod traits;
 mod types;
 
 pub use self::error::*;
 pub use self::handler::*;
 pub use self::method::{HasAuthMethod, IsAuthMethod};
-pub use self::password::*;
 pub use self::traits::*;
 pub use self::types::*;

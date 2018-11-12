@@ -1,6 +1,7 @@
-use auth::{AuthError, HasUserAccess, IsUserAccess};
+use auth::AuthError;
 use futures::Future;
 use serde::{de::DeserializeOwned, Serialize};
+use user::{HasUserAccess, IsUserAccess};
 use BoxFuture;
 
 /// Authentication method interface
