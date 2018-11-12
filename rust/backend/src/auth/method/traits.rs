@@ -51,7 +51,7 @@ impl<A, B> From<(A, B)> for BothAuthInfo<A, B> {
 }
 
 /// Either of two alternative user identification data
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Hash, PartialEq, Eq)]
 #[serde(untagged)]
 pub enum EitherUserIdent<A, B> {
     A(A),

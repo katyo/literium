@@ -11,7 +11,7 @@ use literium::{
         do_user_auth,
         dummy::{Sessions, UserInfo},
         get_auth_info,
-        method::{NativeAuth, OTPassAuth},
+        method::{EmailOTPass, IsEmailOTPassFormatter, NativeAuth, OTPassAuth},
         HasAuthMethod, HasSessionAccess, HasUserInfo,
     },
     mail::{HasMailer, SmtpConfig, SmtpMailer},
@@ -26,7 +26,14 @@ use std::sync::Arc;
 use tokio::run;
 use warp::Filter;
 
-type AuthMethod = (NativeAuth, OTPassAuth);
+pub struct EmailOTPassFormatter;
+
+impl IsEmailOTPassFormatter<State> for EmailOTPassFormatter {}
+
+type AuthMethod = (
+    NativeAuth,
+    OTPassAuth<State, EmailOTPass<EmailOTPassFormatter>>,
+);
 
 pub struct Config {
     server_keys: CryptoKeys,
@@ -105,7 +112,10 @@ fn main() {
     run(lazy(|| {
         let server_keys = CryptoKeys::gen();
 
-        let auth_method = (NativeAuth, OTPassAuth::new(Default::default()));
+        let auth_method = (
+            NativeAuth,
+            OTPassAuth::new(EmailOTPass::new(EmailOTPassFormatter), Default::default()),
+        );
 
         let config = Arc::new(Config {
             server_keys,

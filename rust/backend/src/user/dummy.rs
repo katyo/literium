@@ -6,7 +6,7 @@ This module provides dummy implementation of user data storage backend for examp
 
 */
 
-use auth::method::OTPassIdent;
+use auth::method::EmailUserIdent;
 use dummy::DummyError;
 use futures::future::result;
 use std::borrow::Cow;
@@ -76,11 +76,9 @@ impl HasPasswordHash for UserData {
     }
 }
 
-impl CanUpdateFrom<OTPassIdent> for UserData {
-    fn update_from(&mut self, ident: &OTPassIdent) {
-        match ident {
-            OTPassIdent::Email(email) => self.email = Some(email.email.clone()),
-        }
+impl CanUpdateFrom<EmailUserIdent> for UserData {
+    fn update_from(&mut self, ident: &EmailUserIdent) {
+        self.email = Some(ident.email.clone());
     }
 }
 
