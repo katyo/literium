@@ -14,7 +14,7 @@ extern crate literium;
 extern crate warp;
 extern crate pretty_env_logger;
 
-use literium::{x_json, seal_x_json, CryptoKeys};
+use literium::{x_json, CanEncrypt, CryptoKeys};
 use warp::{Filter, post2, path, any, test::request};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -25,7 +25,7 @@ struct MyData {
 fn main() {
     pretty_env_logger::init();
 
-    let keys = CryptoKeys::gen();
+    let keys = CryptoKeys::default();
 
     let app = post2()
         .and(path("sensible"))
@@ -39,7 +39,7 @@ fn main() {
         .method("POST")
         .path("/sensible/data")
         .header("content-type", "application/x-base64-sealed-json")
-        .body(seal_x_json(&src, &keys).unwrap())
+        .body(keys.seal_json_b64(&src).unwrap())
         .filter(&app)
         .unwrap();
 
@@ -49,7 +49,7 @@ fn main() {
     assert_eq!(request()
         .method("POST")
         .path("/sensible/data")
-        .body(seal_x_json(&src, &keys).unwrap())
+        .body(keys.seal_json_b64(&src).unwrap())
         .filter(&app)
         .unwrap_err()
         .cause().unwrap().to_string(), "Missing request header \'content-type\'");
@@ -59,7 +59,7 @@ fn main() {
         .method("POST")
         .path("/sensible/data")
         .header("content-type", "application/json")
-        .body(seal_x_json(&src, &keys).unwrap())
+        .body(keys.seal_json_b64(&src).unwrap())
         .filter(&app)
         .unwrap_err()
         .cause().unwrap().to_string(), "Unsupported content-type");
@@ -89,7 +89,7 @@ use literium::{
         dummy::{Sessions, UserAuth},
         AuthData, HasUserAuth, HasSessionAccess, IsSessionAccess,
     },
-    seal_x_json, x_auth, CryptoKeys, HasSecretKey, PublicKey,
+    x_auth, CanEncrypt, CryptoKeys, HasSecretKey, PublicKey,
 };
 use std::sync::Arc;
 use warp::{get2, path, test::request, Filter};
@@ -108,7 +108,7 @@ impl AsRef<CryptoKeys> for State {
 }
 
 impl HasSecretKey for State {
-    type KeyData = CryptoKeys;
+    type SecretKey = CryptoKeys;
 }
 
 impl AsRef<Users> for State {
@@ -138,9 +138,9 @@ impl HasUserAuth for State {
 fn main() {
     pretty_env_logger::init();
 
-    let server_keys = CryptoKeys::gen();
+    let server_keys = CryptoKeys::default();
 
-    let client_keys = CryptoKeys::gen();
+    let client_keys = CryptoKeys::default();
 
     let user = UserData::new(1, "yumi");
 
@@ -165,7 +165,7 @@ fn main() {
         token: session.token.clone(),
         serno: session.serno,
     };
-    let auth_header = seal_x_json(&auth_data, &state.as_ref() as &CryptoKeys).unwrap();
+    let auth_header = (&state.as_ref() as &CryptoKeys).seal_json_b64(&auth_data).unwrap();
 
     let app = get2()
         .and(path("sensible"))

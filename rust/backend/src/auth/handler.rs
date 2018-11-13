@@ -9,12 +9,13 @@ use futures::{
 use serde::Serialize;
 use user::{HasUserAccess, IsUserData};
 use warp::{Filter, Rejection, Reply};
-use {reply, x_json, HasPublicKey, HasSecretKey, TimeStamp};
+use {reply, x_json, HasPublicKey, HasSecretKey, PublicKey, TimeStamp};
 
 /// Handle get server auth data
 pub fn get_auth_info<S>(state: S) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
     S: HasPublicKey + HasUserAccess + HasAuthMethod + Send + Sync + Clone + 'static,
+    S::PublicKey: AsRef<PublicKey>,
     S::AuthMethod: IsAuthMethod<S>,
 {
     warp::get2().map(move || warp::reply::json(&get_auth_info_fn(state.clone())))
@@ -23,10 +24,11 @@ where
 fn get_auth_info_fn<S>(state: S) -> AuthInfo<<S::AuthMethod as IsAuthMethod<S>>::AuthInfo>
 where
     S: HasPublicKey + HasUserAccess + HasAuthMethod + Send + Sync + Clone + 'static,
+    S::PublicKey: AsRef<PublicKey>,
     S::AuthMethod: IsAuthMethod<S>,
 {
     AuthInfo::new(
-        (state.as_ref() as &S::KeyData).as_ref().clone(),
+        (state.as_ref() as &S::PublicKey).as_ref().clone(),
         (state.as_ref() as &S::AuthMethod).get_auth_info(&state),
     )
 }

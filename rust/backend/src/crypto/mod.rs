@@ -8,18 +8,12 @@ It uses *sealed-box* encryption from **[NaCL](https://nacl.cr.yp.to/)** (**[libs
 
 */
 
-mod crypto;
 mod error;
+mod sealed;
+mod secure;
 mod traits;
 mod types;
 
-pub use self::crypto::{decrypt_base64_sealed_json, encrypt_base64_sealed_json};
 pub use self::error::CryptoError;
-pub use self::traits::{HasPublicKey, HasSecretKey};
-pub use self::types::{initialize, random_bytes, CryptoKeys, PublicKey, SecretKey};
-
-/// Shortcut for [`decrypt_base64_sealed_json`]
-pub use self::decrypt_base64_sealed_json as open_x_json;
-
-/// Shortcut for [`encrypt_base64_sealed_json`]
-pub use self::encrypt_base64_sealed_json as seal_x_json;
+pub use self::traits::*;
+pub use self::types::{initialize, random_bytes, CryptoKeys, PublicKey, SecretKey, SecureKey};

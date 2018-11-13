@@ -52,11 +52,11 @@ impl AsRef<CryptoKeys> for State {
 }
 
 impl HasPublicKey for State {
-    type KeyData = CryptoKeys;
+    type PublicKey = CryptoKeys;
 }
 
 impl HasSecretKey for State {
-    type KeyData = CryptoKeys;
+    type SecretKey = CryptoKeys;
 }
 
 impl AsRef<Users> for State {
@@ -107,7 +107,7 @@ fn main() {
     pretty_env_logger::init();
 
     run(lazy(|| {
-        let server_keys = CryptoKeys::gen();
+        let server_keys = CryptoKeys::default();
 
         let auth_method = (
             NativeAuth,

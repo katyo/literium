@@ -1,14 +1,15 @@
 use base64lib::{decode, encode};
+use bytes::Bytes;
 use serde::{de, ser, Deserialize, Serialize};
-use sodiumoxide::crypto::box_::gen_keypair;
 use std::error::Error;
 use std::fmt;
 use std::str::FromStr;
 
-use super::{HasPublicKey, HasSecretKey};
+use super::{CanDecrypt, CanEncrypt, CanKeygen, CryptoError, HasPublicKey, HasSecretKey};
 
 pub use sodiumoxide::{
     crypto::box_::{PublicKey, SecretKey},
+    crypto::secretbox::Key as SecureKey,
     init as initialize,
     randombytes::randombytes as random_bytes,
 };
@@ -93,17 +94,35 @@ impl<'de> Deserialize<'de> for CryptoKeys {
 
 impl Default for CryptoKeys {
     fn default() -> Self {
-        Self::gen()
+        Self::gen_key()
     }
 }
 
-impl CryptoKeys {
-    pub fn gen() -> Self {
-        let (public_key, secret_key) = gen_keypair();
-        CryptoKeys {
+impl CanKeygen for CryptoKeys {
+    fn gen_key() -> Self {
+        let (public_key, secret_key) = <(PublicKey, SecretKey)>::gen_key();
+        Self {
             public_key,
             secret_key,
         }
+    }
+}
+
+impl CanEncrypt for CryptoKeys {
+    fn seal_raw<B>(&self, msg: B) -> Bytes
+    where
+        B: AsRef<[u8]>,
+    {
+        self.public_key.seal_raw(msg)
+    }
+}
+
+impl CanDecrypt for CryptoKeys {
+    fn open_raw<B>(&self, msg: B) -> Result<Bytes, CryptoError>
+    where
+        B: AsRef<[u8]>,
+    {
+        (&self.public_key, &self.secret_key).open_raw(msg)
     }
 }
 
@@ -126,9 +145,9 @@ impl AsRef<SecretKey> for CryptoKeys {
 }
 
 impl HasPublicKey for CryptoKeys {
-    type KeyData = CryptoKeys;
+    type PublicKey = CryptoKeys;
 }
 
 impl HasSecretKey for CryptoKeys {
-    type KeyData = CryptoKeys;
+    type SecretKey = CryptoKeys;
 }

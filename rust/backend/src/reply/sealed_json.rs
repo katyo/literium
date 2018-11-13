@@ -1,7 +1,7 @@
-use crypto::{encrypt_base64_sealed_json, HasPublicKey};
+use crypto::{CanEncrypt, HasPublicKey};
 use http::{Response, StatusCode};
 use serde::Serialize;
-use warp::Reply;
+use warp::{reject::custom, Reply};
 
 const MIME_TYPE: &str = "application/x-base64-sealed-json";
 
@@ -13,11 +13,10 @@ where
     T: Serialize,
     S: HasPublicKey,
 {
-    encrypt_base64_sealed_json(data, state.as_ref())
-        .map_err(|error| {
-            error!("Failed to encrypt sealed json: {:?}", error);
-            error
-        }).map(|data| {
+    (state.as_ref() as &S::PublicKey)
+        .seal_json_b64(data)
+        .map_err(custom)
+        .map(|data| {
             Response::builder()
                 .status(StatusCode::OK)
                 .header("Content-Type", MIME_TYPE)

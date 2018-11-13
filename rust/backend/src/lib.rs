@@ -61,8 +61,8 @@ pub use self::common::{
 };
 
 pub use self::crypto::{
-    open_x_json, random_bytes, seal_x_json, CryptoKeys, HasPublicKey, HasSecretKey, PublicKey,
-    SecretKey,
+    random_bytes, CanDecrypt, CanEncrypt, CanKeygen, CryptoKeys, HasPublicKey, HasSecretKey,
+    HasSecureKey, PublicKey, SecretKey, SecureKey,
 };
 
 #[cfg(feature = "auth")]

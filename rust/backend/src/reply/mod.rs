@@ -13,7 +13,7 @@ extern crate serde_derive;
 extern crate literium;
 extern crate warp;
 
-use literium::{reply, open_x_json, CryptoKeys};
+use literium::{reply, CanDecrypt, CryptoKeys};
 use warp::{Filter, get2, path, any, test::request};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -22,7 +22,7 @@ struct MyData {
 }
 
 fn main() {
-    let keys = CryptoKeys::gen();
+    let keys = CryptoKeys::default();
 
     let src = MyData { field: "abcdef".into() };
 
@@ -40,7 +40,7 @@ fn main() {
         .method("GET")
         .path("/sensible/data")
         .reply(&app)
-        .map(|body| open_x_json(&body, keys))
+        .map(|body| keys.open_json_b64(&body))
         .into_body()
         .unwrap();
 

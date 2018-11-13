@@ -1,5 +1,5 @@
 use bytes::Buf;
-use crypto::{decrypt_base64_sealed_json, CryptoError, HasSecretKey};
+use crypto::{CanDecrypt, CryptoError, HasSecretKey};
 use mime::Mime;
 use serde::de::DeserializeOwned;
 use warp::{
@@ -40,18 +40,20 @@ where
         }).and(concat())
         .and(state)
         .and_then(|_, body: FullBody, state: S| {
-            decrypt_base64_sealed_json(body.bytes(), state.as_ref())
+            (state.as_ref() as &S::SecretKey)
+                .open_json_b64(body.bytes())
+                .map_err(custom)
         })
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crypto::CryptoKeys;
+    use crypto::{CanKeygen, CryptoKeys};
 
     #[test]
     fn test() {
-        let keys = CryptoKeys::gen();
+        let keys = CryptoKeys::gen_key();
         let _h = any().and(base64_sealed_json::<u32, _>(keys));
     }
 }

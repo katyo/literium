@@ -9,6 +9,7 @@ pub enum CryptoError {
     BadMime,
     BadBase64,
     BadCrypto,
+    BadUtf8,
     BadJson,
     FailJson,
 }
@@ -20,6 +21,7 @@ impl Display for CryptoError {
             BadMime => f.write_str("Unsupported content-type"),
             BadBase64 => f.write_str("Invalid base64 data"),
             BadCrypto => f.write_str("Unable to decrypt"),
+            BadUtf8 => f.write_str("Invalid UTF8 string"),
             BadJson => f.write_str("Invalid JSON data"),
             FailJson => f.write_str("Unable to encode JSON data"),
         }
@@ -34,7 +36,7 @@ impl CryptoError {
         if let Some(&error) = error.find_cause::<CryptoError>() {
             use self::CryptoError::*;
             let code = match error {
-                BadMime | BadBase64 | BadCrypto | BadJson => StatusCode::BAD_REQUEST,
+                BadMime | BadBase64 | BadCrypto | BadUtf8 | BadJson => StatusCode::BAD_REQUEST,
                 FailJson => StatusCode::INTERNAL_SERVER_ERROR,
             };
 

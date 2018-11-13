@@ -6,7 +6,7 @@ use futures::{
 use auth::{
     AuthData, AuthError, HasSessionAccess, HasUserAuth, IsSessionAccess, IsSessionData, IsUserAuth,
 };
-use crypto::{open_x_json, HasSecretKey};
+use crypto::{CanDecrypt, HasSecretKey};
 use user::{HasUserAccess, IsUserAccess};
 use warp::{any, header, reject::custom, Filter, Rejection};
 
@@ -26,8 +26,11 @@ where
     any()
         .and(header("x-auth"))
         .and(state.clone())
-        .and_then(|data: String, state: State| open_x_json(data, state.as_ref() as &State::KeyData))
-        .and(state.clone())
+        .and_then(|data: String, state: State| {
+            (state.as_ref() as &State::SecretKey)
+                .open_json_b64(data)
+                .map_err(custom)
+        }).and(state.clone())
         .and_then(|data: AuthData, state: State| {
             debug!("Received auth data: {:?}", data);
             (state.clone().as_ref() as &State::SessionAccess)
