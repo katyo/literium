@@ -1,13 +1,12 @@
 use auth::{AuthError, IsAuthMethod};
-use futures::{future, Future};
+use futures::Future;
 use user::{verify_password, HasPasswordHash, HasUserAccess, IsUserAccess};
 use BoxFuture;
 
 /// Native auth method information
 #[derive(Debug, Serialize)]
-pub enum AuthInfo {
-    #[serde(rename = "native")]
-    Native {},
+pub struct AuthInfo {
+    pub native: bool,
 }
 
 /// Native auth user identification
@@ -29,8 +28,8 @@ where
     type AuthInfo = AuthInfo;
     type UserIdent = UserIdent;
 
-    fn get_auth_info(&self, _state: &S) -> BoxFuture<Self::AuthInfo, AuthError> {
-        Box::new(future::ok(AuthInfo::Native {}))
+    fn get_auth_info(&self, _state: &S) -> Self::AuthInfo {
+        AuthInfo { native: true }
     }
 
     fn try_user_auth(

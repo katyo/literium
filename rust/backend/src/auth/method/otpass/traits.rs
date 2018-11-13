@@ -76,10 +76,10 @@ macro_rules! user_ident_type {
 
 macro_rules! sender_info {
     ($self:expr, $i:tt, $j:tt) => {
-        BothAuthInfo::from(($self.$i.sender_info(), $self.$j.sender_info()))
+        BothAuthInfo::new($self.$i.sender_info(), $self.$j.sender_info())
     };
     ($self:expr, $i:tt, $($j:tt),+) => {
-        BothAuthInfo::from(($self.$i.sender_info(), sender_info!($self, $($j),+)))
+        BothAuthInfo::new($self.$i.sender_info(), sender_info!($self, $($j),+))
     };
 }
 

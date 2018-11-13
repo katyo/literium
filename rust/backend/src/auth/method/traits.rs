@@ -1,5 +1,4 @@
 use auth::AuthError;
-use futures::Future;
 use serde::{de::DeserializeOwned, Serialize};
 use user::{HasUserAccess, IsUserAccess};
 use BoxFuture;
@@ -16,7 +15,7 @@ where
     type UserIdent: DeserializeOwned + Send + 'static;
 
     /// Auth method may provide some data to client
-    fn get_auth_info(&self, state: &S) -> BoxFuture<Self::AuthInfo, AuthError>;
+    fn get_auth_info(&self, state: &S) -> Self::AuthInfo;
 
     /// Auth method should made some checks itself
     fn try_user_auth(
@@ -44,8 +43,8 @@ pub struct BothAuthInfo<A, B> {
     b: B,
 }
 
-impl<A, B> From<(A, B)> for BothAuthInfo<A, B> {
-    fn from((a, b): (A, B)) -> Self {
+impl<A, B> BothAuthInfo<A, B> {
+    pub fn new(a: A, b: B) -> Self {
         Self { a, b }
     }
 }
@@ -78,16 +77,10 @@ macro_rules! user_ident_type {
 
 macro_rules! get_auth_info {
     ($self:expr, $state:expr, $i:tt, $j:tt) => {
-        $self.$i
-            .get_auth_info($state)
-            .join($self.$j.get_auth_info($state))
-            .map(BothAuthInfo::from)
+        BothAuthInfo::new($self.$i.get_auth_info($state), $self.$j.get_auth_info($state))
     };
     ($self:expr, $state:expr, $i:tt, $($j:tt),+) => {
-        $self.$i
-            .get_auth_info($state)
-            .join(get_auth_info!($self, $state, $($j),+))
-            .map(BothAuthInfo::from)
+        BothAuthInfo::new($self.$i.get_auth_info($state), get_auth_info!($self, $state, $($j),+))
     };
 }
 
@@ -116,10 +109,8 @@ macro_rules! tuple_method {
             type AuthInfo = auth_info_type!($($type),+);
             type UserIdent = user_ident_type!($($type),+);
 
-            fn get_auth_info(&self, state: &S) -> BoxFuture<Self::AuthInfo, AuthError> {
-                Box::new(
-                    get_auth_info!(self, state, $($id),+)
-                )
+            fn get_auth_info(&self, state: &S) -> Self::AuthInfo {
+                get_auth_info!(self, state, $($id),+)
             }
 
             fn try_user_auth(

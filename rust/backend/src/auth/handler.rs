@@ -17,24 +17,18 @@ where
     S: HasPublicKey + HasUserAccess + HasAuthMethod + Send + Sync + Clone + 'static,
     S::AuthMethod: IsAuthMethod<S>,
 {
-    warp::get2()
-        .and_then(move || {
-            get_auth_info_fn(state.clone())
-                .map(|data| warp::reply::json(&data))
-                .map_err(warp::reject::custom)
-        }).recover(AuthError::recover)
+    warp::get2().map(move || warp::reply::json(&get_auth_info_fn(state.clone())))
 }
 
-fn get_auth_info_fn<S>(
-    state: S,
-) -> impl Future<Item = AuthInfo<<S::AuthMethod as IsAuthMethod<S>>::AuthInfo>, Error = AuthError>
+fn get_auth_info_fn<S>(state: S) -> AuthInfo<<S::AuthMethod as IsAuthMethod<S>>::AuthInfo>
 where
     S: HasPublicKey + HasUserAccess + HasAuthMethod + Send + Sync + Clone + 'static,
     S::AuthMethod: IsAuthMethod<S>,
 {
-    (state.as_ref() as &S::AuthMethod)
-        .get_auth_info(&state)
-        .map(move |info| AuthInfo::new((state.as_ref() as &S::KeyData).as_ref().clone(), info))
+    AuthInfo::new(
+        (state.as_ref() as &S::KeyData).as_ref().clone(),
+        (state.as_ref() as &S::AuthMethod).get_auth_info(&state),
+    )
 }
 
 /// Handle auth requests

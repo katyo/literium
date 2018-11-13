@@ -4,7 +4,7 @@ use super::{
 };
 use auth::{AuthError, IsAuthMethod};
 use futures::{
-    future::{err, ok, Either},
+    future::{err, Either},
     Future,
 };
 use std::sync::Arc;
@@ -45,10 +45,10 @@ where
     type AuthInfo = AuthInfo;
     type UserIdent = UserIdent;
 
-    fn get_auth_info(&self, state: &S) -> BoxFuture<Self::AuthInfo, AuthError> {
+    fn get_auth_info(&self, state: &S) -> Self::AuthInfo {
         let providers: &S::OAuth2Providers = state.as_ref();
 
-        let service_info = self
+        let service = self
             .0
             .options
             .service
@@ -61,14 +61,14 @@ where
                         name: opts.service.clone(),
                         url,
                     })
-            }).collect::<Result<Vec<_>, _>>();
-        Box::new(match service_info {
-            Ok(service) => ok(AuthInfo::OAuth2 {
-                state: Vec::new(),
-                service,
-            }),
-            Err(error) => err(error),
-        })
+            }).filter(Result::is_ok)
+            .map(Result::unwrap)
+            .collect();
+
+        AuthInfo::OAuth2 {
+            state: Vec::new(),
+            service,
+        }
     }
 
     fn try_user_auth(

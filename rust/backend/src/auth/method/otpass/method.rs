@@ -114,10 +114,10 @@ where
     type AuthInfo = AuthInfo<P::AuthInfo>;
     type UserIdent = UserIdent<P::UserIdent>;
 
-    fn get_auth_info(&self, _state: &S) -> BoxFuture<Self::AuthInfo, AuthError> {
-        Box::new(ok(AuthInfo {
+    fn get_auth_info(&self, _state: &S) -> Self::AuthInfo {
+        AuthInfo {
             otpass: self.0.sender.sender_info(),
-        }))
+        }
     }
 
     fn try_user_auth(
