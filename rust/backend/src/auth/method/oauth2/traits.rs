@@ -1,4 +1,4 @@
-use super::{AccessTokenParams, AuthorizeParams, ClientParams};
+use super::{AccessTokenRequest, AuthorizeParams, ClientParams};
 use auth::AuthError;
 use futures::{future::err, Future};
 use serde::Serialize;
@@ -42,10 +42,15 @@ pub trait IsOAuth2Provider<S, X>: IsThirdService<S, X> {
     fn prepare_access_token(
         &self,
         params: &ClientParams,
+        state: &str,
         code: &str,
     ) -> Result<(Cow<str>, String), AuthError> {
         let url = self.access_token_url();
-        let params = AccessTokenParams { params, code };
+        let params = AccessTokenRequest {
+            params,
+            state,
+            code,
+        };
         let params = qs::to_string(&params).map_err(|error| {
             error!("Error serializing params: {}", error);
             AuthError::BackendError
@@ -112,6 +117,7 @@ pub trait IsOAuth2Providers<S, X> {
         &self,
         name: &str,
         params: &ClientParams,
+        state: &str,
         code: &String,
     ) -> Result<(Cow<str>, String), AuthError>;
 
@@ -145,10 +151,11 @@ where
         &self,
         name: &str,
         params: &ClientParams,
+        state: &str,
         code: &String,
     ) -> Result<(Cow<str>, String), AuthError> {
         if self.0.service_name() == name {
-            self.0.prepare_access_token(params, code)
+            self.0.prepare_access_token(params, state, code)
         } else {
             Err(AuthError::BadService)
         }
@@ -195,11 +202,12 @@ macro_rules! tuple_providers {
                 &self,
                 name: &str,
                 params: &ClientParams,
+                state: &str,
                 code: &String,
             ) -> Result<(Cow<str>, String), AuthError> {
                 $(
                     if self.$index.service_name() == name {
-                        return self.$index.prepare_access_token(params, code);
+                        return self.$index.prepare_access_token(params, state, code);
                     }
                 )+
                 Err(AuthError::BadService)

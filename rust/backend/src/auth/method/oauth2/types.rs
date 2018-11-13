@@ -1,16 +1,25 @@
 use serde_extra::base64;
+use serde_with::rust::display_fromstr;
+use url::Url;
+use {random_bytes, TimeStamp};
 
 /// OAuth2 auth options
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OAuth2Options {
     /// Supported services options
     pub service: Vec<ClientOptions>,
+    /// Redirect URI
+    ///
+    /// The service name will be added to this URI to get `redirect_uri` parameter.
+    #[serde(with = "display_fromstr")]
+    pub redirect: Url,
 }
 
 impl Default for OAuth2Options {
     fn default() -> Self {
         Self {
             service: Vec::new(),
+            redirect: "https://my-site.tld/oauth2".parse().unwrap(),
         }
     }
 }
@@ -34,13 +43,33 @@ pub struct ClientParams {
     pub client_secret: String,
 }
 
+/// OAuth2 state params
+#[derive(Serialize, Deserialize)]
+pub struct OAuth2State {
+    /// Creating time
+    pub ctime: TimeStamp,
+    /// Random token
+    #[serde(with = "base64")]
+    pub token: Vec<u8>,
+}
+
+impl OAuth2State {
+    pub fn new() -> Self {
+        Self {
+            ctime: TimeStamp::now(),
+            token: random_bytes(12),
+        }
+    }
+}
+
 /// OAuth2 auth metod information
 #[derive(Debug, Serialize)]
 pub enum AuthInfo {
     #[serde(rename = "oauth2")]
     OAuth2 {
-        #[serde(with = "base64")]
-        state: Vec<u8>,
+        /// Unguessable state string
+        state: String,
+        /// Service params
         service: Vec<ServiceInfo>,
     },
 }
@@ -66,6 +95,8 @@ pub enum UserIdent {
         #[serde(flatten)]
         /// OAuth2 service name
         service: String,
+        /// Unguessable state string
+        state: String,
         /// OAuth2 authorization code
         code: String,
     },
@@ -82,10 +113,12 @@ pub struct AuthorizeParams<'a, T> {
 
 /// OAuth2 access token request params
 #[derive(Debug, Clone, Serialize)]
-pub struct AccessTokenParams<'a> {
+pub struct AccessTokenRequest<'a> {
     /// Provider params
     #[serde(flatten)]
     pub params: &'a ClientParams,
+    /// State string
+    pub state: &'a str,
     /// Auth code
     pub code: &'a str,
 }

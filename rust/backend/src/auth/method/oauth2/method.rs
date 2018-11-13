@@ -1,6 +1,6 @@
 use super::{
     AccessTokenResponse, AuthInfo, HasOAuth2Providers, IsOAuth2Providers, OAuth2Options,
-    ServiceInfo, UserIdent,
+    OAuth2State, ServiceInfo, UserIdent,
 };
 use auth::{AuthError, IsAuthMethod};
 use futures::{
@@ -11,7 +11,7 @@ use std::sync::Arc;
 use user::{
     HasAccountAccess, HasUserAccess, IsAccountAccess, IsAccountData, IsUserAccess, IsUserData,
 };
-use {BoxFuture, CanUpdateFrom, HasHttpClient, IsHttpClient};
+use {BoxFuture, CanDecrypt, CanEncrypt, CanUpdateFrom, HasHttpClient, HasSecureKey, IsHttpClient};
 
 struct State {
     options: OAuth2Options,
@@ -34,6 +34,7 @@ impl<S> IsAuthMethod<S> for OAuth2Auth
 where
     S: HasUserAccess
         + HasAccountAccess
+        + HasSecureKey
         + HasHttpClient
         + HasOAuth2Providers
         + Send
@@ -65,8 +66,15 @@ where
             .map(Result::unwrap)
             .collect();
 
+        let state_str = (state.as_ref() as &S::SecureKey)
+            .seal_json_b64(&OAuth2State::new())
+            .unwrap_or_else(|error| {
+                error!("Unable to encrypt state: {}", error);
+                "".into()
+            });
+
         AuthInfo::OAuth2 {
-            state: Vec::new(),
+            state: state_str,
             service,
         }
     }
@@ -74,8 +82,20 @@ where
     fn try_user_auth(
         &self,
         state: &S,
-        UserIdent::OAuth2 { service, code }: &Self::UserIdent,
+        UserIdent::OAuth2 {
+            service,
+            state: state_str,
+            code,
+        }: &Self::UserIdent,
     ) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError> {
+        match (state.as_ref() as &S::SecureKey).open_json_b64(&state_str) {
+            Ok(OAuth2State { .. }) => (), // TODO: Add state checking
+            Err(error) => {
+                error!("Invalid OAuth2 state: {}", error);
+                return Box::new(err(AuthError::BadIdent));
+            }
+        }
+
         let providers: &S::OAuth2Providers = state.as_ref();
 
         if !providers.has_service(&service) {
@@ -94,10 +114,11 @@ where
             return Box::new(err(AuthError::BadService));
         };
 
-        let (url, params) = match providers.prepare_access_token(&service, &opts.params, &code) {
-            Ok(res) => res,
-            Err(error) => return Box::new(err(error)),
-        };
+        let (url, params) =
+            match providers.prepare_access_token(&service, &opts.params, &state_str, &code) {
+                Ok(res) => res,
+                Err(error) => return Box::new(err(error)),
+            };
 
         let client: &S::HttpClient = state.as_ref();
 
