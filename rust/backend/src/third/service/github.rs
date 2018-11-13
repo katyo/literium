@@ -1,8 +1,10 @@
-use super::{IsThirdService, ThirdApiParams, ThirdError};
 use auth::method::IsOAuth2Provider;
 use futures::Future;
-use serde_extra;
+use serde_extra::timestamp_iso8601;
+use serde_with::{rust::StringWithSeparator, SpaceSeparator};
 use std::borrow::Cow;
+use std::fmt::{Display, Formatter, Result as FmtResult};
+use third::{IsThirdService, ThirdApiParams, ThirdError};
 use user::{
     HasAbout, HasCompany, HasCreateDate, HasEmail, HasFullName, HasHomeUrl, HasImageUrl,
     HasLocation, HasNickName, IsAccountData,
@@ -44,10 +46,22 @@ pub enum GithubScope {
     UserFollow,
 }
 
+impl Display for GithubScope {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        use self::GithubScope::*;
+        f.write_str(match self {
+            User => "user",
+            ReadUser => "read:user",
+            UserEmail => "user:email",
+            UserFollow => "user:follow",
+        })
+    }
+}
+
 #[derive(Clone, Serialize)]
 pub struct AuthorizeParams {
     #[serde(default)]
-    #[serde(with = "serde_extra::space_delim_string")]
+    #[serde(with = "StringWithSeparator::<SpaceSeparator>")]
     pub scope: Vec<GithubScope>,
 }
 
@@ -81,7 +95,7 @@ struct GithubUserProfile {
     #[serde(default)]
     bio: String,
     #[serde(default)]
-    #[serde(with = "serde_extra::timestamp_iso8601")]
+    #[serde(with = "timestamp_iso8601")]
     created_at: TimeStamp,
 }
 
