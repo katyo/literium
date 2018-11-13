@@ -1,7 +1,7 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::ops::{Add, Sub};
 use std::time::Duration;
-use time::{at_utc, now_utc, strftime, strptime, ParseError, Timespec, Tm};
+use time::{at_utc, get_time, strftime, strptime, ParseError, Timespec, Tm};
 
 pub const RFC2822: &str = "%a, %d %b %Y %T %z";
 pub const ISO8601: &str = "%Y-%m-%dT%T%z";
@@ -17,7 +17,7 @@ pub struct TimeStamp(i64);
 impl TimeStamp {
     /// Create value with current UTC time
     pub fn now() -> Self {
-        now_utc().into()
+        get_time().into()
     }
 
     /// Parse time string using specified format
