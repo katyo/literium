@@ -65,17 +65,19 @@ pub struct AuthorizeParams {
     pub scope: Vec<GithubScope>,
 }
 
-/// Github OAuth2 provider
-pub struct OAuth2Github(GithubConfig);
+/// Github service
+pub struct GithubService(GithubConfig);
 
-impl OAuth2Github {
+impl GithubService {
     pub fn new(config: GithubConfig) -> Self {
-        OAuth2Github(config)
+        GithubService(config)
     }
 }
 
 #[derive(Deserialize)]
 struct GithubUserProfile {
+    #[serde(default)]
+    id: u64,
     #[serde(default)]
     login: String,
     #[serde(default)]
@@ -99,7 +101,7 @@ struct GithubUserProfile {
     created_at: TimeStamp,
 }
 
-impl<S, A> IsThirdService<S, A> for OAuth2Github
+impl<S, A> IsThirdService<S, A> for GithubService
 where
     S: HasHttpClient,
     A: IsAccountData
@@ -139,7 +141,7 @@ where
                     ThirdError::ServiceError
                 }).map(JsonBody::into_inner)
                 .map(|data: GithubUserProfile| {
-                    let mut account = A::create_new(data.login.clone());
+                    let mut account = A::create_new(data.id.to_string());
 
                     account.set_nick_name(Some(data.login));
 
@@ -189,7 +191,7 @@ where
     }
 }
 
-impl<S, A> IsOAuth2Provider<S, A> for OAuth2Github
+impl<S, A> IsOAuth2Provider<S, A> for GithubService
 where
     A: IsAccountData
         + HasNickName
