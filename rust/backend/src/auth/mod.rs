@@ -57,12 +57,12 @@
 pub mod dummy;
 mod error;
 mod handler;
-pub mod method;
+mod method;
 mod traits;
 mod types;
 
 pub use self::error::*;
 pub use self::handler::*;
-pub use self::method::{HasAuthMethod, IsAuthMethod};
+pub use self::method::*;
 pub use self::traits::*;
 pub use self::types::*;

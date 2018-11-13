@@ -1,4 +1,4 @@
-use auth::method::IsOAuth2Provider;
+use auth::oauth2::IsOAuth2Provider;
 use futures::Future;
 use serde_extra::timestamp_iso8601;
 use serde_with::{rust::StringWithSeparator, SpaceSeparator};

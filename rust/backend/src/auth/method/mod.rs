@@ -28,17 +28,10 @@ See [examples/auth.rs]
 mod traits;
 
 #[cfg(feature = "native_auth")]
-mod native;
+pub mod native;
 #[cfg(feature = "oauth2_auth")]
-mod oauth2;
+pub mod oauth2;
 #[cfg(feature = "otpass_auth")]
-mod otpass;
+pub mod otpass;
 
 pub use self::traits::*;
-
-#[cfg(feature = "native_auth")]
-pub use self::native::*;
-#[cfg(feature = "oauth2_auth")]
-pub use self::oauth2::*;
-#[cfg(feature = "otpass_auth")]
-pub use self::otpass::*;

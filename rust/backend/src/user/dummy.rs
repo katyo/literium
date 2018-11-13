@@ -6,7 +6,7 @@ This module provides dummy implementation of user data storage backend for examp
 
 */
 
-use auth::method::EmailUserIdent;
+use auth::otpass::EmailUserIdent;
 use dummy::DummyError;
 use futures::future::result;
 use std::borrow::Cow;
