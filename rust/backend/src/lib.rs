@@ -21,6 +21,7 @@ extern crate native_tls;
 extern crate new_tokio_smtp;
 extern crate serde_json;
 extern crate serde_qs;
+extern crate serde_with;
 extern crate sodiumoxide;
 extern crate supercow;
 extern crate tokio;

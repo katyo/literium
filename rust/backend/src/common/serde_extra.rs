@@ -43,8 +43,7 @@ fn main() {
 */
 
 use super::{AsBinary, FromBinary, TimeStamp, ISO8601};
-use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use serde_json::{to_value, Value};
+use serde::{de, ser, Deserialize, Deserializer, Serializer};
 
 pub mod base64 {
     use super::*;
@@ -71,58 +70,17 @@ pub mod base64 {
     }
 }
 
-pub mod space_delim_string {
-    use super::*;
-
-    pub fn serialize<S, I, T>(input: &I, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-        I: AsRef<[T]>,
-        T: Serialize,
-    {
-        let input = input.as_ref();
-        let mut output = String::new();
-
-        for item in input {
-            if let Ok(Value::String(item)) = to_value(item) {
-                if !output.is_empty() && !item.is_empty() {
-                    output += " ";
-                }
-                output += &item;
-            }
-        }
-
-        serializer.serialize_str(&output)
-    }
-}
-
-pub mod comma_delim_string {
-    use super::*;
-
-    pub fn serialize<S, I, T>(input: &I, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-        I: AsRef<[T]>,
-        T: Serialize,
-    {
-        let input = input.as_ref();
-        let mut output = String::new();
-
-        for item in input {
-            if let Ok(Value::String(item)) = to_value(item) {
-                if !output.is_empty() && !item.is_empty() {
-                    output += ",";
-                }
-                output += &item;
-            }
-        }
-
-        serializer.serialize_str(&output)
-    }
-}
-
 pub mod timestamp_iso8601 {
     use super::*;
+
+    pub fn serialize<S, T>(ts: &TimeStamp, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+        T: AsBinary,
+    {
+        let dst = ts.format(&ISO8601).map_err(ser::Error::custom)?;
+        serializer.serialize_str(&dst)
+    }
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<TimeStamp, D::Error>
     where
