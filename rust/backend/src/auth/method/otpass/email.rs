@@ -58,6 +58,11 @@ pub trait IsEmailOTPassFormatter<S> {
     }
 }
 
+/// Built-in email formatter
+pub struct EmailOTPassFormatter;
+
+impl<S> IsEmailOTPassFormatter<S> for EmailOTPassFormatter {}
+
 #[derive(Debug, Serialize)]
 pub struct EmailAuthInfo {
     email: bool,

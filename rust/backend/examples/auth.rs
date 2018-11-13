@@ -11,7 +11,7 @@ use literium::{
         do_user_auth,
         dummy::{Sessions, UserInfo},
         get_auth_info,
-        method::{EmailOTPass, IsEmailOTPassFormatter, NativeAuth, OTPassAuth},
+        method::{EmailOTPass, EmailOTPassFormatter, NativeAuth, OTPassAuth},
         HasAuthMethod, HasSessionAccess, HasUserInfo,
     },
     mail::{HasMailer, SmtpConfig, SmtpMailer},
@@ -25,10 +25,6 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::run;
 use warp::Filter;
-
-pub struct EmailOTPassFormatter;
-
-impl IsEmailOTPassFormatter<State> for EmailOTPassFormatter {}
 
 type AuthMethod = (
     NativeAuth,
