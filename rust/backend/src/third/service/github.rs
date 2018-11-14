@@ -1,7 +1,13 @@
+/*!
+
+## Github service integration and OAuth2 provider
+
+See Github OAuth2 docs at https://developer.github.com/apps/building-oauth-apps/authorizing-oauth-apps/.
+
+*/
 use auth::oauth2::IsOAuth2Provider;
 use futures::Future;
 use serde_extra::timestamp_iso8601;
-use serde_with::{rust::StringWithSeparator, SpaceSeparator};
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use third::{IsThirdService, ThirdApiParams, ThirdError};
@@ -9,18 +15,35 @@ use user::{
     HasAbout, HasCompany, HasCreateDate, HasEmail, HasFullName, HasHomeUrl, HasImageUrl,
     HasLocation, HasNickName, IsAccountData,
 };
-use {BoxFuture, HasHttpClient, IsHttpClient, TimeStamp};
+use {BoxFuture, HasHttpClient, IsHttpClient, Separated, Space, TimeStamp};
 
 /// Github config
 #[derive(Clone, Serialize, Deserialize)]
 pub struct GithubConfig {
+    #[serde(default = "default_scope")]
     pub scope: Vec<GithubScope>,
+
+    #[serde(default = "default_allow_signup")]
+    pub allow_signup: bool,
+}
+
+fn default_scope() -> Vec<GithubScope> {
+    vec![GithubScope::ReadUser, GithubScope::UserEmail]
+}
+
+fn default_allow_signup() -> bool {
+    true
+}
+
+fn is_default_allow_signup(v: &bool) -> bool {
+    v == &true
 }
 
 impl Default for GithubConfig {
     fn default() -> Self {
         Self {
-            scope: vec![GithubScope::ReadUser, GithubScope::UserEmail],
+            scope: default_scope(),
+            allow_signup: default_allow_signup(),
         }
     }
 }
@@ -58,11 +81,10 @@ impl Display for GithubScope {
     }
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Serialize)]
 pub struct AuthorizeParams {
-    #[serde(default)]
-    #[serde(with = "StringWithSeparator::<SpaceSeparator>")]
-    pub scope: Vec<GithubScope>,
+    #[serde(skip_serializing_if = "is_default_allow_signup")]
+    allow_signup: bool,
 }
 
 /// Github service
@@ -208,13 +230,19 @@ where
 {
     type AuthorizeParams = AuthorizeParams;
 
-    fn authorize_url(&self) -> Cow<'static, str> {
+    fn authorize_url(&self) -> Cow<str> {
         "https://github.com/login/oauth/authorize".into()
+    }
+
+    fn authorize_scope(&self) -> Cow<str> {
+        Separated::<_, Space>::from(&self.0.scope)
+            .to_string()
+            .into()
     }
 
     fn authorize_params(&self) -> Self::AuthorizeParams {
         AuthorizeParams {
-            scope: self.0.scope.clone(),
+            allow_signup: self.0.allow_signup,
         }
     }
 

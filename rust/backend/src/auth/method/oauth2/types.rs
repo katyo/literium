@@ -1,13 +1,11 @@
-use serde_extra::base64;
 use serde_with::rust::display_fromstr;
 use url::Url;
-use {random_bytes, TimeStamp};
 
 /// OAuth2 auth options
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OAuth2Options {
     /// Supported services options
-    pub service: Vec<ClientOptions>,
+    pub services: Vec<ClientOptions>,
     /// Redirect URI
     ///
     /// The service name will be added to this URI to get `redirect_uri` parameter.
@@ -18,7 +16,7 @@ pub struct OAuth2Options {
 impl Default for OAuth2Options {
     fn default() -> Self {
         Self {
-            service: Vec::new(),
+            services: Vec::new(),
             redirect: "https://my-site.tld/oauth2".parse().unwrap(),
         }
     }
@@ -28,7 +26,8 @@ impl Default for OAuth2Options {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClientOptions {
     /// Service name
-    pub service: String,
+    pub name: String,
+
     /// Client params
     #[serde(flatten)]
     pub params: ClientParams,
@@ -39,52 +38,50 @@ pub struct ClientOptions {
 pub struct ClientParams {
     /// Client identifier
     pub client_id: String,
+
     /// Client secret
     pub client_secret: String,
 }
 
-/// OAuth2 state params
-#[derive(Serialize, Deserialize)]
-pub struct OAuth2State {
-    /// Creating time
-    pub ctime: TimeStamp,
-    /// Random token
-    #[serde(with = "base64")]
-    pub token: Vec<u8>,
-}
-
-impl OAuth2State {
-    pub fn new() -> Self {
-        Self {
-            ctime: TimeStamp::now(),
-            token: random_bytes(12),
-        }
-    }
-}
-
 /// OAuth2 auth metod information
 #[derive(Debug, Serialize)]
-pub enum AuthInfo {
+pub enum AuthInfo<ServiceInfo> {
     #[serde(rename = "oauth2")]
     OAuth2 {
-        /// Unguessable state string
-        state: String,
         /// Service params
-        service: Vec<ServiceInfo>,
+        services: Vec<ServiceInfo>,
+        /// Redirect URI
+        ///
+        /// The service name will be added to this URI to get `redirect_uri` parameter.
+        #[serde(with = "display_fromstr")]
+        redirect: Url,
     },
 }
 
 /// OAuth2 auth service information
 #[derive(Debug, Serialize)]
-pub struct ServiceInfo {
+pub struct ServiceInfo<Params> {
     /// String name of service
     ///
     /// github, google, ...etc.
     pub name: String,
-    /// Authorize endpoint url
+
+    /// Authorize endpoint URL
     ///
     /// A full url with parameters but without state
     pub url: String,
+
+    /// Client identifier
+    ///
+    /// Sets from service options
+    pub client_id: String,
+
+    /// Scope
+    pub scope: String,
+
+    /// Extra params
+    #[serde(flatten)]
+    pub params: Params,
 }
 
 /// OAuth2 auth user identification
@@ -93,22 +90,17 @@ pub enum UserIdent {
     #[serde(rename = "oauth2")]
     OAuth2 {
         #[serde(flatten)]
-        /// OAuth2 service name
-        service: String,
-        /// Unguessable state string
-        state: String,
-        /// OAuth2 authorization code
-        code: String,
-    },
-}
+        /// Service name
+        name: String,
 
-/// OAuth2 authorize request params
-#[derive(Debug, Clone, Serialize)]
-pub struct AuthorizeParams<'a, T> {
-    /// Client identifier
-    pub client_id: &'a str,
-    /// Service-specific params
-    pub params: T,
+        /// Authorization code
+        code: String,
+
+        /// State string
+        ///
+        /// Some services need this.
+        state: String,
+    },
 }
 
 /// OAuth2 access token request params
@@ -117,10 +109,24 @@ pub struct AccessTokenRequest<'a> {
     /// Provider params
     #[serde(flatten)]
     pub params: &'a ClientParams,
-    /// State string
-    pub state: &'a str,
+
     /// Auth code
     pub code: &'a str,
+
+    /// Redirect uri
+    pub redirect_uri: &'a str,
+
+    /// Grant type
+    ///
+    /// Some services need this.
+    ///
+    /// Should be set to "autorization_code".
+    pub grant_type: &'a str,
+
+    /// State
+    ///
+    /// Some services need this.
+    pub state: &'a str,
 }
 
 /// OAuth2 access token response params
@@ -128,6 +134,14 @@ pub struct AccessTokenRequest<'a> {
 pub struct AccessTokenResponse {
     /// Access token
     pub access_token: String,
+
+    /// Refresh token
+    pub refresh_token: Option<String>,
+
+    /// Expires in
+    ///
+    /// The remaining lifetime of the access token in seconds.
+    pub expires_in: Option<u32>,
 }
 
 impl AccessTokenResponse {

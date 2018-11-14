@@ -1,6 +1,14 @@
+/*!
+
+## Google service integration and OAuth2 provider
+
+See Google OAuth2 docs at https://developers.google.com/identity/protocols/OAuth2WebServer.
+
+*/
+
 use auth::oauth2::IsOAuth2Provider;
 use futures::Future;
-use serde_with::{rust::StringWithSeparator, SpaceSeparator};
+use serde_extra::is_default;
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use third::{IsThirdService, ThirdApiParams, ThirdError};
@@ -8,18 +16,35 @@ use user::{
     HasEmail, HasFamilyName, HasFullName, HasGender, HasGivenName, HasHomeUrl, HasImageUrl,
     HasLocale, IsAccountData,
 };
-use {BoxFuture, HasHttpClient, IsHttpClient};
+use {BoxFuture, HasHttpClient, IsHttpClient, Separated, Space};
 
 /// Google config
 #[derive(Clone, Serialize, Deserialize)]
 pub struct GoogleConfig {
+    #[serde(default = "default_scopes")]
     pub scope: Vec<GoogleScope>,
+
+    #[serde(default)]
+    pub access_type: GoogleAccessType,
+
+    #[serde(default)]
+    pub include_granted_scopes: bool,
+
+    #[serde(default)]
+    pub prompt: Vec<GooglePrompt>,
+}
+
+fn default_scopes() -> Vec<GoogleScope> {
+    vec![GoogleScope::UserInfoProfile, GoogleScope::UserInfoEmail]
 }
 
 impl Default for GoogleConfig {
     fn default() -> Self {
         Self {
-            scope: vec![GoogleScope::UserInfoProfile, GoogleScope::UserInfoEmail],
+            scope: default_scopes(),
+            access_type: GoogleAccessType::default(),
+            include_granted_scopes: false,
+            prompt: Vec::new(),
         }
     }
 }
@@ -27,7 +52,7 @@ impl Default for GoogleConfig {
 /// Google scope
 ///
 /// TODO: Add other scopes
-#[derive(Clone, Copy, Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum GoogleScope {
     /// Know the list of people in your circles, your age range, and language
     ///
@@ -63,13 +88,65 @@ impl Display for GoogleScope {
     }
 }
 
-#[derive(Clone, Serialize)]
-pub struct AuthorizeParams {
-    #[serde(with = "StringWithSeparator::<SpaceSeparator>")]
-    pub scope: Vec<GoogleScope>,
+/// Google access type
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum GoogleAccessType {
+    #[serde(rename = "online")]
+    Online,
+    #[serde(rename = "offline")]
+    Offline,
 }
 
-/// Google servide
+impl Default for GoogleAccessType {
+    fn default() -> Self {
+        GoogleAccessType::Online
+    }
+}
+
+/// Google prompt
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum GooglePrompt {
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "consent")]
+    Consent,
+    #[serde(rename = "select_account")]
+    SelectAccount,
+}
+
+impl Default for GooglePrompt {
+    fn default() -> Self {
+        GooglePrompt::None
+    }
+}
+
+impl Display for GooglePrompt {
+    fn fmt(&self, f: &mut Formatter) -> FmtResult {
+        use self::GooglePrompt::*;
+        f.write_str(match self {
+            None => "none",
+            Consent => "consent",
+            SelectAccount => "select_account",
+        })
+    }
+}
+
+/// Google OAuth2 authorize params
+///
+/// TODO: Add `prompt` and `include_granted_scopes` parameters
+#[derive(Serialize)]
+pub struct AuthorizeParams {
+    #[serde(skip_serializing_if = "is_default")]
+    access_type: GoogleAccessType,
+
+    #[serde(skip_serializing_if = "is_default")]
+    include_granted_scopes: bool,
+
+    #[serde(skip_serializing_if = "is_default")]
+    prompt: String,
+}
+
+/// Google service
 pub struct GoogleService(GoogleConfig);
 
 impl GoogleService {
@@ -202,17 +279,25 @@ where
 {
     type AuthorizeParams = AuthorizeParams;
 
-    fn authorize_url(&self) -> Cow<'static, str> {
-        "https://accounts.google.com/o/oauth2/auth".into()
+    fn authorize_url(&self) -> Cow<str> {
+        "https://accounts.google.com/o/oauth2/v2/auth".into()
+    }
+
+    fn authorize_scope(&self) -> Cow<str> {
+        Separated::<_, Space>::from(&self.0.scope)
+            .to_string()
+            .into()
     }
 
     fn authorize_params(&self) -> Self::AuthorizeParams {
         AuthorizeParams {
-            scope: self.0.scope.clone(),
+            access_type: self.0.access_type,
+            include_granted_scopes: self.0.include_granted_scopes,
+            prompt: Separated::<_, Space>::from(&self.0.prompt).to_string(),
         }
     }
 
-    fn access_token_url(&self) -> Cow<'static, str> {
-        "https://accounts.google.com/o/oauth2/token".into()
+    fn access_token_url(&self) -> Cow<str> {
+        "https://www.googleapis.com/oauth2/v4/token".into()
     }
 }

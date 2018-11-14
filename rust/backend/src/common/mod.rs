@@ -2,6 +2,7 @@ mod binary;
 #[cfg(feature = "http_client")]
 pub mod client;
 pub mod config;
+mod containers;
 pub mod dummy;
 pub mod listen;
 #[cfg(feature = "name_resolver")]
@@ -18,6 +19,7 @@ pub use self::client::{
     HttpResponse, IsHttpClient,
 };
 pub use self::config::FileConfig;
+pub use self::containers::*;
 pub use self::listen::ListenAddr;
 #[cfg(feature = "name_resolver")]
 pub use self::resolver::NameResolver;

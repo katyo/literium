@@ -1,6 +1,6 @@
 use super::{
-    AccessTokenResponse, AuthInfo, HasOAuth2Providers, IsOAuth2Providers, OAuth2Options,
-    OAuth2State, ServiceInfo, UserIdent,
+    AccessTokenRequest, AccessTokenResponse, AuthInfo, HasOAuth2Providers, IsOAuth2Providers,
+    OAuth2Options, ServiceInfo, UserIdent,
 };
 use auth::{AuthError, IsAuthMethod};
 use futures::{
@@ -11,7 +11,7 @@ use std::sync::Arc;
 use user::{
     HasAccountAccess, HasUserAccess, IsAccountAccess, IsAccountData, IsUserAccess, IsUserData,
 };
-use {BoxFuture, CanDecrypt, CanEncrypt, CanUpdateFrom, HasHttpClient, HasSecureKey, IsHttpClient};
+use {BoxFuture, CanUpdateFrom, HasHttpClient, IsHttpClient};
 
 struct State {
     options: OAuth2Options,
@@ -34,7 +34,6 @@ impl<S> IsAuthMethod<S> for OAuth2Auth
 where
     S: HasUserAccess
         + HasAccountAccess
-        + HasSecureKey
         + HasHttpClient
         + HasOAuth2Providers
         + Send
@@ -43,88 +42,87 @@ where
     <S::UserAccess as IsUserAccess>::User:
         CanUpdateFrom<<S::AccountAccess as IsAccountAccess>::Account>,
 {
-    type AuthInfo = AuthInfo;
+    type AuthInfo = AuthInfo<
+        ServiceInfo<
+            <S::OAuth2Providers as IsOAuth2Providers<
+                S,
+                <S::AccountAccess as IsAccountAccess>::Account,
+            >>::AuthorizeParams,
+        >,
+    >;
     type UserIdent = UserIdent;
 
     fn get_auth_info(&self, state: &S) -> Self::AuthInfo {
         let providers: &S::OAuth2Providers = state.as_ref();
 
-        let service = self
+        let services = self
             .0
             .options
-            .service
+            .services
             .iter()
-            .filter(|opts| providers.has_service(&opts.service))
+            .filter(|opts| providers.has_service(&opts.name))
             .map(|opts| {
-                providers
-                    .prepare_authorize(&opts.service, &opts.params)
-                    .map(|url| ServiceInfo {
-                        name: opts.service.clone(),
-                        url,
-                    })
-            }).filter(Result::is_ok)
-            .map(Result::unwrap)
-            .collect();
+                let url = providers.authorize_url(&opts.name);
+                let scope = providers.authorize_scope(&opts.name);
+                let params = providers.authorize_params(&opts.name);
 
-        let state_str = (state.as_ref() as &S::SecureKey)
-            .seal_json_b64(&OAuth2State::new())
-            .unwrap_or_else(|error| {
-                error!("Unable to encrypt state: {}", error);
-                "".into()
-            });
+                ServiceInfo {
+                    name: opts.name.clone(),
+                    url: url.into(),
+                    client_id: opts.params.client_id.clone(),
+                    scope: scope.into(),
+                    params,
+                }
+            }).collect();
 
-        AuthInfo::OAuth2 {
-            state: state_str,
-            service,
-        }
+        let redirect = self.0.options.redirect.clone();
+
+        AuthInfo::OAuth2 { services, redirect }
     }
 
     fn try_user_auth(
         &self,
         state: &S,
         UserIdent::OAuth2 {
-            service,
-            state: state_str,
+            name,
             code,
+            state: state_val,
         }: &Self::UserIdent,
     ) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError> {
-        match (state.as_ref() as &S::SecureKey).open_json_b64(&state_str) {
-            Ok(OAuth2State { .. }) => (), // TODO: Add state checking
-            Err(error) => {
-                error!("Invalid OAuth2 state: {}", error);
-                return Box::new(err(AuthError::BadIdent));
-            }
-        }
-
         let providers: &S::OAuth2Providers = state.as_ref();
 
-        if !providers.has_service(&service) {
+        if !providers.has_service(&name) {
             return Box::new(err(AuthError::BadService));
         }
 
         let opts = if let Some(opts) = self
             .0
             .options
-            .service
+            .services
             .iter()
-            .find(|opts| &opts.service == service)
+            .find(|opts| &opts.name == name)
         {
             opts
         } else {
             return Box::new(err(AuthError::BadService));
         };
 
-        let (url, params) =
-            match providers.prepare_access_token(&service, &opts.params, &state_str, &code) {
-                Ok(res) => res,
-                Err(error) => return Box::new(err(error)),
-            };
+        let redirect_uri = self.0.options.redirect.to_string() + "/" + name;
+
+        let url = providers.access_token_url(name);
+        let query = AccessTokenRequest {
+            params: &opts.params,
+            code: code,
+            redirect_uri: &redirect_uri,
+            grant_type: "authorization_code",
+            state: &state_val,
+        };
 
         let client: &S::HttpClient = state.as_ref();
 
         use request::*;
 
-        let service = service.clone();
+        let name = name.clone();
         let state = state.clone();
 
         Box::new(
@@ -139,7 +137,7 @@ where
                             Header(
                                 "Accept",
                                 "application/x-www-form-urlencoded",
-                                RawBody(params),
+                                UrlEncodedBody(query),
                             ),
                         ),
                     ),
@@ -150,12 +148,12 @@ where
                   .map(AccessTokenResponse::into_access_token)
                   .and_then(move |access_token| {
                       (state.as_ref() as &S::OAuth2Providers)
-                          .fetch_user_info(&service, &state, access_token.into())
+                          .fetch_user_info(&name, &state, access_token.into())
                           .and_then(move |mut data: <<S as HasAccountAccess>::AccountAccess as IsAccountAccess>::Account| {
                               // add service name to account
-                              data.set_account_service(service.as_str());
+                              data.set_account_service(name.as_str());
                               (state.as_ref() as &S::AccountAccess)
-                                  .find_user_account(&service, data.get_account_name())
+                                  .find_user_account(&name, data.get_account_name())
                                   .map_err(|error| {
                                       error!("Error when finding user account: {}", error);
                                       AuthError::BackendError
@@ -193,7 +191,7 @@ where
                                           )
                                       } else {
                                           // not found => create user data
-                                          let name = data.get_account_name().to_string() + "@" + &service;
+                                          let name = data.get_account_name().to_string() + "@" + &name;
                                           let mut user = <S::UserAccess as IsUserAccess>::User::create_new(name);
                                           // fill user info from account
                                           user.update_from(&data);

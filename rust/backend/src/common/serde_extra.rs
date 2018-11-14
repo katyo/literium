@@ -45,6 +45,13 @@ fn main() {
 use super::{AsBinary, FromBinary, TimeStamp, ISO8601};
 use serde::{de, ser, Deserialize, Deserializer, Serializer};
 
+pub fn is_default<T>(v: &T) -> bool
+where
+    T: Default + PartialEq,
+{
+    v == &T::default()
+}
+
 pub mod base64 {
     use super::*;
     use base64lib::{decode, encode};
