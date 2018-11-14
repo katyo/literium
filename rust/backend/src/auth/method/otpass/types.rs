@@ -1,7 +1,7 @@
+use base::TimeStamp;
 use std::borrow::Cow;
 use std::ops::RangeInclusive;
 use user::{gen_password, ARABIC_NUMBERS_AND_LATIN_LETTERS};
-use TimeStamp;
 
 /// One-time password auth options
 #[derive(Debug, Clone, Serialize, Deserialize)]

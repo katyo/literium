@@ -2,10 +2,10 @@ use auth::{
     method::{BothAuthInfo, EitherUserIdent},
     AuthError,
 };
+use base::BoxFuture;
 use serde::{de::DeserializeOwned, Serialize};
 use std::borrow::Cow;
 use std::hash::Hash;
-use BoxFuture;
 
 /// One-time password auth user identification data
 ///

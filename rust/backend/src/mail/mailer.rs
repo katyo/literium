@@ -2,8 +2,8 @@ use super::{
     HasMailer, IsMailer, MailMessage, Mailbox, Mailboxes, MailerError, SmtpAuth, SmtpConfig,
     SmtpSecurity,
 };
+use base::BoxFuture;
 use emailmessage::header;
-use BoxFuture;
 
 use bytes::IntoBuf;
 use futures::{

@@ -68,7 +68,7 @@ pub struct ServiceInfo<Params> {
 
     /// Authorize endpoint URL
     ///
-    /// A full url with parameters but without state
+    /// A basic URL without parameters
     pub url: String,
 
     /// Client identifier

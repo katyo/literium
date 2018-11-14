@@ -1,10 +1,10 @@
 use auth::{AuthError, EitherUserIdent};
+use base::BoxFuture;
 use futures::Future;
 use serde::Serialize;
 use std::borrow::Cow;
 use third::IsThirdService;
 use user::{HasAccountAccess, IsAccountAccess};
-use BoxFuture;
 
 /// OAuth2 provider interface
 pub trait IsOAuth2Provider<S, X>: IsThirdService<S, X> {

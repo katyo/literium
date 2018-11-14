@@ -14,7 +14,9 @@ extern crate literium;
 extern crate warp;
 extern crate pretty_env_logger;
 
-use literium::{x_json, CanEncrypt, CryptoKeys};
+use literium::{x_json,
+    crypto::{CanEncrypt, CryptoKeys}
+};
 use warp::{Filter, post2, path, any, test::request};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -89,7 +91,10 @@ use literium::{
         dummy::{Sessions, UserAuth},
         AuthData, HasUserAuth, HasSessionAccess, IsSessionAccess,
     },
-    x_auth, CanEncrypt, CryptoKeys, HasSecretKey, PublicKey,
+    x_auth,
+    crypto::{
+        CanEncrypt, CryptoKeys, HasSecretKey, PublicKey,
+    },
 };
 use std::sync::Arc;
 use warp::{get2, path, test::request, Filter};

@@ -15,12 +15,12 @@ use literium::{
         otpass::{EmailOTPass, EmailOTPassFormatter, OTPassAuth},
         HasAuthMethod, HasSessionAccess, HasUserInfo,
     },
+    crypto::{CryptoKeys, HasPublicKey, HasSecretKey},
     mail::{HasMailer, SmtpConfig, SmtpMailer},
     user::{
         dummy::{UserData, Users},
         HasUserAccess,
     },
-    CryptoKeys, HasPublicKey, HasSecretKey,
 };
 use std::net::SocketAddr;
 use std::sync::Arc;

@@ -1,7 +1,8 @@
 use super::{AccountId, Gender, UserId};
+use base::{BoxFuture, IsBackend, TimeStamp};
+use mail::MailAddress;
 use std::borrow::Cow;
 use url::Url;
-use {BoxFuture, IsBackend, MailAddress, TimeStamp};
 
 /// Basic user data
 pub trait IsUserData: Sized {

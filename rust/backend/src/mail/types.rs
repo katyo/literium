@@ -3,7 +3,7 @@ pub use emailmessage::{
     MultiPart, Part, SinglePart,
 };
 
-use TimeStamp;
+use base::TimeStamp;
 
 use std::error::Error;
 use std::fmt;

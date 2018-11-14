@@ -9,7 +9,7 @@ extern crate serde_derive;
 #[cfg(feature = "send_mail")]
 extern crate emailmessage;
 extern crate futures;
-extern crate http;
+extern crate http as httplib;
 #[cfg(feature = "http_client")]
 extern crate hyper;
 #[cfg(feature = "http_client")]
@@ -32,38 +32,20 @@ extern crate url;
 extern crate warp;
 
 #[macro_use]
-mod common;
+pub mod base;
 pub mod access;
 #[cfg(feature = "auth")]
 pub mod auth;
 pub mod crypto;
+#[cfg(feature = "name_resolver")]
+pub mod dns;
 pub mod filters;
+pub mod http;
+#[cfg(feature = "send_mail")]
+pub mod mail;
 pub mod reply;
 pub mod third;
 pub mod user;
-
-#[cfg(feature = "send_mail")]
-pub mod mail;
-#[cfg(feature = "send_mail")]
-pub use mail::{HasMailAddress, MailAddress};
-
-pub use self::access::{HasUserRoles, IsUserRole};
-#[cfg(feature = "name_resolver")]
-pub use self::common::NameResolver;
-pub use self::common::{
-    dummy, serde_extra, BoxFuture, CanAccept, CanUpdateFrom, Colon, Comma, FileConfig, IsBackend,
-    ListenAddr, Semicolon, Separated, Space, TimeStamp, ISO8601, RFC2822,
-};
-#[cfg(feature = "http_client")]
-pub use self::common::{
-    request, HasHttpClient, HttpBody, HttpChunk, HttpClient, HttpRequest, HttpResponse,
-    IsHttpClient,
-};
-
-pub use self::crypto::{
-    random_bytes, CanDecrypt, CanEncrypt, CanKeygen, CryptoKeys, HasPublicKey, HasSecretKey,
-    HasSecureKey, PublicKey, SecretKey, SecureKey,
-};
 
 #[cfg(feature = "auth")]
 pub use self::filters::x_auth;

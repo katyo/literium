@@ -10,11 +10,10 @@ use super::{
     HasSessionAccess, IsSessionAccess, IsSessionData, IsUserAuth, IsUserInfo, SessionData,
     SessionId,
 };
-use dummy::DummyError;
+use base::{dummy::DummyError, BoxFuture, IsBackend, TimeStamp};
 use futures::future::result;
 use std::sync::{Arc, RwLock};
 use user::{HasUserAccess, IsUserAccess, IsUserData, UserId};
-use {BoxFuture, IsBackend, TimeStamp};
 
 pub type UserSession = SessionData;
 

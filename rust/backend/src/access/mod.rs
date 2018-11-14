@@ -18,7 +18,7 @@ Usage example:
 #[macro_use]
 extern crate literium;
 
-use literium::{IsUserRole, HasUserRoles};
+use literium::access::{IsUserRole, HasUserRoles};
 
 #[derive(Clone, Copy)]
 enum UserPerm {

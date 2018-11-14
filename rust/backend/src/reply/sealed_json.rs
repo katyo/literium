@@ -1,5 +1,6 @@
 use crypto::{CanEncrypt, HasPublicKey};
-use http::{Response, StatusCode};
+use http::StatusCode;
+use httplib::Response;
 use serde::Serialize;
 use warp::{reject::custom, Reply};
 

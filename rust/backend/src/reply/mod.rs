@@ -13,7 +13,8 @@ extern crate serde_derive;
 extern crate literium;
 extern crate warp;
 
-use literium::{reply, CanDecrypt, CryptoKeys};
+use literium::{reply};
+use literium::crypto::{CanDecrypt, CryptoKeys};
 use warp::{Filter, get2, path, any, test::request};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

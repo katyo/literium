@@ -1,6 +1,13 @@
+/*!
+
+## Dummy types
+
+*/
+
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 
+/// Dummy error for use as error type
 #[derive(Debug)]
 pub struct DummyError;
 

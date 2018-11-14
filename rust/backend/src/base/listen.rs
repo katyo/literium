@@ -1,3 +1,9 @@
+/*!
+
+## Generalized listening for both TCP and Unix Domain sockets.
+
+*/
+
 use std::fmt::{Formatter, Result as FmtResult};
 use std::fs::remove_file;
 use std::io::Error as IoError;
@@ -34,7 +40,7 @@ use futures::{lazy, Future, sync::oneshot::{Sender, channel}};
 use tokio::{run, spawn};
 use http::StatusCode;
 use warp::Filter;
-use literium::ListenAddr;
+use literium::base::ListenAddr;
 
 fn server(addr: &ListenAddr) -> Sender<()> {
     let (tx, rx) = channel();

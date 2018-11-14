@@ -1,6 +1,6 @@
 use super::ThirdError;
+use base::BoxFuture;
 use std::borrow::Cow;
-use BoxFuture;
 
 /// Third service interface
 pub trait IsThirdService<S, A>: Sized {

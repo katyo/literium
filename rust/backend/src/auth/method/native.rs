@@ -1,7 +1,15 @@
+/*!
+
+### Native auth
+
+This method provides classic authorization with *username* and *password*.
+
+*/
+
 use auth::{AuthError, IsAuthMethod};
+use base::BoxFuture;
 use futures::Future;
 use user::{verify_password, HasPasswordHash, HasUserAccess, IsUserAccess};
-use BoxFuture;
 
 /// Native auth method information
 #[derive(Debug, Serialize)]

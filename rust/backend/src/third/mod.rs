@@ -1,3 +1,9 @@
+/*!
+
+## Third-party services integration
+
+*/
+
 mod error;
 mod service;
 mod traits;

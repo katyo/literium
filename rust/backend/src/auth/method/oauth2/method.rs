@@ -3,15 +3,19 @@ use super::{
     OAuth2Options, ServiceInfo, UserIdent,
 };
 use auth::{AuthError, IsAuthMethod};
+use base::{BoxFuture, CanUpdateFrom};
 use futures::{
     future::{err, Either},
     Future,
+};
+use http::{
+    client::{HasHttpClient, IsHttpClient},
+    request,
 };
 use std::sync::Arc;
 use user::{
     HasAccountAccess, HasUserAccess, IsAccountAccess, IsAccountData, IsUserAccess, IsUserData,
 };
-use {BoxFuture, CanUpdateFrom, HasHttpClient, IsHttpClient};
 
 struct State {
     options: OAuth2Options,
@@ -120,7 +124,7 @@ where
 
         let client: &S::HttpClient = state.as_ref();
 
-        use request::*;
+        use self::request::*;
 
         let name = name.clone();
         let state = state.clone();

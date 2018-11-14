@@ -2,6 +2,8 @@ use super::{
     AuthError, AuthInfo, AuthRequest, AuthResponse, HasAuthMethod, HasSessionAccess, HasUserInfo,
     IsAuthMethod, IsSessionAccess, IsSessionData, IsUserInfo, SessionData,
 };
+use base::TimeStamp;
+use crypto::{HasPublicKey, HasSecretKey, PublicKey};
 use futures::{
     future::{err, Either},
     Future,
@@ -9,7 +11,7 @@ use futures::{
 use serde::Serialize;
 use user::{HasUserAccess, IsUserData};
 use warp::{Filter, Rejection, Reply};
-use {reply, x_json, HasPublicKey, HasSecretKey, PublicKey, TimeStamp};
+use {reply, x_json};
 
 /// Handle get server auth data
 pub fn get_auth_info<S>(state: S) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone

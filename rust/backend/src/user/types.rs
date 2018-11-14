@@ -1,5 +1,6 @@
+use base::TimeStamp;
+use mail::MailAddress;
 use std::str::FromStr;
-use {MailAddress, TimeStamp};
 
 /// Unique user identifier
 pub type UserId = u32;

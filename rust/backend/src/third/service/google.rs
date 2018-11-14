@@ -7,8 +7,12 @@ See Google OAuth2 docs at https://developers.google.com/identity/protocols/OAuth
 */
 
 use auth::oauth2::IsOAuth2Provider;
+use base::{serde_extra::is_default, wrappers::DisplayIter, BoxFuture};
 use futures::Future;
-use serde_extra::is_default;
+use http::{
+    client::{HasHttpClient, IsHttpClient},
+    request,
+};
 use std::borrow::Cow;
 use std::fmt::{Display, Formatter, Result as FmtResult};
 use third::{IsThirdService, ThirdApiParams, ThirdError};
@@ -16,7 +20,6 @@ use user::{
     HasEmail, HasFamilyName, HasFullName, HasGender, HasGivenName, HasHomeUrl, HasImageUrl,
     HasLocale, IsAccountData,
 };
-use {BoxFuture, HasHttpClient, IsHttpClient, Separated, Space};
 
 /// Google config
 #[derive(Clone, Serialize, Deserialize)]
@@ -195,7 +198,7 @@ where
     }
 
     fn get_user_profile(&self, state: &S, access_token: Cow<str>) -> BoxFuture<A, ThirdError> {
-        use request::*;
+        use self::request::*;
 
         let client: &S::HttpClient = state.as_ref();
 
@@ -203,7 +206,7 @@ where
             client
                 .fetch(Method(
                     "GET",
-                    UrlParams(
+                    UrlWithQuery(
                         "https://www.googleapis.com/oauth2/v2/userinfo",
                         ThirdApiParams {
                             access_token: &access_token,
@@ -284,7 +287,8 @@ where
     }
 
     fn authorize_scope(&self) -> Cow<str> {
-        Separated::<_, Space>::from(&self.0.scope)
+        DisplayIter::wrap(&self.0.scope)
+            .separator(" ")
             .to_string()
             .into()
     }
@@ -293,7 +297,7 @@ where
         AuthorizeParams {
             access_type: self.0.access_type,
             include_granted_scopes: self.0.include_granted_scopes,
-            prompt: Separated::<_, Space>::from(&self.0.prompt).to_string(),
+            prompt: DisplayIter::wrap(&self.0.prompt).separator(" ").to_string(),
         }
     }
 

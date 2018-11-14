@@ -1,7 +1,7 @@
 use super::{SessionData, SessionId};
+use base::{BoxFuture, IsBackend, TimeStamp};
 use crypto::PublicKey;
 use user::{HasUserAccess, IsUserAccess, UserId};
-use {BoxFuture, IsBackend, TimeStamp};
 
 /// Access to session data
 pub trait IsSessionData {

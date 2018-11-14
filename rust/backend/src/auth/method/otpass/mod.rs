@@ -1,3 +1,11 @@
+/*!
+
+### One-time password auth
+
+This method provides one-time password auth using *email*, *mobile phone* and etc.
+
+*/
+
 mod method;
 mod traits;
 mod types;

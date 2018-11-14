@@ -1,28 +1,33 @@
+use base::TimeStamp;
 use futures::{Future, Poll};
+#[cfg(feature = "http_client")]
+use hyper::client::connect::dns::{Name, Resolve};
 use std::io::Error;
 use std::net::IpAddr;
 use std::vec::IntoIter;
-#[cfg(feature = "http_client")]
-use hyper::client::connect::dns::{Resolve, Name};
-use trust_dns_resolver::{
-    config::{ResolverConfig, ResolverOpts, LookupIpStrategy},
-    system_conf::read_system_conf,
-    lookup_ip::{LookupIpFuture},
-    Background,
-    AsyncResolver
-};
 use tokio::spawn;
-use TimeStamp;
+use trust_dns_resolver::{
+    config::{LookupIpStrategy, ResolverConfig, ResolverOpts},
+    lookup_ip::LookupIpFuture,
+    system_conf::read_system_conf,
+    AsyncResolver, Background,
+};
 
 /// Resolver servers to use
+///
+/// TODO: Add custom servers option
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ResolverServers {
+    /// Use system DNS servers
     #[serde(rename = "system")]
     System,
+    /// Use google DNS servers
     #[serde(rename = "google")]
     Google,
+    /// Use Cloudflare DNS servers
     #[serde(rename = "cloudflare")]
     Cloudflare,
+    /// Use Quad9 DNS servers
     #[serde(rename = "quad9")]
     Quad9,
 }
@@ -169,7 +174,7 @@ impl NameResolver {
         let (client, service) = AsyncResolver::new(conf, opts);
 
         spawn(service);
-        
+
         NameResolver(client)
     }
 
@@ -187,10 +192,16 @@ impl Future for AddrsFuture {
     type Error = Error;
 
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
-        self.0.poll()
-              .map(|state| state.map(|resp| resp.iter()
-                   .map(|addr| addr.into()).collect::<Vec<IpAddr>>().into_iter()))
-              .map_err(|error| error.into())
+        self.0
+            .poll()
+            .map(|state| {
+                state.map(|resp| {
+                    resp.iter()
+                        .map(|addr| addr.into())
+                        .collect::<Vec<IpAddr>>()
+                        .into_iter()
+                })
+            }).map_err(|error| error.into())
     }
 }
 

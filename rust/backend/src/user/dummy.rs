@@ -7,12 +7,12 @@ This module provides dummy implementation of user data storage backend for examp
 */
 
 use auth::otpass::EmailUserIdent;
-use dummy::DummyError;
+use base::{dummy::DummyError, BoxFuture, CanUpdateFrom, IsBackend};
 use futures::future::result;
+use mail::MailAddress;
 use std::borrow::Cow;
 use std::sync::{Arc, RwLock};
 use user::{create_password, HasPasswordHash, IsUserAccess, IsUserData, UserId};
-use {BoxFuture, CanUpdateFrom, IsBackend, MailAddress};
 
 /// User data type
 #[derive(Debug, Clone, Serialize, Deserialize)]

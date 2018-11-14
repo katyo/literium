@@ -3,7 +3,10 @@ use std::ops::{Add, Sub};
 use std::time::Duration;
 use time::{at_utc, get_time, strftime, strptime, ParseError, Timespec, Tm};
 
+/// RFC2822 time string format
 pub const RFC2822: &str = "%a, %d %b %Y %T %z";
+
+/// ISO8601 time string format
 pub const ISO8601: &str = "%Y-%m-%dT%T%z";
 
 /// Unix-time in milliseconds

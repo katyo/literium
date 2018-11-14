@@ -1,6 +1,6 @@
 use super::{MailAddress, MailMessage, MailerError};
+use base::BoxFuture;
 use futures::future;
-use BoxFuture;
 
 /// The generic mailer interface
 pub trait IsMailer {

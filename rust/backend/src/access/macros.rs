@@ -1,6 +1,6 @@
 /**
 
-## Generate [`IsUserRole`] implementation
+## Generate [`access::IsUserRole`] implementation
 
 ```ignore
 role_perm! {

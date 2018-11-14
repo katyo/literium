@@ -1,13 +1,12 @@
 use auth::{AuthError, IsAuthMethod};
+use base::{BoxFuture, CanUpdateFrom, TimeStamp};
 use futures::{
     future::{err, ok, Either},
     Future,
 };
-use user::{HasUserAccess, IsUserAccess, IsUserData};
-
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use {BoxFuture, CanUpdateFrom, TimeStamp};
+use user::{HasUserAccess, IsUserAccess, IsUserData};
 
 use super::{AuthInfo, AuthToken, IsOTPassIdent, IsOTPassSender, OTPassOptions, UserIdent};
 

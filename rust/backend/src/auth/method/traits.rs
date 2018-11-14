@@ -1,7 +1,7 @@
 use auth::AuthError;
+use base::BoxFuture;
 use serde::{de::DeserializeOwned, Serialize};
 use user::{HasUserAccess, IsUserAccess};
-use BoxFuture;
 
 /// Authentication method interface
 pub trait IsAuthMethod<S>

@@ -1,3 +1,9 @@
+/*!
+
+## Persistent configuration in TOML file
+
+*/
+
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::error::Error;
@@ -10,7 +16,9 @@ use toml::{de, from_str, ser, to_string_pretty};
 
 /**
 
-## Persistent configuration in TOML file
+## Persistent config wrapper
+
+The wrapper for holding persistent configuration in TOML file.
 
 This type wraps serializable config and provides load/save features.
 
@@ -20,7 +28,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate literium;
 
-use literium::FileConfig;
+use literium::base::FileConfig;
 use std::path::PathBuf;
 use std::fs::remove_file;
 

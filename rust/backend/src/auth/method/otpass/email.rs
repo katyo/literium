@@ -1,11 +1,11 @@
 use super::{IsOTPassIdent, IsOTPassSender};
 use auth::AuthError;
+use base::BoxFuture;
 use futures::Future;
 use mail::{
     header, HasMailer, IsMailer, MailAddress, MailBody, MailMessage, Mailbox, MultiPart, SinglePart,
 };
 use std::borrow::Cow;
-use BoxFuture;
 
 /// Email message creating
 pub trait IsEmailOTPassFormatter<S> {
@@ -63,11 +63,13 @@ pub struct EmailOTPassFormatter;
 
 impl<S> IsEmailOTPassFormatter<S> for EmailOTPassFormatter {}
 
+/// Email-based OTP auth info
 #[derive(Debug, Serialize)]
 pub struct EmailAuthInfo {
     email: bool,
 }
 
+/// Email-based OTP user ident
 #[derive(Debug, Clone, Serialize, Deserialize, Hash, PartialEq, Eq)]
 pub struct EmailUserIdent {
     pub email: MailAddress,
@@ -80,7 +82,7 @@ impl IsOTPassIdent for EmailUserIdent {
     }
 }
 
-/// One-time password sender which use email
+/// One-time password sender which uses email
 pub struct EmailOTPass<F>(F);
 
 impl<F> EmailOTPass<F> where {
