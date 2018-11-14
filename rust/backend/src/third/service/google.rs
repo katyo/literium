@@ -23,29 +23,33 @@ use user::{
 
 /// Google config
 #[derive(Clone, Serialize, Deserialize)]
-pub struct GoogleConfig {
+pub struct Config {
+    /// Scope to use
     #[serde(default = "default_scopes")]
-    pub scope: Vec<GoogleScope>,
+    pub scope: Vec<Scope>,
 
+    /// Access type (offline by default)
     #[serde(default)]
-    pub access_type: GoogleAccessType,
+    pub access_type: AccessType,
 
+    /// Include previously requested grants
     #[serde(default)]
     pub include_granted_scopes: bool,
 
+    /// Prompts to use
     #[serde(default)]
-    pub prompt: Vec<GooglePrompt>,
+    pub prompt: Vec<Prompt>,
 }
 
-fn default_scopes() -> Vec<GoogleScope> {
-    vec![GoogleScope::UserInfoProfile, GoogleScope::UserInfoEmail]
+fn default_scopes() -> Vec<Scope> {
+    vec![Scope::UserInfoProfile, Scope::UserInfoEmail]
 }
 
-impl Default for GoogleConfig {
+impl Default for Config {
     fn default() -> Self {
         Self {
             scope: default_scopes(),
-            access_type: GoogleAccessType::default(),
+            access_type: AccessType::default(),
             include_granted_scopes: false,
             prompt: Vec::new(),
         }
@@ -56,7 +60,7 @@ impl Default for GoogleConfig {
 ///
 /// TODO: Add other scopes
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-pub enum GoogleScope {
+pub enum Scope {
     /// Know the list of people in your circles, your age range, and language
     ///
     /// `https://www.googleapis.com/auth/plus.login`
@@ -79,9 +83,9 @@ pub enum GoogleScope {
     UserInfoProfile,
 }
 
-impl Display for GoogleScope {
+impl Display for Scope {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        use self::GoogleScope::*;
+        use self::Scope::*;
         f.write_str(match self {
             PlusLogin => "https://www.googleapis.com/auth/plus.login",
             PlusMe => "https://www.googleapis.com/auth/plus.me",
@@ -93,22 +97,22 @@ impl Display for GoogleScope {
 
 /// Google access type
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-pub enum GoogleAccessType {
+pub enum AccessType {
     #[serde(rename = "online")]
     Online,
     #[serde(rename = "offline")]
     Offline,
 }
 
-impl Default for GoogleAccessType {
+impl Default for AccessType {
     fn default() -> Self {
-        GoogleAccessType::Online
+        AccessType::Online
     }
 }
 
 /// Google prompt
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
-pub enum GooglePrompt {
+pub enum Prompt {
     #[serde(rename = "none")]
     None,
     #[serde(rename = "consent")]
@@ -117,15 +121,15 @@ pub enum GooglePrompt {
     SelectAccount,
 }
 
-impl Default for GooglePrompt {
+impl Default for Prompt {
     fn default() -> Self {
-        GooglePrompt::None
+        Prompt::None
     }
 }
 
-impl Display for GooglePrompt {
+impl Display for Prompt {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        use self::GooglePrompt::*;
+        use self::Prompt::*;
         f.write_str(match self {
             None => "none",
             Consent => "consent",
@@ -140,7 +144,7 @@ impl Display for GooglePrompt {
 #[derive(Serialize)]
 pub struct AuthorizeParams {
     #[serde(skip_serializing_if = "is_default")]
-    access_type: GoogleAccessType,
+    access_type: AccessType,
 
     #[serde(skip_serializing_if = "is_default")]
     include_granted_scopes: bool,
@@ -150,16 +154,16 @@ pub struct AuthorizeParams {
 }
 
 /// Google service
-pub struct GoogleService(GoogleConfig);
+pub struct Service(Config);
 
-impl GoogleService {
-    pub fn new(config: GoogleConfig) -> Self {
-        GoogleService(config)
+impl Service {
+    pub fn new(config: Config) -> Self {
+        Service(config)
     }
 }
 
 #[derive(Deserialize)]
-struct GoogleUserProfile {
+struct UserProfile {
     id: String,
     #[serde(default)]
     email: String,
@@ -179,7 +183,7 @@ struct GoogleUserProfile {
     locale: String,
 }
 
-impl<S, A> IsThirdService<S, A> for GoogleService
+impl<S, A> IsThirdService<S, A> for Service
 where
     S: HasHttpClient,
     A: IsAccountData
@@ -208,16 +212,14 @@ where
                     "GET",
                     UrlWithQuery(
                         "https://www.googleapis.com/oauth2/v2/userinfo",
-                        ThirdApiParams {
-                            access_token: &access_token,
-                        },
+                        ThirdApiParams::new(&access_token),
                         Header("Accept", "application/json", NoBody),
                     ),
                 )).map_err(|error| {
                     error!("Error when fetching user profile: {}", error);
                     ThirdError::ServiceError
                 }).map(JsonBody::into_inner)
-                .map(|data: GoogleUserProfile| {
+                .map(|data: UserProfile| {
                     let mut account = A::create_new(data.id);
 
                     if !data.name.is_empty() {
@@ -266,7 +268,7 @@ where
     }
 }
 
-impl<S, A> IsOAuth2Provider<S, A> for GoogleService
+impl<S, A> IsOAuth2Provider<S, A> for Service
 where
     A: IsAccountData
         + HasFullName

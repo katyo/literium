@@ -192,6 +192,12 @@ pub trait HasCompany {
     fn set_company<T: Into<String>>(&mut self, new: Option<T>);
 }
 
+/// Account has position field
+pub trait HasPosition {
+    fn get_position(&self) -> Option<&str>;
+    fn set_position<T: Into<String>>(&mut self, new: Option<T>);
+}
+
 /// Account has email field
 pub trait HasEmail {
     fn get_email(&self) -> Option<&MailAddress>;

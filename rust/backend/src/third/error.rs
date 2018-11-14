@@ -10,6 +10,8 @@ pub enum ThirdError {
     ServiceError,
     /// Access token outdated and not refresh token available
     BadToken,
+    /// Invalid user (blocked or blacklisted)
+    BadUser,
 }
 
 impl Error for ThirdError {}
@@ -20,7 +22,8 @@ impl Display for ThirdError {
         match self {
             BackendError => f.write_str("Backend error"),
             ServiceError => f.write_str("Service error"),
-            BadToken => f.write_str("BadToken"),
+            BadToken => f.write_str("Bad token"),
+            BadUser => f.write_str("Bad user"),
         }
     }
 }

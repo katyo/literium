@@ -22,16 +22,18 @@ use user::{
 
 /// Github config
 #[derive(Clone, Serialize, Deserialize)]
-pub struct GithubConfig {
+pub struct Config {
+    /// Scope to use
     #[serde(default = "default_scope")]
-    pub scope: Vec<GithubScope>,
+    pub scope: Vec<Scope>,
 
+    /// Allow signup
     #[serde(default = "default_allow_signup")]
     pub allow_signup: bool,
 }
 
-fn default_scope() -> Vec<GithubScope> {
-    vec![GithubScope::ReadUser, GithubScope::UserEmail]
+fn default_scope() -> Vec<Scope> {
+    vec![Scope::ReadUser, Scope::UserEmail]
 }
 
 fn default_allow_signup() -> bool {
@@ -42,7 +44,7 @@ fn is_default_allow_signup(v: &bool) -> bool {
     v == &true
 }
 
-impl Default for GithubConfig {
+impl Default for Config {
     fn default() -> Self {
         Self {
             scope: default_scope(),
@@ -55,7 +57,7 @@ impl Default for GithubConfig {
 ///
 /// TODO: Add other scopes
 #[derive(Clone, Copy, Serialize, Deserialize)]
-pub enum GithubScope {
+pub enum Scope {
     /// Grants read/write access to profile info only
     ///
     /// Note that this scope includes `user:email` and `user:follow`.
@@ -72,9 +74,9 @@ pub enum GithubScope {
     UserFollow,
 }
 
-impl Display for GithubScope {
+impl Display for Scope {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        use self::GithubScope::*;
+        use self::Scope::*;
         f.write_str(match self {
             User => "user",
             ReadUser => "read:user",
@@ -91,16 +93,16 @@ pub struct AuthorizeParams {
 }
 
 /// Github service
-pub struct GithubService(GithubConfig);
+pub struct Service(Config);
 
-impl GithubService {
-    pub fn new(config: GithubConfig) -> Self {
-        GithubService(config)
+impl Service {
+    pub fn new(config: Config) -> Self {
+        Service(config)
     }
 }
 
 #[derive(Deserialize)]
-struct GithubUserProfile {
+struct UserProfile {
     #[serde(default)]
     id: u64,
     #[serde(default)]
@@ -126,7 +128,7 @@ struct GithubUserProfile {
     created_at: TimeStamp,
 }
 
-impl<S, A> IsThirdService<S, A> for GithubService
+impl<S, A> IsThirdService<S, A> for Service
 where
     S: HasHttpClient,
     A: IsAccountData
@@ -156,16 +158,14 @@ where
                     "GET",
                     UrlWithQuery(
                         "https://api.github.com/user",
-                        ThirdApiParams {
-                            access_token: &access_token,
-                        },
+                        ThirdApiParams::new(&access_token),
                         Header("Accept", "application/json", NoBody),
                     ),
                 )).map_err(|error| {
                     error!("Error when fetching user profile: {}", error);
                     ThirdError::ServiceError
                 }).map(JsonBody::into_inner)
-                .map(|data: GithubUserProfile| {
+                .map(|data: UserProfile| {
                     let mut account = A::create_new(data.id.to_string());
 
                     account.set_nick_name(Some(data.login));
@@ -216,7 +216,7 @@ where
     }
 }
 
-impl<S, A> IsOAuth2Provider<S, A> for GithubService
+impl<S, A> IsOAuth2Provider<S, A> for Service
 where
     A: IsAccountData
         + HasNickName
