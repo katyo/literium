@@ -69,14 +69,22 @@ where
 /// Server-side user auth data
 pub trait IsUserAuth<S>
 where
-    Self: Send,
+    Self: Send + Sized,
     S: HasSessionAccess + HasUserAccess,
 {
     /// Create auth data from session and user data
+    ///
+    /// This should returns user auth when auth header is present and has valid auth info (i.e. in case of authorized access).
     fn new_user_auth(
         session: &<<S as HasSessionAccess>::SessionAccess as IsSessionAccess>::Session,
         user: &<<S as HasUserAccess>::UserAccess as IsUserAccess>::User,
     ) -> Self;
+
+    /// Create auth data for unauthorized access
+    ///
+    /// This may returns user auth when auth header is missing (i.e. in case of unauthorized access).
+    /// If this method returns `None` then `x_auth()` rejects with `FORBIDDEN` error.
+    fn new_none_auth() -> Option<Self>;
 }
 
 /// State has server-side user auth data

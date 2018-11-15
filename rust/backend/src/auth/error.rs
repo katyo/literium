@@ -10,6 +10,10 @@ pub enum AuthError {
     BackendError,
     /// Third service error
     ServiceError,
+    /// Missing auth header
+    MissingAuth,
+    /// Bad auth data
+    BadAuth,
     /// Lost session
     LostSession,
     /// Invalid session
@@ -36,7 +40,8 @@ impl AuthError {
             let code = match error {
                 BackendError | ServiceError => StatusCode::INTERNAL_SERVER_ERROR,
                 BadMethod | BadService => StatusCode::BAD_REQUEST,
-                BadSession | BadUser | LostSession | Outdated | BadIdent => StatusCode::FORBIDDEN,
+                BadSession | BadUser | LostSession | Outdated | BadIdent | MissingAuth
+                | BadAuth => StatusCode::FORBIDDEN,
                 NeedRetry => StatusCode::CREATED,
             };
             Ok(with_status(error.to_string(), code))
@@ -54,6 +59,8 @@ impl Display for AuthError {
         match self {
             BackendError => f.write_str("Backend error"),
             ServiceError => f.write_str("Service error"),
+            MissingAuth => f.write_str("Missing auth"),
+            BadAuth => f.write_str("Bad auth data"),
             LostSession => f.write_str("Lost session"),
             BadSession => f.write_str("Bad session"),
             BadUser => f.write_str("Bad user"),

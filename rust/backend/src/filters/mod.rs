@@ -179,6 +179,7 @@ fn main() {
         .and(x_auth(state.clone()))
         .map(|user: UserAuth| user.name.clone());
 
+    // auth header is present
     let name = request()
         .method("GET")
         .path("/sensible/data")
@@ -187,6 +188,15 @@ fn main() {
         .unwrap();
 
     assert_eq!(name, user.name);
+
+    // missing auth header
+    let name = request()
+        .method("GET")
+        .path("/sensible/data")
+        .filter(&app)
+        .unwrap();
+
+    assert_eq!(&name, &"guest");
 }
 ```
 

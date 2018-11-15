@@ -122,6 +122,14 @@ where
             name: user.get_user_name().into(),
         }
     }
+
+    fn new_none_auth() -> Option<Self> {
+        Some(UserAuth {
+            user: 0,
+            sess: 0,
+            name: "guest".into(),
+        })
+    }
 }
 
 /// User info type
