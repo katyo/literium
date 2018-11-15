@@ -1,3 +1,5 @@
+use base::EmptyMap;
+
 #[derive(Serialize)]
 pub struct ThirdApiParams<'a, T> {
     /// Access token
@@ -8,14 +10,11 @@ pub struct ThirdApiParams<'a, T> {
     pub service_params: T,
 }
 
-#[derive(Serialize)]
-pub struct ThirdApiParamsEmpty {}
-
-impl<'a> ThirdApiParams<'a, ThirdApiParamsEmpty> {
+impl<'a> ThirdApiParams<'a, EmptyMap> {
     pub fn new(access_token: &'a str) -> Self {
         Self {
             access_token,
-            service_params: ThirdApiParamsEmpty {},
+            service_params: EmptyMap,
         }
     }
 
