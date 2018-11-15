@@ -110,11 +110,11 @@ impl IsUserRole for UserRole {
 
  */
 
-mod types;
+mod traits;
 #[macro_use]
 mod macros;
 
-pub use self::types::{HasUserRoles, IsUserRole, IsUserRoles};
+pub use self::traits::{HasUserRoles, IsUserRole, IsUserRoles};
 
 #[cfg(test)]
 mod test {
