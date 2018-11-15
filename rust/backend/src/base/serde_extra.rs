@@ -94,7 +94,7 @@ pub mod timestamp {
      */
 
     use super::*;
-    use base::timestamp::{TimeStamp, ISO8601, RFC2822};
+    use base::timestamp::TimeStamp;
 
     pub mod iso8601 {
         /*!
@@ -110,7 +110,7 @@ pub mod timestamp {
             S: Serializer,
             T: AsBinary,
         {
-            let dst = ts.format(&ISO8601).map_err(ser::Error::custom)?;
+            let dst = ts.format(&TimeStamp::ISO8601).map_err(ser::Error::custom)?;
             serializer.serialize_str(&dst)
         }
 
@@ -119,7 +119,7 @@ pub mod timestamp {
             D: Deserializer<'de>,
         {
             let src: &str = Deserialize::deserialize(deserializer)?;
-            TimeStamp::parse(&src, &ISO8601).map_err(de::Error::custom)
+            TimeStamp::parse(&src, &TimeStamp::ISO8601).map_err(de::Error::custom)
         }
     }
 
@@ -137,7 +137,7 @@ pub mod timestamp {
             S: Serializer,
             T: AsBinary,
         {
-            let dst = ts.format(&RFC2822).map_err(ser::Error::custom)?;
+            let dst = ts.format(&TimeStamp::RFC2822).map_err(ser::Error::custom)?;
             serializer.serialize_str(&dst)
         }
 
@@ -146,7 +146,7 @@ pub mod timestamp {
             D: Deserializer<'de>,
         {
             let src: &str = Deserialize::deserialize(deserializer)?;
-            TimeStamp::parse(&src, &RFC2822).map_err(de::Error::custom)
+            TimeStamp::parse(&src, &TimeStamp::RFC2822).map_err(de::Error::custom)
         }
     }
 }
