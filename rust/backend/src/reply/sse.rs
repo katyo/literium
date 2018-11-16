@@ -1,3 +1,4 @@
+use crypto::{CanEncrypt, HasPublicKey};
 use futures::Stream;
 use http::StatusCode;
 use httplib::Response;
@@ -293,6 +294,37 @@ where
         .map_err(ServerEventError::StreamError)
         .and_then(|event| {
             to_string(&event.data)
+                .map_err(ServerEventError::CodingError)
+                .map(|data| ServerEvent {
+                    id: event.id,
+                    event: event.event,
+                    retry: event.retry,
+                    data,
+                })
+        }))
+}
+
+/** Server-sent events reply for BASE64 encoded sealed JSON data
+
+This function converts stream of server events into reply.
+
+The event data represented as JSON so you should provide `Serialize` trait impl for it.
+
+ */
+pub fn sse_x_json<N, I, T, S, E, K>(stream: S, state: K) -> impl Reply
+where
+    N: Display + Send + 'static,
+    I: Display + Send + 'static,
+    T: Serialize,
+    S: Stream<Item = ServerEvent<N, I, T>, Error = E> + Send + 'static,
+    E: Error + Send + Sync + 'static,
+    K: HasPublicKey + Send + Sync + 'static,
+{
+    sse(stream
+        .map_err(ServerEventError::StreamError)
+        .and_then(move |event| {
+            (state.as_ref() as &K::PublicKey)
+                .seal_json_b64(&event.data)
                 .map_err(ServerEventError::CodingError)
                 .map(|data| ServerEvent {
                     id: event.id,
