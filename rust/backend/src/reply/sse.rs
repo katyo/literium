@@ -1,3 +1,4 @@
+use super::ReplyStreamError;
 use crypto::{CanEncrypt, HasPublicKey};
 use futures::Stream;
 use http::StatusCode;
@@ -6,7 +7,7 @@ use hyper::Body;
 use serde::Serialize;
 use serde_json::to_string;
 use std::error::Error;
-use std::fmt::{Debug, Display, Formatter, Result as FmtResult, Write};
+use std::fmt::{Display, Formatter, Result as FmtResult, Write};
 use std::time::Duration;
 use warp::Reply;
 
@@ -191,36 +192,6 @@ where
         .unwrap()
 }
 
-/** Server stream error wrapper
-
-This type helps avoid boxing of error values.
- */
-#[derive(Debug)]
-pub enum ServerEventError<SE, CE> {
-    StreamError(SE),
-    CodingError(CE),
-}
-
-impl<SE, CE> Error for ServerEventError<SE, CE>
-where
-    SE: Debug + Display,
-    CE: Debug + Display,
-{}
-
-impl<SE, CE> Display for ServerEventError<SE, CE>
-where
-    SE: Display,
-    CE: Display,
-{
-    fn fmt(&self, f: &mut Formatter) -> FmtResult {
-        use self::ServerEventError::*;
-        match self {
-            StreamError(error) => error.fmt(f),
-            CodingError(error) => error.fmt(f),
-        }
-    }
-}
-
 /** Server-sent events reply for JSON data
 
 This function converts stream of server events into reply.
@@ -291,10 +262,10 @@ where
     E: Error + Send + Sync + 'static,
 {
     sse(stream
-        .map_err(ServerEventError::StreamError)
+        .map_err(ReplyStreamError::StreamError)
         .and_then(|event| {
             to_string(&event.data)
-                .map_err(ServerEventError::CodingError)
+                .map_err(ReplyStreamError::CodingError)
                 .map(|data| ServerEvent {
                     id: event.id,
                     event: event.event,
@@ -321,11 +292,11 @@ where
     K: HasPublicKey + Send + Sync + 'static,
 {
     sse(stream
-        .map_err(ServerEventError::StreamError)
+        .map_err(ReplyStreamError::StreamError)
         .and_then(move |event| {
             (state.as_ref() as &K::PublicKey)
                 .seal_json_b64(&event.data)
-                .map_err(ServerEventError::CodingError)
+                .map_err(ReplyStreamError::CodingError)
                 .map(|data| ServerEvent {
                     id: event.id,
                     event: event.event,
