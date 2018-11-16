@@ -240,7 +240,7 @@ use futures::stream::iter_ok;
 use warp::{get2, path, test::request, Filter};
 use literium::{
     base::dummy::DummyError,
-    reply::{ServerEvent, ServerEventError, sse_json},
+    reply::{ServerEvent, sse_json},
 };
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -251,7 +251,7 @@ struct ChatMsg {
 
 fn main() {
     let app = get2().and(path("sse")).map(|| {
-        let events = iter_ok::<_, ServerEventError<DummyError, _>>(vec![
+        let events = iter_ok::<_, DummyError>(vec![
             ServerEvent::from(ChatMsg { text: "some message".into(), time: 1234567890 })
                 .with_id(45)
                 .with_name("chat"),
