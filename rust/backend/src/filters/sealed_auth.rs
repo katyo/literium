@@ -10,11 +10,143 @@ use crypto::{CanDecrypt, HasSecretKey};
 use user::{HasUserAccess, IsUserAccess};
 use warp::{any, header, reject::custom, Filter, Rejection};
 
-/// Get user identification from header
-///
-/// Requests should contain base64 encoded sealed JSON auth data in `X-Auth` header.
-///
-/// This function extracts auth data, checks session and returns user data which can be used to check permissions and etc.
+/** Get user identification from header
+
+Requests should contain BASE64 encoded sealed JSON auth data in `X-Auth` header.
+
+This function extracts auth data, checks session and returns user data which can be used to check permissions and etc.
+
+```
+extern crate futures;
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate literium;
+extern crate warp;
+#[macro_use]
+extern crate log;
+extern crate pretty_env_logger;
+
+use futures::Future;
+use literium::{
+    user::{
+        dummy::{UserData, Users},
+        HasUserAccess,
+    },
+    auth::{
+        dummy::{Sessions, UserAuth},
+        AuthData, HasUserAuth, HasSessionAccess, IsSessionAccess,
+    },
+    x_auth,
+    crypto::{
+        CanEncrypt, CryptoKeys, HasSecretKey, PublicKey,
+    },
+};
+use std::sync::Arc;
+use warp::{get2, path, test::request, Filter};
+
+#[derive(Clone)]
+pub struct State {
+    config: Arc<CryptoKeys>,
+    users: Users,
+    sessions: Sessions,
+}
+
+impl AsRef<CryptoKeys> for State {
+    fn as_ref(&self) -> &CryptoKeys {
+        &self.config
+    }
+}
+
+impl HasSecretKey for State {
+    type SecretKey = CryptoKeys;
+}
+
+impl AsRef<Users> for State {
+    fn as_ref(&self) -> &Users {
+        &self.users
+    }
+}
+
+impl HasUserAccess for State {
+    type UserAccess = Users;
+}
+
+impl AsRef<Sessions> for State {
+    fn as_ref(&self) -> &Sessions {
+        &self.sessions
+    }
+}
+
+impl HasSessionAccess for State {
+    type SessionAccess = Sessions;
+}
+
+impl HasUserAuth for State {
+    type UserAuth = UserAuth;
+}
+
+fn main() {
+    pretty_env_logger::init();
+
+    let server_keys = CryptoKeys::default();
+
+    let client_keys = CryptoKeys::default();
+
+    let user = UserData::new(1, "yumi");
+
+    let users = Users::new().with_user(user.clone());
+
+    let sessions = Sessions::new();
+
+    let session = sessions
+        .new_user_session(user.id, (client_keys.as_ref() as &PublicKey).clone())
+        .wait()
+        .unwrap();
+
+    let state = State {
+        config: Arc::new(server_keys),
+        users,
+        sessions,
+    };
+
+    let auth_data = AuthData {
+        user: user.id,
+        sess: 1,
+        token: session.token.clone(),
+        serno: session.serno,
+    };
+    let auth_header = (&state.as_ref() as &CryptoKeys).seal_json_b64(&auth_data).unwrap();
+
+    let app = get2()
+        .and(path("sensible"))
+        .and(path("data"))
+        // get auth
+        .and(x_auth(state.clone()))
+        .map(|user: UserAuth| user.name.clone());
+
+    // auth header is present
+    let name = request()
+        .method("GET")
+        .path("/sensible/data")
+        .header("x-auth", auth_header)
+        .filter(&app)
+        .unwrap();
+
+    assert_eq!(name, user.name);
+
+    // missing auth header
+    let name = request()
+        .method("GET")
+        .path("/sensible/data")
+        .filter(&app)
+        .unwrap();
+
+    assert_eq!(&name, &"guest");
+}
+```
+
+*/
 pub fn base64_sealed_auth<State>(
     state: State,
 ) -> impl Filter<Extract = (State::UserAuth,), Error = Rejection> + Clone

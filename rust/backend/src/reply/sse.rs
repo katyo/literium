@@ -11,6 +11,11 @@ use warp::Reply;
 
 const MIME_TYPE: &str = "text/event-stream";
 
+/** Server event type
+
+You should use [`From`] or [`Into`] to create server events.
+
+ */
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ServerEvent<N, I, T> {
     event: Option<N>,
@@ -31,6 +36,7 @@ impl<T> From<T> for ServerEvent<(), (), T> {
 }
 
 impl<N, I, T> ServerEvent<N, I, T> {
+    /// Add event name
     pub fn with_name<K>(self, name: K) -> ServerEvent<K, I, T> {
         ServerEvent {
             event: Some(name),
@@ -40,6 +46,7 @@ impl<N, I, T> ServerEvent<N, I, T> {
         }
     }
 
+    /// Add event id
     pub fn with_id<X>(self, id: X) -> ServerEvent<N, X, T> {
         ServerEvent {
             event: self.event,
@@ -49,6 +56,7 @@ impl<N, I, T> ServerEvent<N, I, T> {
         }
     }
 
+    /// Add reply timeout
     pub fn with_retry(self, retry: Duration) -> Self {
         ServerEvent {
             event: self.event,
@@ -117,10 +125,55 @@ where
     }
 }
 
-/**
+/** Server-sent events reply
 
-Server-sent events reply
+This function converts stream of server events into reply.
 
+```
+extern crate futures;
+extern crate warp;
+extern crate literium;
+
+use std::time::Duration;
+use futures::stream::iter_ok;
+use warp::{get2, path, test::request, Filter};
+use literium::{
+    base::dummy::DummyError,
+    reply::{ServerEvent, sse},
+};
+
+fn main() {
+    let app = get2().and(path("sse")).map(|| {
+        let events = iter_ok::<_, DummyError>(vec![
+            ServerEvent::from("some message")
+                .with_id(12)
+                .with_name("chat"),
+            ServerEvent::from("other message\nwith next line")
+                .with_id(13)
+                .with_name("chat")
+                .with_retry(Duration::from_millis(3020)),
+        ]);
+        sse(events)
+    });
+
+    let res = request().method("GET").path("/sse").reply(&app).into_body();
+
+    assert_eq!(
+        res,
+        r#"event: chat
+data: some message
+id: 12
+
+event: chat
+retry: 3020
+data: other message
+data: with next line
+id: 13
+
+"#
+    );
+}
+```
  */
 pub fn sse<N, I, T, S, E>(stream: S) -> impl Reply
 where
@@ -137,9 +190,10 @@ where
         .unwrap()
 }
 
-/// Server stream error wrapper
-///
-/// This type helps avoid boxing of error values.
+/** Server stream error wrapper
+
+This type helps avoid boxing of error values.
+ */
 #[derive(Debug)]
 pub enum ServerEventError<SE, CE> {
     StreamError(SE),
@@ -166,9 +220,65 @@ where
     }
 }
 
-/**
+/** Server-sent events reply for JSON data
 
-Server-sent events reply for JSON data
+This function converts stream of server events into reply.
+
+The event data represented as JSON so you should provide `Serialize` trait impl for it.
+
+```
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate futures;
+extern crate warp;
+extern crate literium;
+
+use std::time::Duration;
+use futures::stream::iter_ok;
+use warp::{get2, path, test::request, Filter};
+use literium::{
+    base::dummy::DummyError,
+    reply::{ServerEvent, ServerEventError, sse_json},
+};
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+struct ChatMsg {
+    text: String,
+    time: u32,
+}
+
+fn main() {
+    let app = get2().and(path("sse")).map(|| {
+        let events = iter_ok::<_, ServerEventError<DummyError, _>>(vec![
+            ServerEvent::from(ChatMsg { text: "some message".into(), time: 1234567890 })
+                .with_id(45)
+                .with_name("chat"),
+            ServerEvent::from(ChatMsg { text: "next message".into(), time: 1234569708 })
+                .with_id(47)
+                .with_name("chat")
+                .with_retry(Duration::from_millis(5)),
+        ]);
+        sse_json(events)
+    });
+
+    let res = request().method("GET").path("/sse").reply(&app).into_body();
+
+    assert_eq!(
+        res,
+        r#"event: chat
+data: {"text":"some message","time":1234567890}
+id: 45
+
+event: chat
+retry: 5
+data: {"text":"next message","time":1234569708}
+id: 47
+
+"#
+    );
+}
+```
 
  */
 pub fn sse_json<N, I, T, S, E>(stream: S) -> impl Reply

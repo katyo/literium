@@ -6,9 +6,54 @@ use warp::{reject::custom, Reply};
 
 const MIME_TYPE: &str = "application/x-base64-sealed-json";
 
-/// Reply with base64 encoded sealed JSON body
-///
-/// `Content-Type` header will be set to "application/x-base64-sealed-json"
+/** Reply with BASE64 encoded sealed JSON body
+
+`Content-Type` header will be set to "application/x-base64-sealed-json".
+
+```
+extern crate serde;
+#[macro_use]
+extern crate serde_derive;
+extern crate literium;
+extern crate warp;
+
+use literium::{reply};
+use literium::crypto::{CanDecrypt, CryptoKeys};
+use warp::{Filter, get2, path, any, test::request};
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+struct MyData {
+    field: String,
+}
+
+fn main() {
+    let keys = CryptoKeys::default();
+
+    let src = MyData { field: "abcdef".into() };
+
+    let app = get2()
+        .and(path("sensible"))
+        .and(path("data"))
+        // reply with encrypted body
+        .map({
+             let src = src.clone();
+             let keys = keys.clone();
+             move || reply::x_json(&src, &keys)
+        });
+
+    let dst: MyData = request()
+        .method("GET")
+        .path("/sensible/data")
+        .reply(&app)
+        .map(|body| keys.open_json_b64(&body))
+        .into_body()
+        .unwrap();
+
+    assert_eq!(dst, src);
+}
+```
+
+*/
 pub fn base64_sealed_json<T, S>(data: T, state: S) -> impl Reply
 where
     T: Serialize,
