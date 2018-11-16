@@ -8,6 +8,8 @@ const MIME_TYPE: &str = "application/x-base64-sealed-json";
 
 /** Reply with BASE64 encoded sealed JSON body
 
+This function converts serializable data into reply with BASE64 encoded sealed JSON body.
+
 `Content-Type` header will be set to "application/x-base64-sealed-json".
 
 ```
@@ -17,9 +19,11 @@ extern crate serde_derive;
 extern crate literium;
 extern crate warp;
 
-use literium::{reply};
-use literium::crypto::{CanDecrypt, CryptoKeys};
 use warp::{Filter, get2, path, any, test::request};
+use literium::{
+    reply,
+    crypto::{CanDecrypt, CryptoKeys}
+};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 struct MyData {
