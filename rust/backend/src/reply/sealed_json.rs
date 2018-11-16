@@ -54,7 +54,7 @@ fn main() {
 ```
 
 */
-pub fn base64_sealed_json<T, S>(data: T, state: S) -> impl Reply
+pub fn x_json<T, S>(data: T, state: S) -> impl Reply
 where
     T: Serialize,
     S: HasPublicKey,

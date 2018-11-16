@@ -16,6 +16,3 @@ mod sse;
 
 pub use self::sealed_json::*;
 pub use self::sse::*;
-
-/// Shortcut for [`reply::base64_sealed_json`]
-pub use self::base64_sealed_json as x_json;

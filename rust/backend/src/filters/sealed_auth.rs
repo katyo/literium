@@ -147,7 +147,7 @@ fn main() {
 ```
 
 */
-pub fn base64_sealed_auth<State>(
+pub fn x_auth<State>(
     state: State,
 ) -> impl Filter<Extract = (State::UserAuth,), Error = Rejection> + Clone
 where

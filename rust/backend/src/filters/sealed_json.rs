@@ -79,11 +79,10 @@ fn main() {
 ```
 
 */
-pub fn base64_sealed_json<T, S>(state: S) -> impl Filter<Extract = (T,), Error = Rejection> + Clone
+pub fn x_json<T, S>(state: S) -> impl Filter<Extract = (T,), Error = Rejection> + Clone
 where
     T: DeserializeOwned + Send,
     S: HasSecretKey + Send + Clone,
-    //S::KeyData: AsRef<PublicKey> + AsRef<SecretKey>,
 {
     let state = any().map(move || state.clone());
 
@@ -106,16 +105,4 @@ where
                 .open_json_b64(body.bytes())
                 .map_err(custom)
         })
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use crypto::{CanKeygen, CryptoKeys};
-
-    #[test]
-    fn test() {
-        let keys = CryptoKeys::gen_key();
-        let _h = any().and(base64_sealed_json::<u32, _>(keys));
-    }
 }
