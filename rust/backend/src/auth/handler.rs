@@ -14,18 +14,21 @@ use warp::{Filter, Rejection, Reply};
 use {reply, x_json};
 
 /// Handle get server auth data
-pub fn get_auth_info<S>(state: S) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
+pub fn get_auth_info<S>(
+    state: &S,
+) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
-    S: HasPublicKey + HasUserAccess + HasAuthMethod + Send + Sync + Clone + 'static,
+    S: HasPublicKey + HasUserAccess + HasAuthMethod + Send + Sync + Clone,
     S::PublicKey: AsRef<PublicKey>,
     S::AuthMethod: IsAuthMethod<S>,
 {
-    warp::get2().map(move || warp::reply::json(&get_auth_info_fn(state.clone())))
+    let state = state.clone();
+    warp::get2().map(move || warp::reply::json(&get_auth_info_fn(&state)))
 }
 
-fn get_auth_info_fn<S>(state: S) -> AuthInfo<<S::AuthMethod as IsAuthMethod<S>>::AuthInfo>
+fn get_auth_info_fn<S>(state: &S) -> AuthInfo<<S::AuthMethod as IsAuthMethod<S>>::AuthInfo>
 where
-    S: HasPublicKey + HasUserAccess + HasAuthMethod + Send + Sync + Clone + 'static,
+    S: HasPublicKey + HasUserAccess + HasAuthMethod,
     S::PublicKey: AsRef<PublicKey>,
     S::AuthMethod: IsAuthMethod<S>,
 {
@@ -36,7 +39,7 @@ where
 }
 
 /// Handle auth requests
-pub fn do_user_auth<S>(state: S) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
+pub fn do_user_auth<S>(state: &S) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
     S: HasPublicKey
         + HasSecretKey
@@ -46,23 +49,24 @@ where
         + HasAuthMethod
         + Send
         + Sync
-        + Clone
-        + 'static,
+        + Clone,
     S::AuthMethod: IsAuthMethod<S>,
     S::UserInfo: Serialize + Send,
     <S::SessionAccess as IsSessionAccess>::Session: From<SessionData>,
 {
+    let state = state.clone();
+
     warp::post2()
-        .and(x_json(state.clone()))
+        .and(x_json(&state))
         .and_then(move |req| {
-            do_user_auth_fn(state.clone(), req)
-                .map(|data| reply::x_json(data, state.clone()))
+            do_user_auth_fn(&state, req)
+                .map(|data| reply::x_json(&data, &state))
                 .map_err(warp::reject::custom)
         }).recover(AuthError::recover)
 }
 
 fn do_user_auth_fn<S>(
-    state: S,
+    state: &S,
     req: AuthRequest<<S::AuthMethod as IsAuthMethod<S>>::UserIdent>,
 ) -> impl Future<Item = AuthResponse<S::UserInfo>, Error = AuthError>
 where
@@ -73,8 +77,7 @@ where
         + HasAuthMethod
         + Send
         + Sync
-        + Clone
-        + 'static,
+        + Clone,
     S::AuthMethod: IsAuthMethod<S>,
     S::UserInfo: Serialize + Send,
     <S::SessionAccess as IsSessionAccess>::Session: From<SessionData>,
@@ -83,6 +86,7 @@ where
         return Either::A(err(AuthError::Outdated));
     }
 
+    let state = state.clone();
     let ctime = req.ctime;
     let pbkey = req.pbkey;
 

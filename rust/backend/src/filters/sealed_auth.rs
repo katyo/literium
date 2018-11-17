@@ -122,7 +122,7 @@ fn main() {
         .and(path("sensible"))
         .and(path("data"))
         // get auth
-        .and(x_auth(state.clone()))
+        .and(x_auth(&state))
         .map(|user: UserAuth| user.name.clone());
 
     // auth header is present
@@ -147,11 +147,9 @@ fn main() {
 ```
 
 */
-pub fn x_auth<State>(
-    state: State,
-) -> impl Filter<Extract = (State::UserAuth,), Error = Rejection> + Clone
+pub fn x_auth<S>(state: &S) -> impl Filter<Extract = (S::UserAuth,), Error = Rejection> + Clone
 where
-    State: HasSecretKey + HasUserAccess + HasSessionAccess + HasUserAuth + Send + Clone,
+    S: HasSecretKey + HasUserAccess + HasSessionAccess + HasUserAuth + Send + Clone,
 {
     let state = state.clone();
     header("x-auth")
@@ -159,24 +157,25 @@ where
         .or(any().map(|| None))
         .unify()
         .and_then(move |auth: Option<String>| {
-            auth.map(|auth| Either::A(proc_user_auth(state.clone(), auth)))
+            auth.map(|auth| Either::A(proc_user_auth(&state, auth)))
                 .unwrap_or_else(|| {
                     Either::B(result(
-                        State::UserAuth::new_none_auth().ok_or_else(|| AuthError::MissingAuth),
+                        S::UserAuth::new_none_auth().ok_or_else(|| AuthError::MissingAuth),
                     ))
                 }).map_err(custom)
         })
 }
 
-fn proc_user_auth<State>(
-    state: State,
+fn proc_user_auth<S>(
+    state: &S,
     auth: String,
-) -> impl Future<Item = State::UserAuth, Error = AuthError> + Send
+) -> impl Future<Item = S::UserAuth, Error = AuthError> + Send
 where
-    State: HasSecretKey + HasUserAccess + HasSessionAccess + HasUserAuth + Send + Clone,
+    S: HasSecretKey + HasUserAccess + HasSessionAccess + HasUserAuth + Send + Clone,
 {
+    let state = state.clone();
     result(
-        (state.as_ref() as &State::SecretKey)
+        (state.as_ref() as &S::SecretKey)
             .open_json_b64(auth)
             .map_err(|error| {
                 error!("Error when openning auth data: {:?}", error);
@@ -187,13 +186,13 @@ where
         move |data: AuthData| {
             debug!("Received auth data: {:?}", data);
 
-            (state.as_ref() as &State::SessionAccess)
+            (state.as_ref() as &S::SessionAccess)
                 .get_user_session(data.user, data.sess)
                 .map_err(|error| {
                     error!("Error when getting user session: {}", error);
                     AuthError::BackendError
                 }).map(
-                    move |session: Option<<State::SessionAccess as IsSessionAccess>::Session>| {
+                    move |session: Option<<S::SessionAccess as IsSessionAccess>::Session>| {
                         (data, session)
                     },
                 )
@@ -216,7 +215,7 @@ where
             }
             session.session_data_mut().renew();
             Either::B(
-                (state.as_ref() as &State::SessionAccess)
+                (state.as_ref() as &S::SessionAccess)
                     .put_user_session(session)
                     .map_err(|error| {
                         error!("Backend error: {}", error);
@@ -225,13 +224,13 @@ where
             )
         }
     }).and_then({
-        move |session: <State::SessionAccess as IsSessionAccess>::Session| {
-            (state.clone().as_ref() as &State::UserAccess)
+        move |session: <S::SessionAccess as IsSessionAccess>::Session| {
+            (state.clone().as_ref() as &S::UserAccess)
                 .get_user_data(session.session_data().user)
                 .map_err(|_| AuthError::BackendError)
                 .and_then(|user| {
-                    user.map(move |user: <State::UserAccess as IsUserAccess>::User| {
-                        State::UserAuth::new_user_auth(&session, &user)
+                    user.map(move |user: <S::UserAccess as IsUserAccess>::User| {
+                        S::UserAuth::new_user_auth(&session, &user)
                     }).ok_or_else(|| AuthError::BadUser)
                 })
         }

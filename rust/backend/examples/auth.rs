@@ -137,9 +137,9 @@ fn main() {
 
         let base = warp::path("auth");
 
-        let auth_info = base.clone().and(get_auth_info(state.clone()));
+        let auth_info = base.clone().and(get_auth_info(&state));
 
-        let auth_user = base.and(do_user_auth(state.clone()));
+        let auth_user = base.and(do_user_auth(&state));
 
         let app = auth_info.or(auth_user);
 

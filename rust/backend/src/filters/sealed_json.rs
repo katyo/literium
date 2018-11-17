@@ -43,7 +43,7 @@ fn main() {
         .and(path("sensible"))
         .and(path("data"))
         // extract encrypted body
-        .and(x_json(keys.clone()));
+        .and(x_json(&keys));
 
     let src = MyData { field: "abcdef".into() };
 
@@ -79,12 +79,12 @@ fn main() {
 ```
 
 */
-pub fn x_json<T, S>(state: S) -> impl Filter<Extract = (T,), Error = Rejection> + Clone
+pub fn x_json<T, S>(state: &S) -> impl Filter<Extract = (T,), Error = Rejection> + Clone
 where
     T: DeserializeOwned + Send,
     S: HasSecretKey + Send + Clone,
 {
-    let state = any().map(move || state.clone());
+    let state = state.clone();
 
     any()
         .and(header("content-type"))
@@ -99,8 +99,7 @@ where
                 Err(custom(CryptoError::BadMime))
             }
         }).and(concat())
-        .and(state)
-        .and_then(|_, body: FullBody, state: S| {
+        .and_then(move |_, body: FullBody| {
             (state.as_ref() as &S::SecretKey)
                 .open_json_b64(body.bytes())
                 .map_err(custom)
