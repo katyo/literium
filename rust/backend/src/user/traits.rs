@@ -99,10 +99,7 @@ pub trait IsAccountAccess: IsBackend {
         -> BoxFuture<Option<Self::Account>, Self::Error>;
 
     /// Save user account
-    fn put_user_account(
-        &self,
-        account: Self::Account,
-    ) -> BoxFuture<Option<Self::Account>, Self::Error>;
+    fn put_user_account(&self, account: Self::Account) -> BoxFuture<Self::Account, Self::Error>;
 }
 
 /// State has access to user accounts

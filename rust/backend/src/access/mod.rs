@@ -20,14 +20,14 @@ extern crate literium;
 
 use literium::access::{IsUserRole, HasUserRoles};
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 enum UserPerm {
     View,
     Edit,
     Publish,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 enum UserRole {
     Guest,
     Editor,
@@ -111,10 +111,12 @@ impl IsUserRole for UserRole {
  */
 
 mod traits;
+mod types;
 #[macro_use]
 mod macros;
 
-pub use self::traits::{HasUserRoles, IsUserRole, IsUserRoles};
+pub use self::traits::*;
+pub use self::types::*;
 
 #[cfg(test)]
 mod test {

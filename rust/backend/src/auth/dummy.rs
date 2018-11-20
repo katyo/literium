@@ -7,13 +7,14 @@ This module provides dummy implementation of session storage backend for example
 */
 
 use super::{
-    HasSessionAccess, IsSessionAccess, IsSessionData, IsUserAuth, IsUserInfo, SessionData,
+    HasSessionAccess, IsSessionAccess, IsSessionData, IsUserAuth, SessionArg, SessionData,
     SessionId,
 };
+use access::{Grant, HasAccess};
 use base::{dummy::DummyError, BoxFuture, IsBackend, TimeStamp};
 use futures::future::result;
 use std::sync::{Arc, RwLock};
-use user::{HasUserAccess, IsUserAccess, IsUserData, UserId};
+use user::{HasUserAccess, IsUserAccess, IsUserData, UserArg, UserId};
 
 pub type UserSession = SessionData;
 
@@ -100,6 +101,51 @@ impl IsSessionAccess for Sessions {
                 }).map_err(|_| DummyError),
         ))
     }
+
+    fn del_user_session(
+        &self,
+        user: UserId,
+        session: SessionId,
+    ) -> BoxFuture<Option<()>, Self::Error> {
+        Box::new(result(
+            self.sessions
+                .write()
+                .map(|mut sessions| {
+                    if let Some(index) = sessions
+                        .iter()
+                        .position(|data| data.user == user && data.sess == session)
+                    {
+                        sessions.swap_remove(index);
+                        Some(())
+                    } else {
+                        None
+                    }
+                }).map_err(|_| DummyError),
+        ))
+    }
+
+    fn get_user_sessions(&self, user: UserId) -> BoxFuture<Vec<Self::Session>, Self::Error> {
+        Box::new(result(
+            self.sessions
+                .read()
+                .map(|sessions| {
+                    sessions
+                        .iter()
+                        .filter(|session| session.user == user)
+                        .cloned()
+                        .collect()
+                }).map_err(|_| DummyError),
+        ))
+    }
+
+    fn del_user_sessions(&self, user: UserId) -> BoxFuture<(), Self::Error> {
+        Box::new(result(
+            self.sessions
+                .write()
+                .map(|mut sessions| sessions.retain(|data| data.user != user))
+                .map_err(|_| DummyError),
+        ))
+    }
 }
 
 pub struct UserAuth {
@@ -132,23 +178,29 @@ where
     }
 }
 
-/// User info type
-#[derive(Serialize, Deserialize)]
-pub struct UserInfo {
-    /// User name
-    pub name: String,
+impl HasAccess<SessionArg, Grant> for UserAuth {
+    fn has_access(&self, grant: &Grant) -> bool {
+        match grant {
+            // Only unauthorized user can authorize
+            Grant::Create => self.user == 0,
+            _ => false,
+        }
+    }
+
+    fn has_access_to(&self, session: &SessionArg, grant: &Grant) -> bool {
+        match grant {
+            // Only owner can read and drop sessions
+            Grant::Read | Grant::Delete => self.user == session.user,
+            _ => false,
+        }
+    }
 }
 
-impl<S> IsUserInfo<S> for UserInfo
-where
-    S: HasUserAccess,
-{
-    fn new_user_info(
-        _state: &S,
-        user: &<<S as HasUserAccess>::UserAccess as IsUserAccess>::User,
-    ) -> BoxFuture<Self, <<S as HasUserAccess>::UserAccess as IsBackend>::Error> {
-        Box::new(result(Ok(UserInfo {
-            name: user.get_user_name().into(),
-        })))
+impl HasAccess<UserArg, Grant> for UserAuth {
+    fn has_access_to(&self, user: &UserArg, grant: &Grant) -> bool {
+        match grant {
+            Grant::Read | Grant::Update => self.user == user.user,
+            _ => false,
+        }
     }
 }

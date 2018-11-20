@@ -55,6 +55,19 @@ pub trait IsSessionAccess: IsBackend {
 
     /// Save modified user session data
     fn put_user_session(&self, session: Self::Session) -> BoxFuture<Self::Session, Self::Error>;
+
+    /// Delete user session by identifier
+    fn del_user_session(
+        &self,
+        user: UserId,
+        session: SessionId,
+    ) -> BoxFuture<Option<()>, Self::Error>;
+
+    /// Get all user sessions
+    fn get_user_sessions(&self, user: UserId) -> BoxFuture<Vec<Self::Session>, Self::Error>;
+
+    /// Drop all user sessions
+    fn del_user_sessions(&self, user: UserId) -> BoxFuture<(), Self::Error>;
 }
 
 /// State has access to user sessions
@@ -93,28 +106,5 @@ where
     Self: HasSessionAccess + HasUserAccess + Sized,
 {
     /// User auth data type
-    type UserAuth: IsUserAuth<Self> + Send + 'static;
-}
-
-/// Client-side user info
-pub trait IsUserInfo<S>
-where
-    S: HasUserAccess,
-{
-    /// Create user info from user data
-    ///
-    /// Also you can extract additional data using access to state.
-    fn new_user_info(
-        state: &S,
-        user: &<<S as HasUserAccess>::UserAccess as IsUserAccess>::User,
-    ) -> BoxFuture<Self, <<S as HasUserAccess>::UserAccess as IsBackend>::Error>;
-}
-
-/// State hash client-side auth info
-pub trait HasUserInfo
-where
-    Self: HasUserAccess + Sized,
-{
-    /// User info type
-    type UserInfo: IsUserInfo<Self>;
+    type UserAuth: IsUserAuth<Self> + 'static;
 }

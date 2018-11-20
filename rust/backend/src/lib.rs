@@ -29,6 +29,7 @@ extern crate toml;
 #[cfg(feature = "name_resolver")]
 extern crate trust_dns_resolver;
 extern crate url;
+extern crate url_serde;
 extern crate warp;
 
 #[macro_use]

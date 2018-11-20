@@ -8,18 +8,21 @@ extern crate warp;
 use futures::lazy;
 use literium::{
     auth::{
-        do_user_auth,
-        dummy::{Sessions, UserInfo},
-        get_auth_info,
+        auth_scope,
+        dummy::{Sessions, UserAuth},
         native::NativeAuth,
+        oauth2::{self, HasOAuth2Providers, OAuth2Auth, OAuth2Options},
         otpass::{EmailOTPass, EmailOTPassFormatter, OTPassAuth},
-        HasAuthMethod, HasSessionAccess, HasUserInfo,
+        HasAuthMethod, HasSessionAccess, HasUserAuth,
     },
     crypto::{CryptoKeys, HasPublicKey, HasSecretKey},
+    dns::{NameResolver, ResolverOptions},
+    http::client::{HasHttpClient, HttpClient},
     mail::{HasMailer, SmtpConfig, SmtpMailer},
+    third::{github, google},
     user::{
-        dummy::{UserData, Users},
-        HasUserAccess,
+        dummy::{Accounts, UserData, Users},
+        HasAccountAccess, HasUserAccess,
     },
 };
 use std::net::SocketAddr;
@@ -30,6 +33,7 @@ use warp::Filter;
 type AuthMethod = (
     NativeAuth,
     OTPassAuth<State, EmailOTPass<EmailOTPassFormatter>>,
+    OAuth2Auth,
 );
 
 pub struct Config {
@@ -43,6 +47,9 @@ pub struct State {
     mailer: SmtpMailer,
     users: Users,
     sessions: Sessions,
+    accounts: Accounts,
+    client: HttpClient<NameResolver>,
+    services: Arc<(github::Service, google::Service)>,
 }
 
 impl AsRef<CryptoKeys> for State {
@@ -79,10 +86,30 @@ impl HasSessionAccess for State {
     type SessionAccess = Sessions;
 }
 
+impl AsRef<Accounts> for State {
+    fn as_ref(&self) -> &Accounts {
+        &self.accounts
+    }
+}
+
+impl HasAccountAccess for State {
+    type AccountAccess = Accounts;
+}
+
 impl AsRef<SmtpMailer> for State {
     fn as_ref(&self) -> &SmtpMailer {
         &self.mailer
     }
+}
+
+impl AsRef<HttpClient<NameResolver>> for State {
+    fn as_ref(&self) -> &HttpClient<NameResolver> {
+        &self.client
+    }
+}
+
+impl HasHttpClient for State {
+    type HttpClient = HttpClient<NameResolver>;
 }
 
 impl HasMailer for State {
@@ -95,12 +122,22 @@ impl AsRef<AuthMethod> for State {
     }
 }
 
+impl AsRef<(github::Service, google::Service)> for State {
+    fn as_ref(&self) -> &(github::Service, google::Service) {
+        &self.services
+    }
+}
+
+impl HasOAuth2Providers for State {
+    type OAuth2Providers = (github::Service, google::Service);
+}
+
 impl HasAuthMethod for State {
     type AuthMethod = AuthMethod;
 }
 
-impl HasUserInfo for State {
-    type UserInfo = UserInfo;
+impl HasUserAuth for State {
+    type UserAuth = UserAuth;
 }
 
 fn main() {
@@ -109,9 +146,28 @@ fn main() {
     run(lazy(|| {
         let server_keys = CryptoKeys::default();
 
+        let mut oauth2_options = OAuth2Options::default();
+
+        oauth2_options.services.push(oauth2::ClientOptions {
+            name: "github".into(),
+            params: oauth2::ClientParams {
+                client_id: "github_client_id".into(),
+                client_secret: "github_client_secret".into(),
+            },
+        });
+
+        oauth2_options.services.push(oauth2::ClientOptions {
+            name: "google".into(),
+            params: oauth2::ClientParams {
+                client_id: "google_client_id".into(),
+                client_secret: "google_client_secret".into(),
+            },
+        });
+
         let auth_method = (
             NativeAuth,
             OTPassAuth::new(EmailOTPass::new(EmailOTPassFormatter), Default::default()),
+            OAuth2Auth::new(oauth2_options),
         );
 
         let config = Arc::new(Config {
@@ -125,6 +181,8 @@ fn main() {
 
         let sessions = Sessions::new();
 
+        let accounts = Accounts::new();
+
         let mut smtp_config = SmtpConfig::default();
         smtp_config.host = "smtp.gmail.com".into();
 
@@ -133,15 +191,16 @@ fn main() {
             mailer: SmtpMailer::new(&smtp_config).unwrap(),
             users,
             sessions,
+            accounts,
+            services: Arc::new((
+                github::Service::new(github::Config::default()),
+                google::Service::new(google::Config::default()),
+            )),
+            client: HttpClient::new(NameResolver::new(ResolverOptions::default())),
         };
 
         let base = warp::path("auth");
-
-        let auth_info = base.clone().and(get_auth_info(&state));
-
-        let auth_user = base.and(do_user_auth(&state));
-
-        let app = auth_info.or(auth_user);
+        let app = base.and(auth_scope(&state));
 
         warp::serve(app).bind("0.0.0.0:8081".parse::<SocketAddr>().unwrap())
     }));

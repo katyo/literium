@@ -30,6 +30,8 @@ pub enum AuthError {
     BadIdent,
     /// Need retry authorization
     NeedRetry,
+    /// Restricted access
+    Restricted,
 }
 
 impl AuthError {
@@ -41,7 +43,7 @@ impl AuthError {
                 BackendError | ServiceError => StatusCode::INTERNAL_SERVER_ERROR,
                 BadMethod | BadService => StatusCode::BAD_REQUEST,
                 BadSession | BadUser | LostSession | Outdated | BadIdent | MissingAuth
-                | BadAuth => StatusCode::FORBIDDEN,
+                | BadAuth | Restricted => StatusCode::FORBIDDEN,
                 NeedRetry => StatusCode::CREATED,
             };
             Ok(with_status(error.to_string(), code))
@@ -69,6 +71,7 @@ impl Display for AuthError {
             BadService => f.write_str("Bad auth service"),
             BadIdent => f.write_str("Bad user ident"),
             NeedRetry => f.write_str("Retry auth"),
+            Restricted => f.write_str("Restricted access"),
         }
     }
 }

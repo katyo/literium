@@ -7,6 +7,7 @@
 mod binary;
 pub mod config;
 pub mod dummy;
+mod error;
 pub mod listen;
 pub mod serde_extra;
 mod timestamp;
@@ -16,6 +17,7 @@ pub mod wrappers;
 
 pub use self::binary::{AsBinary, FromBinary};
 pub use self::config::FileConfig;
+pub use self::error::*;
 pub use self::listen::ListenAddr;
 pub use self::timestamp::TimeStamp;
 pub use self::traits::*;

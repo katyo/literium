@@ -6,6 +6,13 @@ use user::UserId;
 /// Unique session indentifier
 pub type SessionId = u32;
 
+/// Session arguments (or predicate)
+#[derive(Debug)]
+pub struct SessionArg {
+    /// Session owner
+    pub user: UserId,
+}
+
 /// Public server data
 ///
 /// The data which server publishes for clients,
