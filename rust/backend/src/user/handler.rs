@@ -1,6 +1,6 @@
-use super::{HasUserAccess, IsUserAccess, UserArg, UserId};
+use super::{HasUserStorage, IsUserStorage, UserArg, UserId};
 use access::{Grant, HasAccess};
-use auth::{AuthError, HasSessionAccess, HasUserAuth};
+use auth::{AuthError, HasSessionStorage, HasUserAuth};
 use base::{CanCreateView, CanUpdateData, ResourceError};
 use crypto::HasSecretKey;
 use futures::{
@@ -15,9 +15,9 @@ pub fn get_user_data<S>(
     state: &S,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
-    S: HasSecretKey + HasUserAccess + HasUserAuth + HasSessionAccess + Send + Sync + Clone,
+    S: HasSecretKey + HasUserStorage + HasUserAuth + HasSessionStorage + Send + Sync + Clone,
     S::UserAuth: HasAccess<UserArg, Grant>,
-    <S::UserAccess as IsUserAccess>::User: CanCreateView<S::UserAuth, UserArg>,
+    <S::UserStorage as IsUserStorage>::User: CanCreateView<S::UserAuth, UserArg>,
 {
     let state = state.clone();
     warp::get2()
@@ -39,15 +39,15 @@ fn get_user_data_fn<S>(
     user: UserId,
     auth: S::UserAuth,
 ) -> impl Future<
-    Item = <<S::UserAccess as IsUserAccess>::User as CanCreateView<S::UserAuth, UserArg>>::View,
+    Item = <<S::UserStorage as IsUserStorage>::User as CanCreateView<S::UserAuth, UserArg>>::View,
     Error = ResourceError,
 > + Send
 where
-    S: HasUserAccess + HasUserAuth + Send + Sync + Clone,
+    S: HasUserStorage + HasUserAuth + Send + Sync + Clone,
     S::UserAuth: HasAccess<UserArg, Grant>,
-    <S::UserAccess as IsUserAccess>::User: CanCreateView<S::UserAuth, UserArg>,
+    <S::UserStorage as IsUserStorage>::User: CanCreateView<S::UserAuth, UserArg>,
 {
-    (state.as_ref() as &S::UserAccess)
+    (state.as_ref() as &S::UserStorage)
         .get_user_data(user)
         .map_err(|error| {
             error!("Unable to get user data: {}", error);
@@ -63,9 +63,9 @@ pub fn put_user_data<S>(
     state: &S,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
-    S: HasSecretKey + HasUserAccess + HasUserAuth + HasSessionAccess + Send + Sync + Clone,
+    S: HasSecretKey + HasUserStorage + HasUserAuth + HasSessionStorage + Send + Sync + Clone,
     S::UserAuth: HasAccess<UserArg, Grant>,
-    <S::UserAccess as IsUserAccess>::User: CanUpdateData<S::UserAuth, UserArg>,
+    <S::UserStorage as IsUserStorage>::User: CanUpdateData<S::UserAuth, UserArg>,
 {
     let state = state.clone();
 
@@ -76,7 +76,7 @@ where
             auth.access_to(&UserArg { user }, &Grant::Update)
                 .map(|auth| (user, auth))
         }).and(warp::body::json::<
-            <<S::UserAccess as IsUserAccess>::User as CanUpdateData<S::UserAuth, UserArg>>::View,
+            <<S::UserStorage as IsUserStorage>::User as CanUpdateData<S::UserAuth, UserArg>>::View,
         >()).and_then(move |(user, auth), data| {
             put_user_data_fn(&state, user, data, auth)
                 .map_err(warp::reject::custom)
@@ -88,17 +88,17 @@ where
 fn put_user_data_fn<S>(
     state: &S,
     user: UserId,
-    data: <<S::UserAccess as IsUserAccess>::User as CanUpdateData<S::UserAuth, UserArg>>::View,
+    data: <<S::UserStorage as IsUserStorage>::User as CanUpdateData<S::UserAuth, UserArg>>::View,
     auth: S::UserAuth,
 ) -> impl Future<Item = (), Error = ResourceError>
 where
-    S: HasUserAccess + HasUserAuth + Send + Sync + Clone,
+    S: HasUserStorage + HasUserAuth + Send + Sync + Clone,
     S::UserAuth: HasAccess<UserArg, Grant>,
-    <S::UserAccess as IsUserAccess>::User: CanUpdateData<S::UserAuth, UserArg>,
+    <S::UserStorage as IsUserStorage>::User: CanUpdateData<S::UserAuth, UserArg>,
 {
     let state = state.clone();
 
-    (state.as_ref() as &S::UserAccess)
+    (state.as_ref() as &S::UserStorage)
         .get_user_data(user)
         .map_err(|error| {
             error!("Unable to get user data: {}", error);
@@ -107,7 +107,7 @@ where
             user.map(move |mut user| {
                 user.update_data(&auth, &data);
                 Either::A(
-                    (state.as_ref() as &S::UserAccess)
+                    (state.as_ref() as &S::UserStorage)
                         .put_user_data(user)
                         .map_err(|error| {
                             error!("Unable to put user data: {}", error);
@@ -121,9 +121,9 @@ where
 /// Scope with user data handlers
 pub fn user_scope<S>(state: &S) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
-    S: HasSecretKey + HasUserAuth + HasUserAccess + HasSessionAccess + Send + Sync + Clone,
+    S: HasSecretKey + HasUserAuth + HasUserStorage + HasSessionStorage + Send + Sync + Clone,
     S::UserAuth: HasAccess<UserArg, Grant>,
-    <S::UserAccess as IsUserAccess>::User:
+    <S::UserStorage as IsUserStorage>::User:
         CanCreateView<S::UserAuth, UserArg> + CanUpdateData<S::UserAuth, UserArg>,
 {
     get_user_data(state).or(put_user_data(state))

@@ -6,7 +6,7 @@ use futures::{
 };
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use user::{HasUserAccess, IsUserAccess, IsUserData};
+use user::{HasUserStorage, IsUserData, IsUserStorage};
 
 use super::{AuthInfo, AuthToken, IsOTPassIdent, IsOTPassSender, OTPassOptions, UserIdent};
 
@@ -106,9 +106,9 @@ where
 
 impl<S, P> IsAuthMethod<S> for OTPassAuth<S, P>
 where
-    S: HasUserAccess + Send + Clone + 'static,
+    S: HasUserStorage + Send + Clone + 'static,
     P: IsOTPassSender<S>,
-    <S::UserAccess as IsUserAccess>::User: CanUpdateFrom<P::UserIdent>,
+    <S::UserStorage as IsUserStorage>::User: CanUpdateFrom<P::UserIdent>,
 {
     type AuthInfo = AuthInfo<P::AuthInfo>;
     type UserIdent = UserIdent<P::UserIdent>;
@@ -123,13 +123,13 @@ where
         &self,
         state: &S,
         UserIdent::OTPass { ident, pass }: &Self::UserIdent,
-    ) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError> {
+    ) -> BoxFuture<<S::UserStorage as IsUserStorage>::User, AuthError> {
         if let Some(pass) = pass {
             if self.verify_token(state, ident, pass) {
                 let name = ident.get_user_name().to_string();
                 let ident = ident.clone();
                 Box::new(
-                    (state.as_ref() as &S::UserAccess)
+                    (state.as_ref() as &S::UserStorage)
                         .find_user_data(&name)
                         .and_then({
                             let state = state.clone();
@@ -138,11 +138,11 @@ where
                                     Either::A(ok(user))
                                 } else {
                                     let mut user =
-                                        <S::UserAccess as IsUserAccess>::User::create_new(name);
+                                        <S::UserStorage as IsUserStorage>::User::create_new(name);
                                     // update info
                                     user.update_from(&ident);
                                     Either::B(
-                                        (state.as_ref() as &S::UserAccess).put_user_data(user),
+                                        (state.as_ref() as &S::UserStorage).put_user_data(user),
                                     )
                                 }
                             }

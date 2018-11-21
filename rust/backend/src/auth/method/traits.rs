@@ -1,12 +1,12 @@
 use auth::AuthError;
 use base::BoxFuture;
 use serde::{de::DeserializeOwned, Serialize};
-use user::{HasUserAccess, IsUserAccess};
+use user::{HasUserStorage, IsUserStorage};
 
 /// Authentication method interface
 pub trait IsAuthMethod<S>
 where
-    S: HasUserAccess,
+    S: HasUserStorage,
 {
     /// Auth info type
     type AuthInfo: Serialize + Send + 'static;
@@ -22,13 +22,13 @@ where
         &self,
         state: &S,
         ident: &Self::UserIdent,
-    ) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError>;
+    ) -> BoxFuture<<S::UserStorage as IsUserStorage>::User, AuthError>;
 }
 
 /// Access to auth method
 pub trait HasAuthMethod
 where
-    Self: HasUserAccess + AsRef<<Self as HasAuthMethod>::AuthMethod> + Sized,
+    Self: HasUserStorage + AsRef<<Self as HasAuthMethod>::AuthMethod> + Sized,
 {
     /// Auth method type
     type AuthMethod: IsAuthMethod<Self>;
@@ -103,7 +103,7 @@ macro_rules! tuple_method {
     (($($type:ident),+) => ($($id:tt),+)) => {
         impl<S, $($type),+> IsAuthMethod<S> for ($($type),+)
         where
-            S: HasUserAccess,
+            S: HasUserStorage,
             $($type: IsAuthMethod<S>),+
         {
             type AuthInfo = auth_info_type!($($type),+);
@@ -117,7 +117,7 @@ macro_rules! tuple_method {
                 &self,
                 state: &S,
                 ident: &Self::UserIdent,
-            ) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError> {
+            ) -> BoxFuture<<S::UserStorage as IsUserStorage>::User, AuthError> {
                 try_user_auth!(self, state, ident, $($id),+)
             }
         }

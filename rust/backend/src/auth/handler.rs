@@ -1,6 +1,6 @@
 use super::{
-    AuthError, AuthInfo, AuthRequest, AuthResponse, HasAuthMethod, HasSessionAccess, HasUserAuth,
-    IsAuthMethod, IsSessionAccess, IsSessionData, SessionArg, SessionData, SessionId, SessionInfo,
+    AuthError, AuthInfo, AuthRequest, AuthResponse, HasAuthMethod, HasSessionStorage, HasUserAuth,
+    IsAuthMethod, IsSessionData, IsSessionStorage, SessionArg, SessionData, SessionId, SessionInfo,
 };
 use access::{Grant, HasAccess};
 use base::{CanCreateView, TimeStamp};
@@ -9,7 +9,7 @@ use futures::{
     future::{err, Either},
     Future,
 };
-use user::{HasUserAccess, IsUserAccess, IsUserData, UserId};
+use user::{HasUserStorage, IsUserData, IsUserStorage, UserId};
 use warp::{any, Filter, Rejection, Reply};
 use {reply, x_auth, x_json};
 
@@ -18,7 +18,7 @@ pub fn get_auth_info<S>(
     state: &S,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
-    S: HasPublicKey + HasSecretKey + HasUserAuth + HasSessionAccess + HasAuthMethod + Send + Clone,
+    S: HasPublicKey + HasSecretKey + HasUserAuth + HasSessionStorage + HasAuthMethod + Send + Clone,
     S::PublicKey: AsRef<PublicKey>,
     S::AuthMethod: IsAuthMethod<S>,
     S::UserAuth: HasAccess<SessionArg, Grant>,
@@ -33,7 +33,7 @@ where
 
 fn get_auth_info_fn<S>(state: &S) -> AuthInfo<<S::AuthMethod as IsAuthMethod<S>>::AuthInfo>
 where
-    S: HasPublicKey + HasUserAccess + HasAuthMethod,
+    S: HasPublicKey + HasUserStorage + HasAuthMethod,
     S::PublicKey: AsRef<PublicKey>,
     S::AuthMethod: IsAuthMethod<S>,
 {
@@ -48,16 +48,16 @@ pub fn do_user_auth<S>(state: &S) -> impl Filter<Extract = (impl Reply,), Error 
 where
     S: HasPublicKey
         + HasSecretKey
-        + HasUserAccess
+        + HasUserStorage
         + HasUserAuth
-        + HasSessionAccess
+        + HasSessionStorage
         + HasAuthMethod
         + Send
         + Sync
         + Clone,
     S::AuthMethod: IsAuthMethod<S>,
-    <S::UserAccess as IsUserAccess>::User: CanCreateView<S::UserAuth, SessionArg>,
-    <S::SessionAccess as IsSessionAccess>::Session: From<SessionData>,
+    <S::UserStorage as IsUserStorage>::User: CanCreateView<S::UserAuth, SessionArg>,
+    <S::SessionStorage as IsSessionStorage>::Session: From<SessionData>,
     S::UserAuth: HasAccess<SessionArg, Grant>,
 {
     let state = state.clone();
@@ -79,15 +79,21 @@ fn do_user_auth_fn<S>(
     req: AuthRequest<<S::AuthMethod as IsAuthMethod<S>>::UserIdent>,
 ) -> impl Future<
     Item = AuthResponse<
-        <<S::UserAccess as IsUserAccess>::User as CanCreateView<S::UserAuth, SessionArg>>::View,
+        <<S::UserStorage as IsUserStorage>::User as CanCreateView<S::UserAuth, SessionArg>>::View,
     >,
     Error = AuthError,
 >
 where
-    S: HasSecretKey + HasUserAccess + HasUserAuth + HasSessionAccess + HasAuthMethod + Send + Clone,
+    S: HasSecretKey
+        + HasUserStorage
+        + HasUserAuth
+        + HasSessionStorage
+        + HasAuthMethod
+        + Send
+        + Clone,
     S::AuthMethod: IsAuthMethod<S>,
-    <S::UserAccess as IsUserAccess>::User: CanCreateView<S::UserAuth, SessionArg>,
-    <S::SessionAccess as IsSessionAccess>::Session: From<SessionData>,
+    <S::UserStorage as IsUserStorage>::User: CanCreateView<S::UserAuth, SessionArg>,
+    <S::SessionStorage as IsSessionStorage>::Session: From<SessionData>,
 {
     if TimeStamp::now().abs_delta(&req.ctime) > TimeStamp::default().with_secs(3) {
         return Either::A(err(AuthError::Outdated));
@@ -104,14 +110,14 @@ where
                 error!("Backend error on check_user_ident(): {}", error);
                 AuthError::BackendError
             }).and_then(move |user| {
-                (state.as_ref() as &S::SessionAccess)
+                (state.as_ref() as &S::SessionStorage)
                     .find_user_session(user.get_user_id(), ctime)
                     .map_err(|error| {
                         error!("Backend error on find_user_session(): {}", error);
                         AuthError::BackendError
                     }).and_then(|_| Err(AuthError::Outdated))
                     .or_else(move |_| {
-                        (state.as_ref() as &S::SessionAccess)
+                        (state.as_ref() as &S::SessionStorage)
                             .new_user_session(user.get_user_id(), pbkey)
                             .map_err(|error| {
                                 error!("Backend error on new_user_session(): {}", error);
@@ -136,7 +142,7 @@ pub fn get_user_sessions<S>(
     state: &S,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
-    S: HasSecretKey + HasUserAccess + HasUserAuth + HasSessionAccess + Send + Sync + Clone,
+    S: HasSecretKey + HasUserStorage + HasUserAuth + HasSessionStorage + Send + Sync + Clone,
     S::UserAuth: HasAccess<SessionArg, Grant>,
 {
     let state = state.clone();
@@ -160,9 +166,9 @@ fn get_user_sessions_fn<S>(
     user: UserId,
 ) -> impl Future<Item = Vec<SessionInfo>, Error = AuthError>
 where
-    S: HasUserAccess + HasSessionAccess + HasUserAuth + Send + Sync + Clone,
+    S: HasUserStorage + HasSessionStorage + HasUserAuth + Send + Sync + Clone,
 {
-    (state.as_ref() as &S::SessionAccess)
+    (state.as_ref() as &S::SessionStorage)
         .get_user_sessions(user)
         .map(|sessions| {
             sessions
@@ -180,7 +186,7 @@ pub fn del_user_sessions<S>(
     state: &S,
 ) -> impl Filter<Extract = (impl Reply,), Error = Rejection> + Clone
 where
-    S: HasSecretKey + HasUserAccess + HasUserAuth + HasSessionAccess + Send + Sync + Clone,
+    S: HasSecretKey + HasUserStorage + HasUserAuth + HasSessionStorage + Send + Sync + Clone,
     S::UserAuth: HasAccess<SessionArg, Grant>,
 {
     let state = state.clone();
@@ -215,11 +221,11 @@ fn del_user_sessions_fn<S>(
     session: Option<SessionId>,
 ) -> impl Future<Item = Option<()>, Error = AuthError>
 where
-    S: HasUserAccess + HasSessionAccess + HasUserAuth + Send + Sync + Clone,
+    S: HasUserStorage + HasSessionStorage + HasUserAuth + Send + Sync + Clone,
 {
     if let Some(session) = session {
         Either::A(
-            (state.as_ref() as &S::SessionAccess)
+            (state.as_ref() as &S::SessionStorage)
                 .del_user_session(user, session)
                 .map_err(|error| {
                     error!("Unable to delete user sessions: {}", error);
@@ -228,7 +234,7 @@ where
         )
     } else {
         Either::B(
-            (state.as_ref() as &S::SessionAccess)
+            (state.as_ref() as &S::SessionStorage)
                 .del_user_sessions(user)
                 .map_err(|error| {
                     error!("Unable to delete user sessions: {}", error);
@@ -244,8 +250,8 @@ where
     S: HasPublicKey
         + HasSecretKey
         + HasUserAuth
-        + HasUserAccess
-        + HasSessionAccess
+        + HasUserStorage
+        + HasSessionStorage
         + HasAuthMethod
         + Send
         + Sync
@@ -253,8 +259,8 @@ where
     S::PublicKey: AsRef<PublicKey>,
     S::AuthMethod: IsAuthMethod<S>,
     S::UserAuth: HasAccess<SessionArg, Grant>,
-    <S::UserAccess as IsUserAccess>::User: CanCreateView<S::UserAuth, SessionArg>,
-    <S::SessionAccess as IsSessionAccess>::Session: From<SessionData>,
+    <S::UserStorage as IsUserStorage>::User: CanCreateView<S::UserAuth, SessionArg>,
+    <S::SessionStorage as IsSessionStorage>::Session: From<SessionData>,
 {
     get_auth_info(state)
         .or(do_user_auth(state))

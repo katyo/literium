@@ -1,7 +1,7 @@
 use super::{SessionData, SessionId};
 use base::{BoxFuture, IsBackend, TimeStamp};
 use crypto::PublicKey;
-use user::{HasUserAccess, IsUserAccess, UserId};
+use user::{HasUserStorage, IsUserStorage, UserId};
 
 /// Access to session data
 pub trait IsSessionData {
@@ -23,7 +23,7 @@ impl IsSessionData for SessionData {
 }
 
 /// Access to user sessions
-pub trait IsSessionAccess: IsBackend {
+pub trait IsSessionStorage: IsBackend {
     /// Session data type
     type Session: IsSessionData + Send + 'static;
 
@@ -71,26 +71,26 @@ pub trait IsSessionAccess: IsBackend {
 }
 
 /// State has access to user sessions
-pub trait HasSessionAccess
+pub trait HasSessionStorage
 where
-    Self: AsRef<<Self as HasSessionAccess>::SessionAccess>,
+    Self: AsRef<<Self as HasSessionStorage>::SessionStorage>,
 {
     /// User session accessor
-    type SessionAccess: IsSessionAccess;
+    type SessionStorage: IsSessionStorage;
 }
 
 /// Server-side user auth data
 pub trait IsUserAuth<S>
 where
     Self: Send + Sized,
-    S: HasSessionAccess + HasUserAccess,
+    S: HasSessionStorage + HasUserStorage,
 {
     /// Create auth data from session and user data
     ///
     /// This should returns user auth when auth header is present and has valid auth info (i.e. in case of authorized access).
     fn new_user_auth(
-        session: &<<S as HasSessionAccess>::SessionAccess as IsSessionAccess>::Session,
-        user: &<<S as HasUserAccess>::UserAccess as IsUserAccess>::User,
+        session: &<<S as HasSessionStorage>::SessionStorage as IsSessionStorage>::Session,
+        user: &<<S as HasUserStorage>::UserStorage as IsUserStorage>::User,
     ) -> Self;
 
     /// Create auth data for unauthorized access
@@ -103,7 +103,7 @@ where
 /// State has server-side user auth data
 pub trait HasUserAuth
 where
-    Self: HasSessionAccess + HasUserAccess + Sized,
+    Self: HasSessionStorage + HasUserStorage + Sized,
 {
     /// User auth data type
     type UserAuth: IsUserAuth<Self> + 'static;

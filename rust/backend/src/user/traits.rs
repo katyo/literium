@@ -26,7 +26,7 @@ pub trait HasPasswordHash {
 }
 
 /// Access to user data
-pub trait IsUserAccess: IsBackend {
+pub trait IsUserStorage: IsBackend {
     /// User data type
     type User: IsUserData + Send + 'static;
 
@@ -44,12 +44,12 @@ pub trait IsUserAccess: IsBackend {
 }
 
 /// State has access to user data
-pub trait HasUserAccess
+pub trait HasUserStorage
 where
-    Self: AsRef<<Self as HasUserAccess>::UserAccess>,
+    Self: AsRef<<Self as HasUserStorage>::UserStorage>,
 {
     /// User data accessor
-    type UserAccess: IsUserAccess;
+    type UserStorage: IsUserStorage;
 }
 
 /// Basic account data type
@@ -83,7 +83,7 @@ pub trait IsAccountData {
 }
 
 /// Access to user account
-pub trait IsAccountAccess: IsBackend {
+pub trait IsAccountStorage: IsBackend {
     /// Account data type
     type Account: IsAccountData + Send + 'static;
 
@@ -103,12 +103,12 @@ pub trait IsAccountAccess: IsBackend {
 }
 
 /// State has access to user accounts
-pub trait HasAccountAccess
+pub trait HasAccountStorage
 where
-    Self: AsRef<<Self as HasAccountAccess>::AccountAccess>,
+    Self: AsRef<<Self as HasAccountStorage>::AccountStorage>,
 {
     /// Account accessor
-    type AccountAccess: IsAccountAccess;
+    type AccountStorage: IsAccountStorage;
 }
 
 /// Account has nick name field

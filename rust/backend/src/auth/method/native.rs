@@ -9,7 +9,7 @@ This method provides classic authorization with *username* and *password*.
 use auth::{AuthError, IsAuthMethod};
 use base::BoxFuture;
 use futures::Future;
-use user::{verify_password, HasPasswordHash, HasUserAccess, IsUserAccess};
+use user::{verify_password, HasPasswordHash, HasUserStorage, IsUserStorage};
 
 /// Native auth method information
 #[derive(Debug, Serialize)]
@@ -30,8 +30,8 @@ pub struct NativeAuth;
 
 impl<S> IsAuthMethod<S> for NativeAuth
 where
-    S: HasUserAccess,
-    <S::UserAccess as IsUserAccess>::User: HasPasswordHash,
+    S: HasUserStorage,
+    <S::UserStorage as IsUserStorage>::User: HasPasswordHash,
 {
     type AuthInfo = AuthInfo;
     type UserIdent = UserIdent;
@@ -44,12 +44,12 @@ where
         &self,
         state: &S,
         ident: &Self::UserIdent,
-    ) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError> {
+    ) -> BoxFuture<<S::UserStorage as IsUserStorage>::User, AuthError> {
         match ident {
             UserIdent::Native { name, pass } => {
                 let pass = pass.clone();
                 Box::new(
-                    (state.as_ref() as &S::UserAccess)
+                    (state.as_ref() as &S::UserStorage)
                         .find_user_data(name)
                         .map_err(|error| {
                             error!("Error on find_user_data(): {}", error);

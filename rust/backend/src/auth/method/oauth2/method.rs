@@ -14,7 +14,7 @@ use http::{
 };
 use std::sync::Arc;
 use user::{
-    HasAccountAccess, HasUserAccess, IsAccountAccess, IsAccountData, IsUserAccess, IsUserData,
+    HasAccountStorage, HasUserStorage, IsAccountData, IsAccountStorage, IsUserData, IsUserStorage,
 };
 
 struct State {
@@ -36,21 +36,21 @@ impl OAuth2Auth {
 
 impl<S> IsAuthMethod<S> for OAuth2Auth
 where
-    S: HasUserAccess
-        + HasAccountAccess
+    S: HasUserStorage
+        + HasAccountStorage
         + HasHttpClient
         + HasOAuth2Providers
         + Send
         + Clone
         + 'static,
-    <S::UserAccess as IsUserAccess>::User:
-        CanUpdateFrom<<S::AccountAccess as IsAccountAccess>::Account>,
+    <S::UserStorage as IsUserStorage>::User:
+        CanUpdateFrom<<S::AccountStorage as IsAccountStorage>::Account>,
 {
     type AuthInfo = AuthInfo<
         ServiceInfo<
             <S::OAuth2Providers as IsOAuth2Providers<
                 S,
-                <S::AccountAccess as IsAccountAccess>::Account,
+                <S::AccountStorage as IsAccountStorage>::Account,
             >>::AuthorizeParams,
         >,
     >;
@@ -92,7 +92,7 @@ where
             code,
             state: state_val,
         }: &Self::UserIdent,
-    ) -> BoxFuture<<S::UserAccess as IsUserAccess>::User, AuthError> {
+    ) -> BoxFuture<<S::UserStorage as IsUserStorage>::User, AuthError> {
         let providers: &S::OAuth2Providers = state.as_ref();
 
         if !providers.has_service(&name) {
@@ -153,10 +153,10 @@ where
                   .and_then(move |access_token| {
                       (state.as_ref() as &S::OAuth2Providers)
                           .fetch_user_info(&name, &state, access_token.into())
-                          .and_then(move |mut data: <<S as HasAccountAccess>::AccountAccess as IsAccountAccess>::Account| {
+                          .and_then(move |mut data: <<S as HasAccountStorage>::AccountStorage as IsAccountStorage>::Account| {
                               // add service name to account
                               data.set_account_service(name.as_str());
-                              (state.as_ref() as &S::AccountAccess)
+                              (state.as_ref() as &S::AccountStorage)
                                   .find_user_account(&name, data.get_account_name())
                                   .map_err(|error| {
                                       error!("Error when finding user account: {}", error);
@@ -167,7 +167,7 @@ where
                                           // found => get user data
                                           data.set_account_id(account.get_account_id());
                                           Either::A(
-                                              (state.as_ref() as &S::UserAccess)
+                                              (state.as_ref() as &S::UserStorage)
                                                   .get_user_data(account.get_user_id())
                                                   .map_err(|error| {
                                                       error!("Error when getting user data: {}", error);
@@ -180,7 +180,7 @@ where
                                                               // update user info from account
                                                               user.update_from(&data);
                                                               // TODO: put only when something changed
-                                                              Either::A((state.as_ref() as &S::UserAccess)
+                                                              Either::A((state.as_ref() as &S::UserStorage)
                                                                         .put_user_data(user)
                                                                         .map_err(|error| {
                                                                             error!("Error when putting user data: {}", error);
@@ -196,11 +196,11 @@ where
                                       } else {
                                           // not found => create user data
                                           let name = data.get_account_name().to_string() + "@" + &name;
-                                          let mut user = <S::UserAccess as IsUserAccess>::User::create_new(name);
+                                          let mut user = <S::UserStorage as IsUserStorage>::User::create_new(name);
                                           // fill user info from account
                                           user.update_from(&data);
                                           Either::B(
-                                              (state.as_ref() as &S::UserAccess)
+                                              (state.as_ref() as &S::UserStorage)
                                                   .put_user_data(user)
                                                   .map_err(|error| {
                                                       error!("Error when putting user data: {}", error);
@@ -215,7 +215,7 @@ where
                                       }.and_then(move |(account, user)| {
                                           // save account data
                                           // TODO: put only when something changed
-                                          (state.as_ref() as &S::AccountAccess)
+                                          (state.as_ref() as &S::AccountStorage)
                                               .put_user_account(account)
                                               .map_err(|error| {
                                                   error!("Error when putting user account: {}", error);

@@ -4,7 +4,7 @@ use futures::Future;
 use serde::Serialize;
 use std::borrow::Cow;
 use third::IsThirdService;
-use user::{HasAccountAccess, IsAccountAccess};
+use user::{HasAccountStorage, IsAccountStorage};
 
 /// OAuth2 provider interface
 pub trait IsOAuth2Provider<S, X>: IsThirdService<S, X> {
@@ -228,10 +228,10 @@ tuple_providers!((A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) -> (0, 1, 2, 3
 /// State which has OAuth2 providers
 pub trait HasOAuth2Providers
 where
-    Self: HasAccountAccess + AsRef<<Self as HasOAuth2Providers>::OAuth2Providers> + Sized,
+    Self: HasAccountStorage + AsRef<<Self as HasOAuth2Providers>::OAuth2Providers> + Sized,
 {
     type OAuth2Providers: IsOAuth2Providers<
         Self,
-        <<Self as HasAccountAccess>::AccountAccess as IsAccountAccess>::Account,
+        <<Self as HasAccountStorage>::AccountStorage as IsAccountStorage>::Account,
     >;
 }

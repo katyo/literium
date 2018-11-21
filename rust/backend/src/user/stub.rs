@@ -10,7 +10,7 @@ use super::{
     create_password, AccountId, Gender, HasAbout, HasBirthDate, HasCompany, HasCreateDate,
     HasEmail, HasFamilyName, HasFullName, HasGender, HasGivenName, HasHomeUrl, HasImageUrl,
     HasLocale, HasLocation, HasMiddleName, HasNickName, HasPasswordHash, HasPosition, HasTimeZone,
-    IsAccountAccess, IsAccountData, IsUserAccess, IsUserData, UserArg, UserId,
+    IsAccountData, IsAccountStorage, IsUserData, IsUserStorage, UserArg, UserId,
 };
 use access::{Grant, HasAccess};
 use auth::{otpass::EmailUserIdent, SessionArg};
@@ -186,7 +186,7 @@ impl Users {
     }
 }
 
-impl IsUserAccess for Users {
+impl IsUserStorage for Users {
     type User = UserData;
 
     fn find_user_data<'a, S: Into<Cow<'a, str>>>(
@@ -519,7 +519,7 @@ impl Accounts {
     }
 }
 
-impl IsAccountAccess for Accounts {
+impl IsAccountStorage for Accounts {
     /// Account data type
     type Account = AccountData;
 

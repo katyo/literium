@@ -7,14 +7,14 @@ This module provides dummy implementation of session storage backend for example
 */
 
 use super::{
-    HasSessionAccess, IsSessionAccess, IsSessionData, IsUserAuth, SessionArg, SessionData,
+    HasSessionStorage, IsSessionData, IsSessionStorage, IsUserAuth, SessionArg, SessionData,
     SessionId,
 };
 use access::{Grant, HasAccess};
 use base::{BoxFuture, DummyError, IsBackend, TimeStamp};
 use futures::future::result;
 use std::sync::{Arc, RwLock};
-use user::{HasUserAccess, IsUserAccess, IsUserData, UserArg, UserId};
+use user::{HasUserStorage, IsUserData, IsUserStorage, UserArg, UserId};
 
 pub type UserSession = SessionData;
 
@@ -43,7 +43,7 @@ impl IsBackend for Sessions {
     type Error = DummyError;
 }
 
-impl IsSessionAccess for Sessions {
+impl IsSessionStorage for Sessions {
     type Session = UserSession;
 
     fn find_user_session(
@@ -156,11 +156,11 @@ pub struct UserAuth {
 
 impl<S> IsUserAuth<S> for UserAuth
 where
-    S: HasSessionAccess + HasUserAccess,
+    S: HasSessionStorage + HasUserStorage,
 {
     fn new_user_auth(
-        session: &<<S as HasSessionAccess>::SessionAccess as IsSessionAccess>::Session,
-        user: &<<S as HasUserAccess>::UserAccess as IsUserAccess>::User,
+        session: &<<S as HasSessionStorage>::SessionStorage as IsSessionStorage>::Session,
+        user: &<<S as HasUserStorage>::UserStorage as IsUserStorage>::User,
     ) -> Self {
         UserAuth {
             user: user.get_user_id(),

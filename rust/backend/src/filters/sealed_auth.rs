@@ -4,10 +4,11 @@ use futures::{
 };
 
 use auth::{
-    AuthData, AuthError, HasSessionAccess, HasUserAuth, IsSessionAccess, IsSessionData, IsUserAuth,
+    AuthData, AuthError, HasSessionStorage, HasUserAuth, IsSessionData, IsSessionStorage,
+    IsUserAuth,
 };
 use crypto::{CanDecrypt, HasSecretKey};
-use user::{HasUserAccess, IsUserAccess};
+use user::{HasUserStorage, IsUserStorage};
 use warp::{any, header, reject::custom, Filter, Rejection};
 
 /** Get user identification from header
@@ -31,11 +32,11 @@ use futures::Future;
 use literium::{
     user::{
         stub::{UserData, Users},
-        HasUserAccess,
+        HasUserStorage,
     },
     auth::{
         stub::{Sessions, UserAuth},
-        AuthData, HasUserAuth, HasSessionAccess, IsSessionAccess,
+        AuthData, HasUserAuth, HasSessionStorage, IsSessionStorage,
     },
     x_auth,
     crypto::{
@@ -68,8 +69,8 @@ impl AsRef<Users> for State {
     }
 }
 
-impl HasUserAccess for State {
-    type UserAccess = Users;
+impl HasUserStorage for State {
+    type UserStorage = Users;
 }
 
 impl AsRef<Sessions> for State {
@@ -78,8 +79,8 @@ impl AsRef<Sessions> for State {
     }
 }
 
-impl HasSessionAccess for State {
-    type SessionAccess = Sessions;
+impl HasSessionStorage for State {
+    type SessionStorage = Sessions;
 }
 
 impl HasUserAuth for State {
@@ -149,7 +150,7 @@ fn main() {
 */
 pub fn x_auth<S>(state: &S) -> impl Filter<Extract = (S::UserAuth,), Error = Rejection> + Clone
 where
-    S: HasSecretKey + HasUserAccess + HasSessionAccess + HasUserAuth + Send + Clone,
+    S: HasSecretKey + HasUserStorage + HasSessionStorage + HasUserAuth + Send + Clone,
 {
     let state = state.clone();
     header("x-auth")
@@ -171,7 +172,7 @@ fn proc_user_auth<S>(
     auth: String,
 ) -> impl Future<Item = S::UserAuth, Error = AuthError> + Send
 where
-    S: HasSecretKey + HasUserAccess + HasSessionAccess + HasUserAuth + Send + Clone,
+    S: HasSecretKey + HasUserStorage + HasSessionStorage + HasUserAuth + Send + Clone,
 {
     let state = state.clone();
     result(
@@ -186,13 +187,13 @@ where
         move |data: AuthData| {
             debug!("Received auth data: {:?}", data);
 
-            (state.as_ref() as &S::SessionAccess)
+            (state.as_ref() as &S::SessionStorage)
                 .get_user_session(data.user, data.sess)
                 .map_err(|error| {
                     error!("Error when getting user session: {}", error);
                     AuthError::BackendError
                 }).map(
-                    move |session: Option<<S::SessionAccess as IsSessionAccess>::Session>| {
+                    move |session: Option<<S::SessionStorage as IsSessionStorage>::Session>| {
                         (data, session)
                     },
                 )
@@ -215,7 +216,7 @@ where
             }
             session.session_data_mut().renew();
             Either::B(
-                (state.as_ref() as &S::SessionAccess)
+                (state.as_ref() as &S::SessionStorage)
                     .put_user_session(session)
                     .map_err(|error| {
                         error!("Backend error: {}", error);
@@ -224,12 +225,12 @@ where
             )
         }
     }).and_then({
-        move |session: <S::SessionAccess as IsSessionAccess>::Session| {
-            (state.clone().as_ref() as &S::UserAccess)
+        move |session: <S::SessionStorage as IsSessionStorage>::Session| {
+            (state.clone().as_ref() as &S::UserStorage)
                 .get_user_data(session.session_data().user)
                 .map_err(|_| AuthError::BackendError)
                 .and_then(|user| {
-                    user.map(move |user: <S::UserAccess as IsUserAccess>::User| {
+                    user.map(move |user: <S::UserStorage as IsUserStorage>::User| {
                         S::UserAuth::new_user_auth(&session, &user)
                     }).ok_or_else(|| AuthError::BadUser)
                 })

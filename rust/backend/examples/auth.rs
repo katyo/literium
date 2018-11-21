@@ -13,7 +13,7 @@ use literium::{
         oauth2::{self, HasOAuth2Providers, OAuth2Auth, OAuth2Options},
         otpass::{EmailOTPass, EmailOTPassFormatter, OTPassAuth},
         stub::{Sessions, UserAuth},
-        HasAuthMethod, HasSessionAccess, HasUserAuth,
+        HasAuthMethod, HasSessionStorage, HasUserAuth,
     },
     crypto::{CryptoKeys, HasPublicKey, HasSecretKey},
     dns::{NameResolver, ResolverOptions},
@@ -22,7 +22,7 @@ use literium::{
     third::{github, google},
     user::{
         stub::{Accounts, UserData, Users},
-        HasAccountAccess, HasUserAccess,
+        HasAccountStorage, HasUserStorage,
     },
 };
 use std::net::SocketAddr;
@@ -72,8 +72,8 @@ impl AsRef<Users> for State {
     }
 }
 
-impl HasUserAccess for State {
-    type UserAccess = Users;
+impl HasUserStorage for State {
+    type UserStorage = Users;
 }
 
 impl AsRef<Sessions> for State {
@@ -82,8 +82,8 @@ impl AsRef<Sessions> for State {
     }
 }
 
-impl HasSessionAccess for State {
-    type SessionAccess = Sessions;
+impl HasSessionStorage for State {
+    type SessionStorage = Sessions;
 }
 
 impl AsRef<Accounts> for State {
@@ -92,8 +92,8 @@ impl AsRef<Accounts> for State {
     }
 }
 
-impl HasAccountAccess for State {
-    type AccountAccess = Accounts;
+impl HasAccountStorage for State {
+    type AccountStorage = Accounts;
 }
 
 impl AsRef<SmtpMailer> for State {
