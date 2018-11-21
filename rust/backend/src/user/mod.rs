@@ -4,9 +4,9 @@
 
 */
 
-pub mod dummy;
 mod handler;
 mod password;
+pub mod stub;
 mod traits;
 mod types;
 

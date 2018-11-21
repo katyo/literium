@@ -15,7 +15,7 @@ use super::{
 use access::{Grant, HasAccess};
 use auth::{otpass::EmailUserIdent, SessionArg};
 use base::{
-    dummy::DummyError, BoxFuture, CanCreateView, CanUpdateData, CanUpdateFrom, IsBackend, TimeStamp,
+    BoxFuture, CanCreateView, CanUpdateData, CanUpdateFrom, DummyError, IsBackend, TimeStamp,
 };
 use futures::future::result;
 use mail::MailAddress;

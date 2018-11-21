@@ -54,10 +54,10 @@
 
 */
 
-pub mod dummy;
 mod error;
 mod handler;
 mod method;
+pub mod stub;
 mod traits;
 mod types;
 

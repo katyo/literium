@@ -6,7 +6,6 @@
 
 mod binary;
 pub mod config;
-pub mod dummy;
 mod error;
 pub mod listen;
 pub mod serde_extra;

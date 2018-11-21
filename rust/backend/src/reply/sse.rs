@@ -140,7 +140,7 @@ use std::time::Duration;
 use futures::stream::iter_ok;
 use warp::{get2, path, test::request, Filter};
 use literium::{
-    base::dummy::DummyError,
+    base::DummyError,
     reply::{ServerEvent, sse},
 };
 
@@ -210,7 +210,7 @@ use std::time::Duration;
 use futures::stream::iter_ok;
 use warp::{get2, path, test::request, Filter};
 use literium::{
-    base::dummy::DummyError,
+    base::DummyError,
     reply::{ServerEvent, sse_json},
 };
 

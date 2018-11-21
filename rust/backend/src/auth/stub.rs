@@ -11,7 +11,7 @@ use super::{
     SessionId,
 };
 use access::{Grant, HasAccess};
-use base::{dummy::DummyError, BoxFuture, IsBackend, TimeStamp};
+use base::{BoxFuture, DummyError, IsBackend, TimeStamp};
 use futures::future::result;
 use std::sync::{Arc, RwLock};
 use user::{HasUserAccess, IsUserAccess, IsUserData, UserArg, UserId};

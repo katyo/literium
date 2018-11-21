@@ -9,10 +9,10 @@ use futures::lazy;
 use literium::{
     auth::{
         auth_scope,
-        dummy::{Sessions, UserAuth},
         native::NativeAuth,
         oauth2::{self, HasOAuth2Providers, OAuth2Auth, OAuth2Options},
         otpass::{EmailOTPass, EmailOTPassFormatter, OTPassAuth},
+        stub::{Sessions, UserAuth},
         HasAuthMethod, HasSessionAccess, HasUserAuth,
     },
     crypto::{CryptoKeys, HasPublicKey, HasSecretKey},
@@ -21,7 +21,7 @@ use literium::{
     mail::{HasMailer, SmtpConfig, SmtpMailer},
     third::{github, google},
     user::{
-        dummy::{Accounts, UserData, Users},
+        stub::{Accounts, UserData, Users},
         HasAccountAccess, HasUserAccess,
     },
 };

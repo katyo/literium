@@ -1,4 +1,4 @@
-use super::{dummy::DummyError, BoxFuture, EitherError};
+use super::{BoxFuture, DummyError, EitherError};
 use futures::{future::ok, Future};
 use serde::{de::DeserializeOwned, Serialize};
 use std::error::Error;

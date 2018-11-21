@@ -28,7 +28,7 @@ extern crate literium;
 
 use futures::stream::iter_ok;
 use warp::{Filter, get2, path, any, test::request};
-use literium::{reply, base::dummy::DummyError};
+use literium::{reply, base::DummyError};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 struct MyData {
@@ -84,7 +84,7 @@ extern crate literium;
 
 use futures::stream::iter_ok;
 use warp::{Filter, get2, path, any, test::request};
-use literium::{reply, base::dummy::DummyError};
+use literium::{reply, base::DummyError};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 struct MyData {

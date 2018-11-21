@@ -30,11 +30,11 @@ extern crate pretty_env_logger;
 use futures::Future;
 use literium::{
     user::{
-        dummy::{UserData, Users},
+        stub::{UserData, Users},
         HasUserAccess,
     },
     auth::{
-        dummy::{Sessions, UserAuth},
+        stub::{Sessions, UserAuth},
         AuthData, HasUserAuth, HasSessionAccess, IsSessionAccess,
     },
     x_auth,
