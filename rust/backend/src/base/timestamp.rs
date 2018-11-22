@@ -1,6 +1,6 @@
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::ops::{Add, Sub};
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 use time::{at_utc, get_time, strftime, strptime, ParseError, Timespec, Tm};
 
 /// Unix-time in milliseconds
@@ -153,6 +153,19 @@ impl From<Duration> for TimeStamp {
 impl Into<Duration> for TimeStamp {
     fn into(self) -> Duration {
         Duration::from_millis(self.into())
+    }
+}
+
+impl From<SystemTime> for TimeStamp {
+    fn from(st: SystemTime) -> Self {
+        TimeStamp::from(st.duration_since(SystemTime::UNIX_EPOCH).unwrap())
+    }
+}
+
+impl Into<SystemTime> for TimeStamp {
+    fn into(self) -> SystemTime {
+        let dt: Duration = self.into();
+        SystemTime::UNIX_EPOCH + dt
     }
 }
 
