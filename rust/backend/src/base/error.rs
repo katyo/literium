@@ -17,17 +17,16 @@ pub enum ResourceError {
 impl ResourceError {
     /// Convert error into reply
     pub fn recover(error: Rejection) -> Result<impl Reply, Rejection> {
-        if let Some(&error) = error.find_cause::<ResourceError>() {
+        if let Some(error) = &error.find_cause::<ResourceError>() {
             use self::ResourceError::*;
             let code = match error {
                 Backend => StatusCode::INTERNAL_SERVER_ERROR,
                 Stupid => StatusCode::BAD_REQUEST,
                 Missing => StatusCode::NOT_FOUND,
             };
-            Ok(with_status(error.to_string(), code))
-        } else {
-            Err(error)
+            return Ok(with_status(error.to_string(), code));
         }
+        Err(error)
     }
 }
 

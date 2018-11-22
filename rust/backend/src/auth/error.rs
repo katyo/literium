@@ -35,9 +35,9 @@ pub enum AuthError {
 }
 
 impl AuthError {
-    /// Convert identification error into reply
+    /// Convert auth error into reply
     pub fn recover(error: Rejection) -> Result<impl Reply, Rejection> {
-        if let Some(&error) = error.find_cause::<AuthError>() {
+        if let Some(error) = &error.find_cause::<AuthError>() {
             use self::AuthError::*;
             let code = match error {
                 BackendError | ServiceError => StatusCode::INTERNAL_SERVER_ERROR,
@@ -46,10 +46,9 @@ impl AuthError {
                 | BadAuth | Restricted => StatusCode::FORBIDDEN,
                 NeedRetry => StatusCode::CREATED,
             };
-            Ok(with_status(error.to_string(), code))
-        } else {
-            Err(error)
+            return Ok(with_status(error.to_string(), code));
         }
+        Err(error)
     }
 }
 

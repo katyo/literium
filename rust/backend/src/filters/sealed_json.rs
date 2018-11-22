@@ -3,7 +3,6 @@ use crypto::{CanDecrypt, CryptoError, HasSecretKey};
 use mime::Mime;
 use serde::de::DeserializeOwned;
 use warp::{
-    any,
     body::{concat, FullBody},
     header,
     reject::custom,
@@ -86,8 +85,7 @@ where
 {
     let state = state.clone();
 
-    any()
-        .and(header("content-type"))
+    header("content-type")
         .and_then(|mime: Mime| {
             if mime.subtype() == MIME_SUBTYPE || mime
                 .suffix()

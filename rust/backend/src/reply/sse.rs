@@ -1,8 +1,7 @@
 use super::ReplyStreamError;
 use crypto::{CanEncrypt, HasPublicKey};
 use futures::Stream;
-use http::StatusCode;
-use httplib::Response;
+use httplib::{Response, StatusCode};
 use hyper::Body;
 use serde::Serialize;
 use serde_json::to_string;
@@ -158,7 +157,11 @@ fn main() {
         sse(events)
     });
 
-    let res = request().method("GET").path("/sse").reply(&app).into_body();
+    let res = request()
+        .method("GET")
+        .path("/sse")
+        .reply(&app)
+        .into_body();
 
     assert_eq!(
         res,
