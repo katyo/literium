@@ -14,6 +14,7 @@ extern crate http as httplib;
 extern crate hyper;
 #[cfg(feature = "http_client")]
 extern crate hyper_tls;
+extern crate imagesize;
 extern crate mime;
 #[cfg(feature = "http_client")]
 extern crate native_tls;
