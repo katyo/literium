@@ -41,6 +41,7 @@ pub mod auth;
 pub mod crypto;
 #[cfg(feature = "name_resolver")]
 pub mod dns;
+pub mod file;
 pub mod filters;
 pub mod http;
 #[cfg(feature = "send_mail")]
