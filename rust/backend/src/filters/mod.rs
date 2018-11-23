@@ -9,15 +9,18 @@ The filters which widely used by literium web-framework.
 * Extracting BASE64 encoded sealed JSON body
 * Using BASE64 encoded sealed JSON authorization
 * Check image data from request body and get data stream
+* Check file content from request body and get data stream
 
 */
 
 mod image_file;
+mod magic_file;
 #[cfg(feature = "auth")]
 mod sealed_auth;
 mod sealed_json;
 
 pub use self::image_file::*;
+pub use self::magic_file::*;
 #[cfg(feature = "auth")]
 pub use self::sealed_auth::*;
 pub use self::sealed_json::*;

@@ -24,6 +24,7 @@ tokio = "0.1"
 supercow = "0.1"
 warp = "0.1"
 imagesize = "0.6"
+magic = "0.12"
 new-tokio-smtp = { version = "0.8", optional = true }
 emailmessage = { version = "0.2", optional = true, features = ["serde"] }
 hyper = { version = "0.12", optional = true }
