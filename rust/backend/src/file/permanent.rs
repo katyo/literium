@@ -1,7 +1,11 @@
-use super::{FileLink, PermFile, TempFile, TempFiles};
-use futures::{future::join_all, Future};
+use super::{FileLink, TempFiles};
+use futures::{
+    future::{join_all, ok, Either},
+    Future,
+};
 use std::collections::HashSet;
 use std::iter::{IntoIterator, Iterator};
+use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::fs::remove_file;
@@ -54,7 +58,7 @@ impl FileStorage {
         files: &I,
     ) -> impl Future<Item = (), Error = Rejection> + Send + 'static
     where
-        for<'a> &'a I: IntoIterator<Item = &'a PermFile>,
+        for<'a> &'a I: IntoIterator<Item = &'a FileLink>,
     {
         join_all(
             files
@@ -73,14 +77,17 @@ impl FileStorage {
         files: &I,
     ) -> impl Future<Item = (), Error = Rejection> + Send + 'static
     where
-        for<'a> &'a I: IntoIterator<Item = &'a TempFile>,
+        for<'a> &'a I: IntoIterator<Item = &'a FileLink>,
     {
         join_all(
             files
                 .into_iter()
                 .map(|file| {
-                    self.temp_files
-                        .permanent(&file.temp, self.file_path(&file.name))
+                    if let Some(temp) = &file.temp {
+                        Either::A(self.temp_files.permanent(temp, self.file_path(&file.name)))
+                    } else {
+                        Either::B(ok(()))
+                    }
                 }).collect::<Vec<_>>(),
         ).map(|_| {})
     }
@@ -93,21 +100,26 @@ impl FileStorage {
     /// * The temporary files from the second list will be saved as permanent
     ///
     /// The result of operation is a new list of permanent files.
-    pub fn update_files<I, J>(
+    pub fn update_files<I, J, T>(
         &self,
         old: J,
         new: I,
-    ) -> impl Future<Item = Vec<PermFile>, Error = Rejection> + Send + 'static
+    ) -> impl Future<Item = Vec<T>, Error = Rejection> + Send + 'static
     where
-        for<'a> &'a J: IntoIterator<Item = &'a PermFile>,
-        for<'a> &'a I: IntoIterator<Item = &'a FileLink>,
+        for<'a> &'a J: IntoIterator<Item = &'a T>,
+        for<'a> &'a I: IntoIterator<Item = &'a T>,
+        T: Deref<Target = FileLink> + DerefMut + Send + Clone + 'static,
     {
-        let old_set = old.into_iter().collect::<HashSet<_>>();
+        let old_set = old
+            .into_iter()
+            .map(Deref::deref)
+            .filter(|file| file.is_permanent())
+            .collect::<HashSet<_>>();
 
         let new_set = new
             .into_iter()
-            .filter(|file| file.is_perm())
-            .map(FileLink::as_ref)
+            .map(Deref::deref)
+            .filter(|file| file.is_permanent())
             .collect::<HashSet<_>>();
 
         let to_clear = old_set
@@ -118,16 +130,18 @@ impl FileStorage {
 
         let to_store = new
             .into_iter()
-            .filter(|file| file.is_temp())
-            .map(FileLink::as_ref)
+            .map(Deref::deref)
+            .filter(|file| file.is_temporary())
             .cloned()
-            .collect::<Vec<TempFile>>();
+            .collect::<Vec<_>>();
 
         let out = new
             .into_iter()
             .cloned()
-            .map(PermFile::from)
-            .collect::<Vec<_>>();
+            .map(|mut file| {
+                file.deref_mut().to_permanent();
+                file
+            }).collect::<Vec<_>>();
 
         let this = self.clone();
 
