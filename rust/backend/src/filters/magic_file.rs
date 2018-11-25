@@ -1,9 +1,10 @@
-use base::{serde_extra::seq_display_fromstr, EitherError};
+use base::EitherError;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use futures::{Async, Poll, Stream};
 use http::{HttpChunk, StatusCode};
 use magic;
 use mime::Mime;
+use serde_with::rust::seq_display_fromstr;
 use std::collections::HashSet;
 use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult};
