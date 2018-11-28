@@ -7,7 +7,7 @@ This module provides dummy implementation of session storage backend for example
 */
 
 use super::{
-    HasSessionStorage, IsSessionData, IsSessionStorage, IsUserAuth, SessionArg, SessionData,
+    BaseSessionData, HasSessionStorage, IsSessionData, IsSessionStorage, IsUserAuth, SessionArg,
     SessionId,
 };
 use access::{Grant, HasAccess};
@@ -16,12 +16,18 @@ use futures::future::result;
 use std::sync::{Arc, RwLock};
 use user::{HasUserStorage, IsUserData, IsUserStorage, UserArg, UserId};
 
-pub type UserSession = SessionData;
+pub type SessionData = BaseSessionData;
+
+impl From<(SessionData, ())> for SessionData {
+    fn from((session, _): (SessionData, ())) -> Self {
+        session
+    }
+}
 
 /// Dummy sessions backend
 #[derive(Clone)]
 pub struct Sessions {
-    sessions: Arc<RwLock<Vec<UserSession>>>,
+    sessions: Arc<RwLock<Vec<SessionData>>>,
 }
 
 impl Sessions {
@@ -33,7 +39,7 @@ impl Sessions {
     }
 
     /// Add session
-    pub fn with_session(self, session: UserSession) -> Self {
+    pub fn with_session(self, session: SessionData) -> Self {
         self.sessions.write().unwrap().push(session);
         self
     }
@@ -44,7 +50,7 @@ impl IsBackend for Sessions {
 }
 
 impl IsSessionStorage for Sessions {
-    type Session = UserSession;
+    type Session = SessionData;
 
     fn find_user_session(
         &self,

@@ -3,6 +3,7 @@ use serde::{
     ser::{SerializeMap, SerializeSeq},
     Deserialize, Deserializer, Serialize, Serializer,
 };
+pub use warp::filters::BoxedFilter as BoxFilter;
 
 /// Empty object to use where object-like (or map-like) parameter required
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

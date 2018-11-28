@@ -90,7 +90,7 @@ pub struct AuthResponse<UserInfo> {
 ///
 /// The data which stored on server
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SessionData {
+pub struct BaseSessionData {
     /// Unique user identifier
     pub user: UserId,
 
@@ -113,7 +113,7 @@ pub struct SessionData {
     pub atime: TimeStamp,
 }
 
-impl SessionData {
+impl BaseSessionData {
     /// Create new session data
     ///
     /// Create new session data using user identifier and client public key
@@ -160,15 +160,15 @@ pub struct SessionInfo {
     pub atime: TimeStamp,
 }
 
-impl<'a> From<&'a SessionData> for SessionInfo {
+impl<'a> From<&'a BaseSessionData> for SessionInfo {
     fn from(
-        SessionData {
+        BaseSessionData {
             user,
             sess,
             ctime,
             atime,
             ..
-        }: &'a SessionData,
+        }: &'a BaseSessionData,
     ) -> Self {
         Self {
             user: *user,
@@ -199,9 +199,9 @@ pub struct AuthData {
     pub serno: u32,
 }
 
-impl PartialEq<SessionData> for AuthData {
+impl PartialEq<BaseSessionData> for AuthData {
     /// Validate
-    fn eq(&self, other: &SessionData) -> bool {
+    fn eq(&self, other: &BaseSessionData) -> bool {
         self.serno == other.serno && self.token == other.token
     }
 }

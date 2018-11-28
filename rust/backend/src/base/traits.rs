@@ -1,7 +1,15 @@
-use super::{BoxFuture, DummyError, EitherError};
+use super::{BoxFilter, BoxFuture, DummyError, EitherError};
 use futures::{future::ok, Future};
 use serde::{de::DeserializeOwned, Serialize};
 use std::error::Error;
+
+/// Extra filter
+pub trait HasFilter<X = ()> {
+    type Arg: Send + Clone + 'static;
+
+    /// Get filter
+    fn filter(&self) -> BoxFilter<(Self::Arg,)>;
+}
 
 /// Trait which provides generic backend types
 pub trait IsBackend {

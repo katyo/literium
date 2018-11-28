@@ -13,8 +13,9 @@ use literium::{
         oauth2::{self, HasOAuth2Providers, OAuth2Auth, OAuth2Options},
         otpass::{EmailOTPass, EmailOTPassFormatter, OTPassAuth},
         stub::{Sessions, UserAuth},
-        HasAuthMethod, HasSessionStorage, HasUserAuth,
+        HasAuthMethod, HasSessionStorage, HasUserAuth, SessionArg,
     },
+    base::{BoxFilter, HasFilter},
     crypto::{CryptoKeys, HasPublicKey, HasSecretKey},
     dns::{NameResolver, ResolverOptions},
     http::client::{HasHttpClient, HttpClient},
@@ -50,6 +51,14 @@ pub struct State {
     accounts: Accounts,
     client: HttpClient<NameResolver>,
     services: Arc<(github::Service, google::Service)>,
+}
+
+impl HasFilter<SessionArg> for State {
+    type Arg = ();
+
+    fn filter(&self) -> BoxFilter<(Self::Arg,)> {
+        warp::any().map(|| ()).boxed()
+    }
 }
 
 impl AsRef<CryptoKeys> for State {

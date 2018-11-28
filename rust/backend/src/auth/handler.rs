@@ -1,9 +1,10 @@
 use super::{
-    AuthError, AuthInfo, AuthRequest, AuthResponse, HasAuthMethod, HasSessionStorage, HasUserAuth,
-    IsAuthMethod, IsSessionData, IsSessionStorage, SessionArg, SessionData, SessionId, SessionInfo,
+    AuthError, AuthInfo, AuthRequest, AuthResponse, BaseSessionData, HasAuthMethod,
+    HasSessionStorage, HasUserAuth, IsAuthMethod, IsSessionData, IsSessionStorage, SessionArg,
+    SessionId, SessionInfo,
 };
 use access::{Grant, HasAccess};
-use base::{CanCreateView, TimeStamp};
+use base::{CanCreateView, HasFilter, TimeStamp};
 use crypto::{HasPublicKey, HasSecretKey, PublicKey};
 use futures::{
     future::{err, Either},
@@ -52,12 +53,13 @@ where
         + HasUserAuth
         + HasSessionStorage
         + HasAuthMethod
+        + HasFilter<SessionArg>
         + Send
         + Sync
         + Clone,
     S::AuthMethod: IsAuthMethod<S>,
     <S::UserStorage as IsUserStorage>::User: CanCreateView<S::UserAuth, SessionArg>,
-    <S::SessionStorage as IsSessionStorage>::Session: From<SessionData>,
+    <S::SessionStorage as IsSessionStorage>::Session: From<(BaseSessionData, S::Arg)>,
     S::UserAuth: HasAccess<SessionArg, Grant>,
 {
     let state = state.clone();
@@ -66,8 +68,9 @@ where
         .and(x_auth(&state))
         .and_then(|auth: S::UserAuth| auth.access(&Grant::Create))
         .and(x_json(&state))
-        .and_then(move |auth, req| {
-            do_user_auth_fn(&state, auth, req)
+        .and(state.filter())
+        .and_then(move |auth, req, extra| {
+            do_user_auth_fn(&state, auth, req, extra)
                 .map(|data| reply::x_json(&data, &state))
                 .map_err(warp::reject::custom)
         }).recover(AuthError::recover)
@@ -77,6 +80,7 @@ fn do_user_auth_fn<S>(
     state: &S,
     auth: S::UserAuth,
     req: AuthRequest<<S::AuthMethod as IsAuthMethod<S>>::UserIdent>,
+    extra: S::Arg,
 ) -> impl Future<
     Item = AuthResponse<
         <<S::UserStorage as IsUserStorage>::User as CanCreateView<S::UserAuth, SessionArg>>::View,
@@ -88,12 +92,13 @@ where
         + HasUserStorage
         + HasUserAuth
         + HasSessionStorage
+        + HasFilter<SessionArg>
         + HasAuthMethod
         + Send
         + Clone,
     S::AuthMethod: IsAuthMethod<S>,
     <S::UserStorage as IsUserStorage>::User: CanCreateView<S::UserAuth, SessionArg>,
-    <S::SessionStorage as IsSessionStorage>::Session: From<SessionData>,
+    <S::SessionStorage as IsSessionStorage>::Session: From<(BaseSessionData, S::Arg)>,
 {
     if TimeStamp::now().abs_delta(&req.ctime) > TimeStamp::default().with_secs(3) {
         return Either::A(err(AuthError::Outdated));
@@ -115,23 +120,32 @@ where
                     .map_err(|error| {
                         error!("Backend error on find_user_session(): {}", error);
                         AuthError::BackendError
-                    }).and_then(|_| Err(AuthError::Outdated))
-                    .or_else(move |_| {
-                        (state.as_ref() as &S::SessionStorage)
-                            .new_user_session(user.get_user_id(), pbkey)
-                            .map_err(|error| {
-                                error!("Backend error on new_user_session(): {}", error);
-                                AuthError::BackendError
-                            }).map(move |session| {
-                                let extra = user.create_view(&auth);
-                                let data = session.session_data();
-                                AuthResponse {
-                                    user: user.get_user_id(),
-                                    sess: data.sess,
-                                    token: data.token.clone(),
-                                    extra,
-                                }
-                            })
+                    }).and_then(move |sess| {
+                        if sess.is_some() {
+                            Either::A(err(AuthError::Outdated))
+                        } else {
+                            let session = <S::SessionStorage as IsSessionStorage>::Session::from((
+                                BaseSessionData::new(user.get_user_id(), pbkey),
+                                extra,
+                            ));
+                            Either::B(
+                                (state.as_ref() as &S::SessionStorage)
+                                    .put_user_session(session)
+                                    .map_err(|error| {
+                                        error!("Backend error on new_user_session(): {}", error);
+                                        AuthError::BackendError
+                                    }).map(move |session| {
+                                        let extra = user.create_view(&auth);
+                                        let data = session.session_data();
+                                        AuthResponse {
+                                            user: user.get_user_id(),
+                                            sess: data.sess,
+                                            token: data.token.clone(),
+                                            extra,
+                                        }
+                                    }),
+                            )
+                        }
                     })
             }),
     )
@@ -252,6 +266,7 @@ where
         + HasUserAuth
         + HasUserStorage
         + HasSessionStorage
+        + HasFilter<SessionArg>
         + HasAuthMethod
         + Send
         + Sync
@@ -260,7 +275,7 @@ where
     S::AuthMethod: IsAuthMethod<S>,
     S::UserAuth: HasAccess<SessionArg, Grant>,
     <S::UserStorage as IsUserStorage>::User: CanCreateView<S::UserAuth, SessionArg>,
-    <S::SessionStorage as IsSessionStorage>::Session: From<SessionData>,
+    <S::SessionStorage as IsSessionStorage>::Session: From<(BaseSessionData, S::Arg)>,
 {
     get_auth_info(state)
         .or(do_user_auth(state))

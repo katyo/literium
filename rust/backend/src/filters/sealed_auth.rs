@@ -35,7 +35,7 @@ use literium::{
         HasUserStorage,
     },
     auth::{
-        stub::{Sessions, UserAuth},
+        stub::{Sessions, UserAuth, SessionData},
         AuthData, HasUserAuth, HasSessionStorage, IsSessionStorage,
     },
     x_auth,
@@ -100,8 +100,13 @@ fn main() {
 
     let sessions = Sessions::new();
 
+    let new_session = SessionData::new(
+        user.id,
+        (client_keys.as_ref() as &PublicKey).clone()
+    );
+
     let session = sessions
-        .new_user_session(user.id, (client_keys.as_ref() as &PublicKey).clone())
+        .put_user_session(new_session)
         .wait()
         .unwrap();
 

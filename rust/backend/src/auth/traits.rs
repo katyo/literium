@@ -1,23 +1,22 @@
-use super::{SessionData, SessionId};
+use super::{BaseSessionData, SessionId};
 use base::{BoxFuture, IsBackend, TimeStamp};
-use crypto::PublicKey;
 use user::{HasUserStorage, IsUserStorage, UserId};
 
 /// Access to session data
 pub trait IsSessionData {
     /// Get immutable session data
-    fn session_data(&self) -> &SessionData;
+    fn session_data(&self) -> &BaseSessionData;
 
     /// Get mutable session data
-    fn session_data_mut(&mut self) -> &mut SessionData;
+    fn session_data_mut(&mut self) -> &mut BaseSessionData;
 }
 
-impl IsSessionData for SessionData {
-    fn session_data(&self) -> &SessionData {
+impl IsSessionData for BaseSessionData {
+    fn session_data(&self) -> &BaseSessionData {
         self
     }
 
-    fn session_data_mut(&mut self) -> &mut SessionData {
+    fn session_data_mut(&mut self) -> &mut BaseSessionData {
         self
     }
 }
@@ -26,18 +25,6 @@ impl IsSessionData for SessionData {
 pub trait IsSessionStorage: IsBackend {
     /// Session data type
     type Session: IsSessionData + Send + 'static;
-
-    /// Create new user session
-    fn new_user_session(
-        &self,
-        user: UserId,
-        pbkey: PublicKey,
-    ) -> BoxFuture<Self::Session, Self::Error>
-    where
-        Self::Session: From<SessionData>,
-    {
-        self.put_user_session(Self::Session::from(SessionData::new(user, pbkey)))
-    }
 
     /// Find user session by user id and creation time
     fn find_user_session(
