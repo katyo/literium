@@ -25,7 +25,6 @@ extern crate serde_json;
 extern crate serde_qs;
 extern crate serde_with;
 extern crate sodiumoxide;
-extern crate supercow;
 extern crate tokio;
 extern crate toml;
 #[cfg(feature = "name_resolver")]
