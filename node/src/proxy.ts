@@ -12,7 +12,13 @@ export function proxy_handler(bind: BindOptions): Handler {
             const proxy_req = request({
                 ...bind,
                 method: req.method,
-                headers: req.headers().reduce((all, name) => (all[name] = req.header(name), all), {} as Record<string, string[]>),
+                headers: req.headers().reduce((all, name) => {
+                    const value = req.header(name);
+                    if (value.length > 0) {
+                        all[name] = value.length == 1 ? value[0] : value;
+                    }
+                    return all;
+                }, {} as Record<string, string | string[]>),
                 path: req.url,
             }, proxy_res => {
                 if (proxy_res.statusCode) {
