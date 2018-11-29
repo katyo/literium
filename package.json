@@ -7,7 +7,7 @@
     "example": "examples"
   },
   "scripts": {
-    "preinstall": "cd workspace && test -x workspace.js || { npm install --no-package-lock && npm run compile && chmod +x workspace.js; }",
+    "preinstall": "cd workspace && test -f literium-workspace-0.2.5.tgz || { npm install --no-package-lock && npm pack; }",
     "show": "lws show",
     "install": "lws install",
     "clean": "lws purge",
@@ -35,7 +35,7 @@
   },
   "homepage": "https://github.com/katyo/literium#readme",
   "devDependencies": {
-    "@literium/workspace": "file:workspace"
+    "@literium/workspace": "file:workspace/literium-workspace-0.2.5.tgz"
   },
   "packages": [
     "base",
@@ -52,6 +52,7 @@
     "backend",
     "frontend",
     "examples/basic",
-    "examples/todomvc"
+    "examples/todomvc",
+    "examples/blog"
   ]
 }
