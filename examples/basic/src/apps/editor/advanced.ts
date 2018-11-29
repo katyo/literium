@@ -116,7 +116,10 @@ function setSelection(root: HTMLElement, sel: Selection): void {
     }*/
 
     const doc = root.ownerDocument;
+    if (!doc) return;
+    
     const csel = doc.getSelection();
+    if (!csel) return;
 
     let range = csel.rangeCount && csel.getRangeAt(0);
 
@@ -146,7 +149,12 @@ function setRange(range: Range, start: [Node, number], end: [Node, number]) {
 }
 
 function getSelection(node: HTMLElement): Selection {
-    const sel = node.ownerDocument.getSelection();
+    const doc = node.ownerDocument;
+    if (!doc) throw 'invalid';
+    
+    const sel = doc.getSelection();
+    if (!sel) throw 'invalid';
+    
     const start = findPosition(node, sel.anchorNode, sel.anchorOffset);
     return sel.isCollapsed ? a(start) :
         b([start, findPosition(node, sel.focusNode, sel.focusOffset)] as Region);

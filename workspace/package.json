@@ -46,6 +46,6 @@
     "typescript": "^3"
   },
   "dependencies": {
-    "fs-extra": "^6"
+    "fs-extra": "^7"
   }
 }

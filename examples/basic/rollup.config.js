@@ -1,14 +1,14 @@
 /* -*- mode: typescript; -*- */
 import { join } from 'path';
 import nodeResolve from 'rollup-plugin-node-resolve';
-import make from 'rollup-plugin-make';
-import sourceMaps from 'rollup-plugin-sourcemaps';
+import makeDeps from 'rollup-plugin-make';
 import typescript from 'rollup-plugin-typescript2';
 import postcss from 'rollup-plugin-postcss';
 import { uglify } from 'rollup-plugin-uglify';
 import replace from 'rollup-plugin-replace';
 import gzip from 'rollup-plugin-gzip';
 import visualize from 'rollup-plugin-visualizer';
+import { compress } from 'node-zopfli';
 
 const { stringify } = JSON;
 
@@ -55,10 +55,9 @@ export default {
                 }
             }
         }),
-        make({
+        makeDeps({
             mangle: file => join(distdir, `${file.replace(distdir + '/', '')}.d`),
         }),
-        sourceMaps(),
         uglify({
             ie8: true,
             mangle: {
@@ -78,18 +77,15 @@ export default {
             }
         }),
         gzip({
-            algorithm: 'zopfli',
-            options: {
-                level: 9,
-                //numiterations: 10
-            },
-            additional: [
+            customCompression: content => compress(Buffer.from(content), 'deflate'),
+            additionalFiles: [
                 join(distdir, `client_${version}.min.css`),
                 join(distdir, 'client.html')
             ],
         }),
         visualize({
-            filename: join(distdir, 'stats.html')
+            filename: join(distdir, 'stats.html'),
+            //sourcemap: true
         }),
     ],
 }

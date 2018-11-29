@@ -1,17 +1,14 @@
 /* -*- mode: typescript; -*- */
 import { join } from 'path';
 import nodeResolve from 'rollup-plugin-node-resolve';
-import sourceMaps from 'rollup-plugin-sourcemaps';
 import typescript from 'rollup-plugin-typescript2';
 import postcss from 'rollup-plugin-postcss';
 import { terser } from 'rollup-plugin-terser';
-//import closure from 'rollup-plugin-closure-compiler-js';
 import replace from 'rollup-plugin-replace';
-import { compress } from 'node-zopfli';
 import gzip from 'rollup-plugin-gzip';
-import { plugin as analyze } from 'rollup-plugin-analyzer';
 import visualize from 'rollup-plugin-visualizer';
 import postcss_import from 'postcss-import';
+import { compress } from 'node-zopfli';
 
 const { stringify } = JSON;
 
@@ -59,7 +56,6 @@ export default {
             'process.env.npm_package_version': stringify(version),
             NODE_ENV: stringify(devel ? 'development' : 'production')
         }),
-        sourceMaps(),
         terser({
             ecma: 5,
             warnings: 'verbose',
@@ -82,26 +78,13 @@ export default {
                 comments: false
             }
         }),
-        /*closure({
-            languageIn: 'ES6',
-            languageOut: 'ES5',
-            compilationLevel: 'ADVANCED',
-            warningLevel: 'VERBOSE',
-            assumeFunctionWrapper: true,
-            externs: ['process', 'global', 'sessionStorage', 'localStorage']
-        }),*/
         gzip({
             customCompression: content => compress(Buffer.from(content), 'deflate'),
-            gzipOptions: {
-                level: 9,
-                //numiterations: 10
-            },
             additionalFiles: [
                 join(distdir, `client_${version}.min.css`),
                 join(distdir, 'client.html')
             ],
         }),
-        //analyze(),
         /*visualize({
             filename: join(distdir, 'stats.html')
         })*/

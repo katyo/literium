@@ -1,6 +1,6 @@
 {
   "name": "@literium/example-basic",
-  "version": "0.0.3",
+  "version": "0.2.3",
   "description": "The simple usage example of the Literium Web-framework.",
   "scripts": {
     "compile": "ts-node src/html && rollup -c",
@@ -33,16 +33,15 @@
     "cssnano": "^4",
     "node-sass": "^4",
     "node-zopfli": "^2",
-    "postcss": "^6",
-    "rollup": "^0.65",
-    "rollup-plugin-gzip": "^1",
+    "postcss": "^7",
+    "rollup": "^0.67",
+    "rollup-plugin-gzip": "^2",
     "rollup-plugin-make": "^3",
     "rollup-plugin-node-resolve": "^3",
     "rollup-plugin-postcss": "^1",
     "rollup-plugin-replace": "^2",
-    "rollup-plugin-sourcemaps": "^0.4",
-    "rollup-plugin-typescript2": "^0.16",
-    "rollup-plugin-uglify": "^4",
+    "rollup-plugin-typescript2": "^0.18",
+    "rollup-plugin-uglify": "^6",
     "rollup-plugin-visualizer": "^0.9"
   },
   "dependencies": {
@@ -57,7 +56,7 @@
     "highlight-ts": "^9",
     "marklit": "^0.2",
     "raf-polyfill": "^1",
-    "ts-node": "^5",
+    "ts-node": "^7",
     "tslib": "^1",
     "typescript": "^3"
   }

@@ -23,7 +23,7 @@ export function init(doc: Document = document): Init {
         eventModule(document),
     ], document);
 
-    return <Props, State, Signal>({ create, update, render }: Component<Props, State, Signal>) => (props: Props, elm: Node = doc.documentElement) => {
+    return <Props, State, Signal>({ create, update, render }: Component<Props, State, Signal>) => (props: Props, elm: Node = doc.documentElement as Node) => {
         let frame: any;
         const [spawn, run, kill] = task_pool(dummy);
         const deferred_emit = deferred(emit);
