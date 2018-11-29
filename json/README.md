@@ -22,18 +22,18 @@ The third approach is used in libraries like [serde](https://serde.rs/) (Rust) a
 
 ## How
 
-Each data type have corresponded `JsonType` interface which implements parser and builder.
-The parser gets untyped data do internal validation and returns `JsonResult` which is either the data of corresponded type or an error string.
-The builder gets typed data and like the parser after some checks returns `JsonResult` which is either the untyped data or an error string.
+Each data type have corresponded `Type` interface which implements parser and builder.
+The parser gets untyped data do internal validation and returns `Result` which is either the data of corresponded type or an error string.
+The builder gets typed data and like the parser after some checks returns `Result` which is either the untyped data or an error string.
 
 ## API basics
 
 The proposed API have two class of functions: the first works with string JSON representation, the second operates with untyped JS data (i.e. with `any` type).
 
 ```typescript
-import { JsonType, build, parse, build_js, parse_js } from 'literium-json';
+import { Type, build, parse, build_js, parse_js } from 'literium-json';
 
-const json_model: JsonType<JSType>;
+const json_model: Type<JSType>;
 
 build(json_model)(/*js-data*/)     // => Result<"json-string", "error-string">
 build_js(json_model)(/*js-data*/)  // => Result<js-data, "error-string">
@@ -104,7 +104,7 @@ The `list` container corresponds to JSON *array* type.
 import { str, list, parse, build } from 'literium-json';
 
 const args = list(str);
-// => JsonType<string[]>
+// => Type<string[]>
 
 parse(args)(`["arg1","arg2","arg3"]`)
 // => ok(["arg1", "arg2", "arg3"])
@@ -126,7 +126,7 @@ The `dict` container corresponds to JSON *object* type.
 import { str, num, dict, parse, build } from 'literium-json';
 
 const opts = dict({ a: str, b: num });
-// => JsonType<{ a: string, b: number }>
+// => Type<{ a: string, b: number }>
 
 parse(opts)(`{"a":"abc","b":123}`)
 // => ok({a:"abc",b:123})
@@ -151,7 +151,7 @@ In some cases we prefer to use tuples instead of dictionaries.
 import { str, num, tup, parse, build } from 'literium-json';
 
 const args = tup(str, num);
-// => JsonType<[string, number]>
+// => Type<[string, number]>
 
 parse(args)(`["abc",123]`)         // => ok(["abc", 123])
 parse(args)(`{"a":"abc","b":123}`) // => err("!tuple")
@@ -341,17 +341,17 @@ build(even)(9)   // => err('odd')
 #### Custom type
 
 One of the more helpful feature of this library is the possibility to define your own data types with fully customized validation.
-For example, suppose we have enum type _Order_ which has two values: _Asc_ and _Desc_. We can simply use it in our data models when we defined corresponding JsonType for it.
+For example, suppose we have enum type _Order_ which has two values: _Asc_ and _Desc_. We can simply use it in our data models when we defined corresponding `Type` for it.
 
 ```typescript
 import { ok, err } from 'literium';
-import { str, parse, build, JsonType } from 'literium-json';
+import { str, parse, build, Type } from 'literium-json';
 
 // Our enum type
 export const enum Order { Asc, Desc }
 
 // The implementation of TypeApi
-export const ord: JsonType<Order> = {
+export const ord: Type<Order> = {
     // The parser function
     p(v) {
         const s = str.p(v);
@@ -380,14 +380,14 @@ The example below demonstrates how to create custom combinator.
 
 ```typescript
 import { ok, err } from 'literium';
-import { str, num, parse, build, JsonType } from 'literium-json';
+import { str, num, parse, build, Type } from 'literium-json';
 
 export interface Pair<Key, Value> { $: Key, _: Value }
 
 export function pair<Key, Value>(
-  tk: JsonType<Key>,
-  tv: JsonType<Value>
-): JsonType<Pair<Key, Value>> {
+  tk: Type<Key>,
+  tv: Type<Value>
+): Type<Pair<Key, Value>> {
     return {
         p(x) {
             if (typeof x != 'object' ||

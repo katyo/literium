@@ -1,6 +1,6 @@
 import { deepStrictEqual as dse } from 'assert';
-import { ok, err } from 'literium-base';
-import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, mix, tup, alt, opt, def, val, map, then, parse, build, Type, date_msec, date_unix, regex } from '../src/index';
+import { ok, err } from '@literium/base';
+import { str, num, bin, und, fin, pos, neg, int, nat, list, dict, rec, mix, tup, alt, opt, def, val, map, then, parse, build, Type, date_msec, date_unix, regex } from '../src/index';
 
 // custom type
 
@@ -202,6 +202,7 @@ describe('json', () => {
                     const t = dict({});
                     dse(parse(t)(`{}`), ok({}));
                     dse(parse(t)(`[]`), err("!object"));
+                    dse(parse(t)(`null`), err("!object"));
                     dse(parse(t)(`{"abc":123}`), ok({}));
                 });
 
@@ -224,6 +225,41 @@ describe('json', () => {
                     dse(parse(t)(`{"a":"abc","b":{"a":123}}`), ok({ a: "abc", b: { a: 123 } }));
                     dse(parse(t)(`{"a":"abc","b":{}}`), err(".b .a missing"));
                     dse(parse(t)(`{"a":"abc","b":{"a":-1}}`), err(".b .a negative"));
+                });
+            });
+
+            describe('rec', () => {
+                it('empty', () => {
+                    const t = rec(str);
+                    dse(parse(t)(`{}`), ok({}));
+                    dse(parse(t)(`[]`), err("!object"));
+                    dse(parse(t)(`null`), err("!object"));
+                });
+
+                it('single', () => {
+                    const t = rec(str);
+                    dse(parse(t)(`{"abc":"def"}`), ok({abc:"def"}));
+                    dse(parse(t)(`{"abc":123}`), err(".abc value !string"));
+                });
+
+                it('multi', () => {
+                    const t = rec(str);
+                    dse(parse(t)(`{"abc":"def","123":"abc"}`), ok({abc:"def",123:"abc"}));
+                    dse(parse(t)(`{"123":"def","abc":123}`), err(".abc value !string"));
+                });
+
+                it('alt', () => {
+                    const t = rec(alt(str, num));
+                    dse(parse(t)(`{"abc":"def","123":"abc"}`), ok({abc:"def",123:"abc"}));
+                    dse(parse(t)(`{"123":"def","abc":123}`), ok({123:"def",abc:123}));
+                });
+
+                it('key', () => {
+                    const t = rec(num, map(k => `~${k}`, k => k)(str));
+                    dse(parse(t)(`{"abc":456,"123":0}`), ok({"~abc":456,"~123":0}));
+
+                    const e = rec(num, then(k => parseInt(k) ? ok(k) : err("error"), (k: string) => ok(k))(str));
+                    dse(parse(e)(`{"123":0,"abc":456}`), err(`.abc key error`));
                 });
             });
 
@@ -487,9 +523,10 @@ describe('json', () => {
 
             describe('dict', () => {
                 it('empty', () => {
-                    dse(build(dict({}))({}), ok(`{}`));
-                    dse(build(dict({}))([]), err("!object"));
-                    dse(build(dict({}))({ "abc": 123 }), ok(`{}`));
+                    const t = dict({});
+                    dse(build(t)({}), ok(`{}`));
+                    dse(build(t)([]), err("!object"));
+                    dse(build(t)({ "abc": 123 }), ok(`{}`));
                     dse(build(dict({ a: str }))({} as any), err(".a missing"));
                 });
 
@@ -511,6 +548,41 @@ describe('json', () => {
                     dse(build(t)({ a: "abc", b: { a: 123 } }), ok(`{"a":"abc","b":{"a":123}}`));
                     dse(build(t)({ a: "abc", b: {} } as any), err(".b .a missing"));
                     dse(build(t)({ a: "abc", b: { a: -1 } }), err(".b .a negative"));
+                });
+            });
+
+            describe('rec', () => {
+                it('empty', () => {
+                    const t = rec(str);
+                    dse(build(t)({}), ok(`{}`));
+                    dse(build(t)([] as any), err("!object"));
+                    
+                });
+
+                it('single', () => {
+                    const t = rec(str);
+                    dse(build(t)({ "abc": "123" }), ok(`{"abc":"123"}`));
+                    dse(build(t)({ "abc": 123 } as any), err(`.abc value !string`));
+                });
+
+                it('multi', () => {
+                    const t = rec(str);
+                    dse(build(t)({ "abc": "123", "def": "abc" }), ok(`{"abc":"123","def":"abc"}`));
+                    dse(build(t)({ "def": "abc", "abc": 123 } as any), err(`.abc value !string`));
+                });
+
+                it('alt', () => {
+                    const t = rec(alt(str, num));
+                    dse(build(t)({ "abc": "123", "def": "abc" }), ok(`{"abc":"123","def":"abc"}`));
+                    dse(build(t)({ "def": "abc", "abc": 123 } as any), ok(`{"def":"abc","abc":123}`));
+                });
+
+                it('key', () => {
+                    const t = rec(num, map((k: string) => k, k => `~${k}`)(str));
+                    dse(build(t)({"123":0,"abc":456}), ok(`{"~123":0,"~abc":456}`));
+
+                    const e = rec(num, then((k: string) => ok(k), k => parseInt(k) ? ok(k) : err("error"))(str));
+                    dse(build(e)({"123":0,"abc":456}), err(`.abc key error`));
                 });
             });
 

@@ -27,8 +27,8 @@ export const bin: Type<boolean> = {
 };
 
 export const und: Type<void> = {
-    p: v => v != null ? err('defined') : ok(undefined),
-    b: v => v != null ? err('defined') : ok(null),
+    p: /*@__PURE__*/v => v != null ? err('defined') : ok(undefined),
+    b: /*@__PURE__*/v => v != null ? err('defined') : ok(null),
 };
 
 // Extra numeric types
@@ -62,12 +62,12 @@ export const nat: Type<number> = {
 
 export const date_msec: Type<Date> = {
     p: /*@__PURE__*/mk_seq(nat_check, map_ok(v => new Date(v))),
-    b: v => v instanceof Date ? ok(v.getTime()) : err('!date'),
+    b: /*@__PURE__*/v => v instanceof Date ? ok(v.getTime()) : err('!date'),
 }
 
 export const date_unix: Type<Date> = {
     p: /*@__PURE__*/mk_seq(nat_check, map_ok(v => new Date(v * 1000))),
-    b: v => v instanceof Date ? ok((v.getTime() / 1000) | 0) : err('!date'),
+    b: /*@__PURE__*/v => v instanceof Date ? ok((v.getTime() / 1000) | 0) : err('!date'),
 }
 
 // RegExp matched string
@@ -119,7 +119,7 @@ export type Dict<T extends Object> = { [Tag in keyof T]: Type<T[Tag]> };
 export function dict<T extends Object>(t: Dict<T>): Type<T> {
     return {
         p(v) {
-            if (typeof v != 'object' ||
+            if (v == null || typeof v != 'object' ||
                 Array.isArray(v)) return err('!object');
             const r = {} as T;
             for (const k in t) {
@@ -130,13 +130,44 @@ export function dict<T extends Object>(t: Dict<T>): Type<T> {
             return ok(r);
         },
         b(v) {
-            if (typeof v != 'object' ||
+            if (v == null || typeof v != 'object' ||
                 Array.isArray(v)) return err('!object');
             const r = {} as any;
             for (const k in t) {
                 const e = t[k].b(v[k]);
                 if (!e.$) return err(`.${k} ${k in v ? e._ : "missing"}`);
                 if (e._ != null) r[k] = e._;
+            }
+            return ok(r);
+        }
+    };
+}
+
+export function rec<V, K extends keyof any = string>(t: Type<V>, i: Type<K> = str as Type<K>): Type<Record<K, V>> {
+    return {
+        p(v) {
+            if (v == null || typeof v != 'object' ||
+                Array.isArray(v)) return err('!object');
+            const r = {} as Record<K, V>;
+            for (const k in v) {
+                const n = i.p(k);
+                if (!n.$) return err(`.${k} key ${n._}`);
+                const e = t.p(v[k]);
+                if (!e.$) return err(`.${k} value ${e._}`);
+                if (n._ != null && e._ != null) r[n._ as K] = e._ as V;
+            }
+            return ok(r);
+        },
+        b(v) {
+            if (v == null || typeof v != 'object' ||
+                Array.isArray(v)) return err('!object');
+            const r = {} as Record<K, V>;
+            for (const k in v) {
+                const n = i.b(k);
+                if (!n.$) return err(`.${k} key ${n._}`);
+                const e = t.b(v[k]);
+                if (!e.$) return err(`.${k} value ${e._}`);
+                if (n._ != null && e._ != null) r[n._] = e._;
             }
             return ok(r);
         }
