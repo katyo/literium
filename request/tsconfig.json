@@ -19,9 +19,12 @@
   },
   "files": [
     "src/types.ts",
-    "src/request.ts",
     "src/client.ts",
     "src/server.ts",
-    "src/json.ts"
+    "src/plugins.ts",
+    "src/route.ts",
+    "src/json.ts",
+    "src/rest.ts",
+    "src/index.ts"
   ]
 }

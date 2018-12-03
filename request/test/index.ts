@@ -1,360 +1,259 @@
 import 'setimmediate';
 
-import { strictEqual as se, deepStrictEqual as dse } from 'assert';
-import * as is from 'assert';
-import { is_ok, un_ok, un_err, err, timeout_future } from '@literium/base';
+import { deepStrictEqual } from 'assert';
+import { Result, ok, err, some, keyed } from '@literium/base';
 import * as Json from '@literium/json';
-import { Method, Status, StrBody, BinBody, JsonBody, request } from '../src/request';
+//import * as Router from '@literium/router';
+import { Plugin, Error, ErrorKind, Method, Status, StatusKind, BodyType, mix_plugin, request, method_use, origin_use, path_use, path_from, header_use, header_from, header_into, header_exact, header_expect, status_exact, status_expect, status_into, reason_exact, reason_expect, reason_into, body_use, body_exact, body_into, json_from, json_into, progress_emit, ProgressType } from '../src/index';
 
 const base = typeof window != 'undefined' ? '' : 'http://localhost:8182';
+const set_origin = origin_use(base);
+
+function test<A, R, XA extends A, XR extends R>(plugin: Plugin<A, R>, arg: XA, res: Result<XR, Error>): (done: () => void) => void {
+    return done => {
+        request(mix_plugin(set_origin, plugin))
+        (arg)((r: Result<R, Error>) => {
+            deepStrictEqual(r, res);
+            done();
+        });
+    };
+}
+
+const expected_binary_data = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]).buffer;
+
+const unexpected_binary_data = new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]).buffer;
+
+const expected_json_type = Json.dict({
+    a: Json.fin,
+    b: Json.nat,
+    c: Json.list(Json.int),
+    d: Json.dict({
+        a: Json.str,
+        b: Json.bin,
+    })
+});
+
+const expected_json_data = {
+    a: -1,
+    b: 2,
+    c: [1, 2],
+    d: {
+        a: "b",
+        b: true
+    }
+};
+
+const unexpected_json_type = Json.dict({
+    a: Json.fin,
+    b: Json.nat,
+    c: Json.list(Json.str),
+    d: Json.dict({
+        a: Json.str,
+        b: Json.bin,
+    })
+});
+
+const unexpected_json_data = {
+    a: -1,
+    b: 2,
+    c: ["3", "4"],
+    d: {
+        a: "b",
+        b: true
+    }
+};
+
+type UnexpectedJsonType = Json.JSType<typeof unexpected_json_type>;
+
+// 16Megs of spaces
+const too_long_data = new Array((1 << 24) + 1).join(' ');
+
+describe('plugins', () => {
+    it('header + path + status_exact + header_exact + body_exact', test(mix_plugin(
+        header_use('accept', 'text/plain'),
+        path_use('/xhr/ascii'),
+        status_exact(Status.Ok),
+        header_exact('content-type', 'text/plain'),
+        body_exact()("Not very long ASCII text content."),
+    ), {}, ok({})));
+
+    it('header_from + path_from + status_expect + header_into + body_into', test(mix_plugin(
+        header_from()('accept')('mime'),
+        path_from(f => f == 'xhr_ascii' ? ok('/xhr/ascii') : err('unsupported call'))('call'),
+        status_expect(StatusKind.Success),
+        header_expect('content-type', /text/),
+        header_into()('content-type')('mime'),
+        body_into()()('text'),
+    ), {
+        mime: 'text/plain',
+        call: 'xhr_ascii',
+    }, ok({
+        mime: 'text/plain',
+        text: "Not very long ASCII text content.",
+    })));
+});
 
 describe('request', () => {
     describe('get', () => {
-        it('ascii', done => {
-            request({
-                method: Method.Get,
-                url: `${base}/xhr/ascii`,
-                headers: { 'accept': 'text/plain' },
-                response: StrBody,
-            })(res => {
-                is(is_ok(res));
-                const { status, message, headers, body } = un_ok(res);
-                se(status, Status.Ok);
-                se(message, 'OK');
-                se(headers['Content-Type'], 'text/plain');
-                se(body, "Not very long ASCII text content.");
-                done();
-            });
-        });
+        it('ascii', test(mix_plugin(
+            path_use('/xhr/ascii'),
+            header_use('accept', 'text/plain'),
+            status_exact(Status.Ok),
+            header_exact('content-type', 'text/plain'),
+            body_exact()("Not very long ASCII text content."),
+        ), {}, ok({})));
 
-        it('utf8', done => {
-            request({
-                method: Method.Get,
-                url: `${base}/xhr/utf8`,
-                headers: { 'accept': 'text/plain; charset=UTF-8' },
-                response: StrBody
-            })(res => {
-                is(is_ok(res));
-                const { status, message, headers, body } = un_ok(res);
-                se(status, Status.Ok);
-                se(message, 'OK');
-                se(headers['Content-Type'], 'text/plain; charset=UTF-8');
-                se(body, "Не очень длинное UTF-8 содержимое.");
-                done();
-            });
-        });
+        it('utf8', test(mix_plugin(
+            path_use('/xhr/utf8'),
+            header_use('accept', 'text/plain; charset=UTF-8'),
+            status_exact(Status.Ok),
+            header_into()('content-type')('mime'),
+            body_into()()("text"),
+        ), {}, ok({
+            mime: 'text/plain; charset=UTF-8',
+            text: "Не очень длинное UTF-8 содержимое.",
+        })));
 
-        it('binary', done => {
-            request({
-                method: Method.Get,
-                url: `${base}/xhr/binary`,
-                headers: { 'accept': 'application/octet-stream' },
-                response: BinBody
-            })(res => {
-                is(is_ok(res));
-                const { status, message, headers, body } = un_ok(res);
-                se(status, Status.Ok);
-                se(message, 'OK');
-                se(headers['Content-Type'], 'application/octet-stream');
-                dse(body, new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]).buffer);
-                done();
-            });
-        });
+        it('binary', test(mix_plugin(
+            method_use(Method.Get),
+            path_use('/xhr/binary'),
+            header_use('accept', 'application/octet-stream'),
+            status_exact(Status.Ok),
+            header_exact('content-type', 'application/octet-stream'),
+            body_into(BodyType.Binary)()("data"),
+        ), {}, ok({
+            data: expected_binary_data,
+        })));
 
-        it('json', done => {
-            request({
-                method: Method.Get,
-                url: `${base}/xhr/json`,
-                headers: { 'accept': 'application/json' },
-                response: JsonBody(Json.dict({
-                    a: Json.fin,
-                    b: Json.nat,
-                    c: Json.list(Json.int),
-                    d: Json.dict({
-                        a: Json.str,
-                        b: Json.bin,
-                    })
-                }))
-            })(res => {
-                is(is_ok(res));
-                const { status, message, headers, body } = un_ok(res);
-                se(status, Status.Ok);
-                se(message, 'OK');
-                se(headers['Content-Type'], 'application/json');
-                dse(body, { a: -1, b: 2, c: [1, 2], d: { a: "b", b: true } });
-                done();
-            });
-        });
+        it('json', test(mix_plugin(
+            path_use('/xhr/json'),
+            header_use('accept', 'application/json'),
+            status_exact(Status.Ok),
+            json_into(expected_json_type)(),
+        ), {}, ok(expected_json_data)));
 
-        it('json error', done => {
-            request({
-                method: Method.Get,
-                url: `${base}/xhr/json`,
-                headers: { 'accept': 'application/json' },
-                response: JsonBody(Json.dict({
-                    a: Json.fin,
-                    b: Json.nat,
-                    c: Json.list(Json.str),
-                    d: Json.dict({
-                        a: Json.str,
-                        b: Json.bin,
-                    })
-                }))
-            })(res => {
-                is(!is_ok(res));
-                dse(un_err(res).message, 'Json parse error: .c [0] !string');
-                done();
-            });
-        });
+        it('json error', test(mix_plugin(
+            path_use('/xhr/json'),
+            header_use('accept', 'application/json'),
+            status_exact(Status.Ok),
+            json_into(unexpected_json_type)(),
+        ), {}, err<UnexpectedJsonType, Error>(keyed(ErrorKind.FromBody, 'invalid response body: .c [0] !string'))));
 
-        it('client error', done => {
-            request({
-                method: Method.Get,
-                url: `${base}/xhr/error`,
-                response: StrBody
-            })(res => {
-                is(is_ok(res));
-                const { status, message, body } = un_ok(res);
-                se(status, Status.Forbidden);
-                se(message, 'Forbidden');
-                se(body, '');
-                done();
-            })
-        });
+        it('client error', test(mix_plugin(
+            path_use('/xhr/error'),
+            status_expect(StatusKind.Success),
+        ), {}, err(keyed(ErrorKind.FromHead, "invalid status '403' when '2xx' expected"))));
     });
 
     describe('put', () => {
-        it('ascii', done => {
-            request({
-                method: Method.Put,
-                url: `${base}/xhr/ascii`,
-                headers: { 'Content-Type': 'text/plain' },
-                request: StrBody,
-                body: "Not very long ASCII text content."
-            })(res => {
-                is(is_ok(res));
-                const { status, message } = un_ok(res);
-                se(status, Status.Ok);
-                se(message, 'OK');
-                done();
-            });
-        });
+        it('ascii', test(mix_plugin(
+            method_use(Method.Put),
+            path_use('/xhr/ascii'),
+            header_use('content-type', 'text/plain'),
+            body_use()('Not very long ASCII text content.'),
+            status_exact(Status.Ok),
+        ), {}, ok({})));
 
-        it('ascii error', done => {
-            request({
-                method: Method.Put,
-                url: `${base}/xhr/ascii`,
-                headers: { 'Content-Type': 'text/plain' },
-                request: StrBody,
-                body: "Not very long ASCII text content!"
-            })(res => {
-                is(is_ok(res));
-                const { status, message } = un_ok(res);
-                se(status, Status.BadRequest);
-                se(message, 'Invalid');
-                done();
-            });
-        });
+        it('ascii error', test(mix_plugin(
+            method_use(Method.Put),
+            path_use('/xhr/ascii'),
+            header_use('content-type', 'text/plain'),
+            body_use()('Not very long ASCII text content!'),
+            status_exact(Status.Ok),
+        ), {}, err(keyed(ErrorKind.FromHead, "unexpected status '400' when '200' expected"))));
 
-        it('utf8', done => {
-            request({
-                method: Method.Put,
-                url: `${base}/xhr/utf8`,
-                headers: { 'Content-Type': 'text/plain; charset=UTF-8' },
-                request: StrBody,
-                body: "Не очень длинное UTF-8 содержимое."
-            })(res => {
-                is(is_ok(res));
-                const { status, message } = un_ok(res);
-                se(status, Status.Ok);
-                se(message, 'OK');
-                done();
-            });
-        });
+        it('utf8', test(mix_plugin(
+            method_use(Method.Put),
+            path_use('/xhr/utf8'),
+            header_use('content-type', 'text/plain; charset=UTF-8'),
+            body_use()('Не очень длинное UTF-8 содержимое.'),
+            status_exact(Status.Ok),
+        ), {}, ok({})));
 
-        it('utf8 error', done => {
-            request({
-                method: Method.Put,
-                url: `${base}/xhr/utf8`,
-                headers: { 'Content-Type': 'text/plain; charset=UTF-8' },
-                request: StrBody,
-                body: "Не очень длинное UTF-8 содержимое!"
-            })(res => {
-                is(is_ok(res));
-                const { status, message } = un_ok(res);
-                se(status, Status.BadRequest);
-                se(message, 'Invalid');
-                done();
-            });
-        });
+        it('utf8 error', test(mix_plugin(
+            method_use(Method.Put),
+            path_use('/xhr/utf8'),
+            header_use('content-type', 'text/plain; charset=UTF-8'),
+            body_use()('Не очень длинное UTF-8 содержимое!'),
+            status_exact(Status.Ok),
+        ), {}, err(keyed(ErrorKind.FromHead, "unexpected status '400' when '200' expected"))));
 
-        it('binary', done => {
-            request({
-                method: Method.Put,
-                url: `${base}/xhr/binary`,
-                headers: { 'Content-Type': 'application/octet-stream' },
-                request: BinBody,
-                body: new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]).buffer
-            })(res => {
-                is(is_ok(res));
-                const { status, message } = un_ok(res);
-                se(status, Status.Ok);
-                se(message, 'OK');
-                done();
-            });
-        });
+        it('binary', test(mix_plugin(
+            method_use(Method.Put),
+            path_use('/xhr/binary'),
+            header_use('content-type', 'application/octet-stream'),
+            body_use(BodyType.Binary)(expected_binary_data),
+            status_exact(Status.Ok),
+        ), {}, ok({})));
 
-        it('binary error', done => {
-            request({
-                method: Method.Put,
-                url: `${base}/xhr/binary`,
-                headers: { 'Content-Type': 'application/octet-stream' },
-                request: BinBody,
-                body: new Uint8Array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]).buffer
-            })(res => {
-                is(is_ok(res));
-                const { status, message } = un_ok(res);
-                se(status, Status.BadRequest);
-                se(message, 'Invalid');
-                done();
-            });
-        });
+        it('binary error', test(mix_plugin(
+            method_use(Method.Put),
+            path_use('/xhr/binary'),
+            header_use('content-type', 'application/octet-stream'),
+            body_use(BodyType.Binary)(unexpected_binary_data),
+            status_exact(Status.Ok),
+        ), {}, err(keyed(ErrorKind.FromHead, "unexpected status '400' when '200' expected"))));
 
-        it('json', done => {
-            request({
-                method: Method.Put,
-                url: `${base}/xhr/json`,
-                headers: { 'Content-Type': 'application/json' },
-                request: JsonBody(Json.dict({
-                    a: Json.fin,
-                    b: Json.nat,
-                    c: Json.list(Json.int),
-                    d: Json.dict({
-                        a: Json.str,
-                        b: Json.bin,
-                    })
-                })),
-                body: { a: -1, b: 2, c: [1, 2], d: { a: "b", b: true } }
-            })(res => {
-                is(is_ok(res));
-                const { status, message } = un_ok(res);
-                se(status, Status.Ok);
-                se(message, 'OK');
-                done();
-            });
-        });
+        it('json', test(mix_plugin(
+            method_use(Method.Put),
+            path_use('/xhr/json'),
+            json_from(expected_json_type)(),
+            status_exact(Status.Ok),
+        ), expected_json_data, ok({})));
 
-        it('json error', done => {
-            request({
-                method: Method.Put,
-                url: `${base}/xhr/json`,
-                headers: { 'Content-Type': 'application/json' },
-                request: JsonBody(Json.dict({
-                    a: Json.fin,
-                    b: Json.nat,
-                    c: Json.list(Json.int),
-                    d: Json.dict({
-                        a: Json.str,
-                        b: Json.bin,
-                    })
-                })),
-                body: { a: -1, b: 2, c: [3, 4], d: { a: "b", b: true } }
-            })(res => {
-                is(is_ok(res));
-                const { status, message } = un_ok(res);
-                se(status, Status.BadRequest);
-                se(message, 'Invalid');
-                done();
-            });
-        });
+        it('json error', test(mix_plugin(
+            method_use(Method.Put),
+            path_use('/xhr/json'),
+            json_from(unexpected_json_type)(),
+            status_exact(Status.Ok),
+        ), unexpected_json_data, err(keyed(ErrorKind.FromHead, "unexpected status '400' when '200' expected"))));
 
-        it('server error', done => {
-            request({
-                method: Method.Put,
-                url: `${base}/xhr/error`,
-                request: StrBody,
-                body: '',
-            })(res => {
-                is(is_ok(res));
-                const { status, message } = un_ok(res);
-                se(status, Status.BadGateway);
-                se(message, 'Bad gateway');
-                done();
-            });
-        });
+        it('server error', test(mix_plugin(
+            method_use(Method.Put),
+            path_use('/xhr/error'),
+            status_into()('status'),
+            reason_into()('message')
+        ), {}, ok({ status: Status.BadGateway, message: 'Bad gateway' })));
     });
-
-    it('timeout error', done => {
-        const timeout_error = new Error('timeout');
-        timeout_future(1000)(err(timeout_error))(request({
-            method: Method.Post,
-            url: `${base}/xhr/long`,
-            request: StrBody,
-            body: '',
-        }))(res => {
-            is(!is_ok(res));
-            se(un_err(res), timeout_error);
-            done();
-        });
-    });
-
-    /*
-    it('broken error', done => {
-        request({
-            method: Method.Post,
-            url: `${base}/xhr/break`,
-            body: '123',
-        })(res => {
-            is(!is_ok(res));
-            se(un_err(res), Error.Broken);
-            done();
-        });
-    });
-    */
 
     describe('progress', function() {
         this.timeout(10000);
+        
         it('upload', done => {
-            let all = 0;
-            request({
-                method: Method.Post,
-                url: `${base}/xhr/upload`,
-                request: StrBody,
-                body: new Array((1 << 24) + 1).join(' '), // 16Megs of spaces
-                progress: ({ left, size, down }) => {
-                    if (!down) {
-                        se(size, 1 << 24);
-                        all = left;
-                    }
-                },
-            })(res => {
-                is(is_ok(res));
-                const { status, message } = un_ok(res);
-                se(status, Status.Created);
-                se(message, 'Created');
-                se(all, 1 << 24);
+            let uploaded = 0;
+            request(mix_plugin(
+                set_origin,
+                method_use(Method.Post),
+                path_use('/xhr/upload'),
+                body_use()(too_long_data),
+                progress_emit(ProgressType.Upload)(({ loaded, total }) => {
+                    deepStrictEqual(total, some(1 << 24));
+                    uploaded = loaded;
+                }),
+                status_exact(Status.Created),
+                reason_expect('Created'),
+            ))({})(res => {
+                deepStrictEqual(res, ok({}));
+                deepStrictEqual(uploaded, 1 << 24);
                 done();
             });
         });
 
         it('download', done => {
-            let all = 0;
-            request({
-                method: Method.Get,
-                url: `${base}/xhr/download`,
-                response: StrBody,
-                progress: ({ left, size, down }) => {
-                    if (down) {
-                        se(size, 1 << 24);
-                        all = left;
-                    }
-                },
-            })(res => {
-                is(is_ok(res));
-                const { status, message } = un_ok(res);
-                se(status, Status.Ok);
-                se(message, 'OK');
-                se(all, 1 << 24);
+            let downloaded = 0;
+            request(mix_plugin(
+                set_origin,
+                path_use('/xhr/download'),
+                body_into()()('data'),
+                progress_emit(ProgressType.Download)(({ loaded, total }) => {
+                    deepStrictEqual(total, some(1 << 24));
+                    downloaded = loaded;
+                }),
+                status_exact(Status.Ok),
+                reason_exact('OK'),
+            ))({})(res => {
+                deepStrictEqual(res, ok({ data: too_long_data }));
+                deepStrictEqual(downloaded, 1 << 24);
                 done();
             });
         });

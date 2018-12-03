@@ -1,10 +1,10 @@
 {
   "name": "@literium/request",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "description": "Request module for Literium web-framework.",
-  "main": "request.js",
-  "typings": "request.d.ts",
-  "module": "es/request.js",
+  "main": "index.js",
+  "typings": "index.d.ts",
+  "module": "es/index.js",
   "browser": {
     "./server.js": "./client.js",
     "./es/server.js": "./es/client.js"
@@ -58,6 +58,7 @@
   "dependencies": {
     "@literium/base": "file:../base",
     "@literium/json": "file:../json",
+    "@literium/router": "file:../router",
     "tslib": "^1"
   }
 }
