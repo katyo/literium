@@ -1,6 +1,6 @@
 import { do_seq } from './helper';
 import { Result, ok, err, is_ok, un_ok, un_err, ErrFn, OkFn } from './result';
-import { Emit, Future, future, then_future, FutureConv, select_future, map_future, timeout } from './future';
+import { Emit, Done, Future, future, then_future, FutureConv, select_future, map_future, timeout } from './future';
 
 export type FutureResult<Value, Error> = Future<Result<Value, Error>>;
 
@@ -10,11 +10,15 @@ export type FutureOkFn<Error> = <Value>(v: Value) => FutureResult<Value, Error>;
 
 export type FutureErrFn<Value> = <Error>(e: Error) => FutureResult<Value, Error>;
 
-export function future_ok<Value, Error>(v: Value): FutureResult<Value, Error> {
+export function future_ok<Value, Error>(v: Value): FutureResult<Value, Error>;
+export function future_ok<Error>(): FutureResult<void, Error>;
+export function future_ok<Value, Error>(v?: Value): FutureResult<Value | void, Error> {
     return future(ok(v));
 }
 
-export function future_err<Value, Error>(e: Error): FutureResult<Value, Error> {
+export function future_err<Value, Error>(e: Error): FutureResult<Value, Error>;
+export function future_err<Value>(): FutureResult<Value, void>;
+export function future_err<Value, Error>(e?: Error): FutureResult<Value, Error | void> {
     return future(err(e));
 }
 
@@ -32,6 +36,35 @@ export function map_future_ok<Value, NewValue>(fn: (v: Value) => NewValue): <Err
 
 export function map_future_err<Error, NewError>(fn: (e: Error) => NewError): <Value>(future: FutureResult<Value, Error>) => FutureResult<Value, NewError> {
     return then_future(<Value>(r: Result<Value, Error>) => is_ok(r) ? future(r as Result<Value, NewError>) : future_err(fn(un_err(r))));
+}
+
+export function join_future_result<T1, T2, E>(f1: FutureResult<T1, E>, f2: FutureResult<T2, E>): FutureResult<[T1, T2], E>;
+export function join_future_result<T1, T2, T3, E>(f1: FutureResult<T1, E>, f2: FutureResult<T2, E>, f3: FutureResult<T3, E>): FutureResult<[T1, T2, T3], E>;
+export function join_future_result<T1, T2, T3, T4, E>(f1: FutureResult<T1, E>, f2: FutureResult<T2, E>, f3: FutureResult<T3, E>, f4: FutureResult<T4, E>): FutureResult<[T1, T2, T3, T4], E>;
+export function join_future_result<T1, T2, T3, T4, T5, E>(f1: FutureResult<T1, E>, f2: FutureResult<T2, E>, f3: FutureResult<T3, E>, f4: FutureResult<T4, E>, f5: FutureResult<T5, E>): FutureResult<[T1, T2, T3, T4, T5], E>;
+export function join_future_result<T1, T2, T3, T4, T5, T6, E>(f1: FutureResult<T1, E>, f2: FutureResult<T2, E>, f3: FutureResult<T3, E>, f4: FutureResult<T4, E>, f5: FutureResult<T5, E>, f6: FutureResult<T6, E>): FutureResult<[T1, T2, T3, T4, T5, T6], E>;
+export function join_future_result<T1, T2, T3, T4, T5, T6, T7, E>(f1: FutureResult<T1, E>, f2: FutureResult<T2, E>, f3: FutureResult<T3, E>, f4: FutureResult<T4, E>, f5: FutureResult<T5, E>, f6: FutureResult<T6, E>, f7: FutureResult<T7, E>): FutureResult<[T1, T2, T3, T4, T5, T6, T7], E>;
+export function join_future_result<T1, T2, T3, T4, T5, T6, T7, T8, E>(f1: FutureResult<T1, E>, f2: FutureResult<T2, E>, f3: FutureResult<T3, E>, f4: FutureResult<T4, E>, f5: FutureResult<T5, E>, f6: FutureResult<T6, E>, f7: FutureResult<T7, E>, f8: FutureResult<T8, E>): FutureResult<[T1, T2, T3, T4, T5, T6, T7, T8], E>;
+export function join_future_result<T1, T2, T3, T4, T5, T6, T7, T8, T9, E>(f1: FutureResult<T1, E>, f2: FutureResult<T2, E>, f3: FutureResult<T3, E>, f4: FutureResult<T4, E>, f5: FutureResult<T5, E>, f6: FutureResult<T6, E>, f7: FutureResult<T7, E>, f8: FutureResult<T8, E>, f9: FutureResult<T9, E>): FutureResult<[T1, T2, T3, T4, T5, T6, T7, T8, T9], E>;
+export function join_future_result<E>(...fs: FutureResult<any, E>[]): FutureResult<any[], E> {
+    return (emit: Emit<Result<any[], E>>) => {
+        const cs: Record<string, Done> = {};
+        let n = fs.length;
+        const r: any[] = new Array(n);
+        const s = (i: number) => (t: Result<any, E>) => {
+            if (t.$ && n >= 0) {
+                r[i] = t._;
+                delete cs[i];
+                if (!--n) emit(ok(r));
+            } else {
+                n = 0;
+                emit(t);
+            }
+        };
+        for (let i = 0; i < fs.length; i++)
+            cs[i] = fs[i](s(i));
+        return () => { for (const i in cs) cs[i](); };
+    };
 }
 
 export function future_async<T, E>(fn: (cb: (error?: E, value?: T) => void) => void): FutureResult<T, E>;

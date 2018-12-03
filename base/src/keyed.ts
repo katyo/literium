@@ -6,12 +6,19 @@ export type KeyedValue<Enum, Key extends keyof any> = Enum extends Keyed<Key, in
 
 export type KeyedAsPaired<Enum> = { [K in KeyedKeys<Enum>]: KeyedValue<Enum, K>; };
 
-export function keyed<Key extends keyof any, Value>($: Key, _: Value): Keyed<Key, Value> {
+export function keyed<Key extends keyof any, Value>($: Key, _: Value): Keyed<Key, Value>;
+export function keyed<Key extends keyof any>($: Key): Keyed<Key, void>;
+export function keyed<Key extends keyof any, Value>($: Key, _?: Value): Keyed<Key, Value | void> {
     return { $, _ };
 }
 
-export function to_keyed<Key extends keyof any>($: Key): <Value>(_: Value) => Keyed<Key, Value> {
-    return <Value>(_: Value) => ({ $, _ });
+export interface KeyedWithValue<Key extends keyof any> {
+    <Value>(_: Value): Keyed<Key, Value>;
+    (): Keyed<Key, void>;
+}
+
+export function to_keyed<Key extends keyof any>($: Key): KeyedWithValue<Key> {
+    return <Value>(_?: Value) => ({ $, _ });
 }
 
 export function map_key<Key extends keyof any, NewKey extends keyof any>(fn: ($: Key) => NewKey): <Value>(_: Keyed<Key, Value>) => Keyed<NewKey, Value> {

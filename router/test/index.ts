@@ -1,5 +1,5 @@
 import { deepStrictEqual as dse } from 'assert';
-import { some, none, keyed } from 'literium-base';
+import { some, none, keyed } from '@literium/base';
 import { match, build, match_paired, build_paired, match_keyed, build_keyed } from '../src/router';
 import { Order, routes } from './routes';
 

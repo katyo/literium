@@ -14,7 +14,7 @@ describe('helper', () => {
             (v: number) => v + 1,
             (v: number) => `value=${v}`,
             (v: string) => `${v};`
-        ).call(this, 123), 'value=124;');
+        )(123), 'value=124;');
     });
 
     it('do_seq', () => {

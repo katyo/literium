@@ -20,7 +20,7 @@ export function runner_handler<Props, State, Signal>({ pre, main, post, doctype,
         map_future(([html, state]) => do_seq(
             some_def(post),
             then_some(post => post(state)),
-            map_some(ok),
+            map_some(ok as OkFn<string>),
             un_some_else(() => do_seq(
                 okay(),
                 with_body(StreamBody, html, 'text/html'),

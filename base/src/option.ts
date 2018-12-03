@@ -10,13 +10,21 @@ export type Option<Value> = Some<Value> | None;
 
 export type Optional<Rec> = { [Key in keyof Rec]: Option<Rec[Key]> };
 
-const _none: None = { $: 0 };
+export interface SomeFn<Value> {
+    (val: Value): Option<Value>;
+}
 
-export type NoneFn<Value> = <Value>() => Option<Value>;
+export interface NoneFn<Value> {
+    (): Option<Value>;
+}
 
-export function some<Value>(_: Value): Option<Value> {
+export function some<Value>(_: Value): Option<Value>;
+export function some(): Option<void>;
+export function some<Value>(_?: Value): Option<Value | void> {
     return { $: 1, _ };
 }
+
+const _none: None = { $: 0 };
 
 export function none<Value>(): Option<Value> {
     return _none as Option<Value>;

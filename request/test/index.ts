@@ -2,8 +2,8 @@ import 'setimmediate';
 
 import { strictEqual as se, deepStrictEqual as dse } from 'assert';
 import * as is from 'assert';
-import { is_ok, un_ok, un_err, err, timeout_future } from 'literium-base';
-import * as Json from 'literium-json';
+import { is_ok, un_ok, un_err, err, timeout_future } from '@literium/base';
+import * as Json from '@literium/json';
 import { Method, Status, StrBody, BinBody, JsonBody, request } from '../src/request';
 
 const base = typeof window != 'undefined' ? '' : 'http://localhost:8182';

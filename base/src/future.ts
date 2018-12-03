@@ -1,5 +1,5 @@
 import { Keyed, KeyedValue, to_keyed } from './keyed';
-import { constant, deferred, dummy, do_seq } from './helper';
+import { constant, deferred, dummy, do_seq, is_empty } from './helper';
 import { Option, some, none, is_some, un_some } from './option';
 import { Either, a, b } from './either';
 
@@ -35,8 +35,10 @@ export interface GenericFutureConv {
     <Type>(_: Future<Type>): Future<Type>;
 }
 
-export function future<Type>(val: Type): Future<Type> {
-    return (emit: Emit<Type>) => deferred(emit)(val);
+export function future<Type>(val: Type): Future<Type>;
+export function future(): Future<void>;
+export function future<Type>(val?: Type): Future<Type | void> {
+    return (emit: Emit<Type | void>) => deferred(emit)(val);
 }
 
 export function never<Type>(): Future<Type> {
@@ -102,6 +104,74 @@ export function select_future<Type>(...fs: Future<Type>[]): Future<Type> {
             cs[i] = fs[i](s(i));
         return u;
     };
+}
+
+export function once_future<Type>(f: Future<Type>): Future<Type> {
+    let v: Option<Type> = none(); // value
+    let i: number = 0; // emitter enumerator
+    let r: Record<number, Emit<Type>> = {}; // reserved request emitters
+    let c: Done | void; // cancel handle
+
+    // emitter
+    function e(t: Type) {
+        v = some(t);
+        for (const i in r) {
+            r[i](t);
+        }
+        r = {};
+    }
+    
+    return (emit: Emit<Type>) => {
+        if (v.$) {
+            // respond immediate when already resolved
+            return deferred(emit)(v._);
+        } else {
+            // enumerate request
+            const j = i++;
+            // add emitter for response
+            r[j] = emit;
+            // request future unless already requested
+            if (!c) c = f(e);
+            
+            return () => {
+                // remove response emitter
+                delete r[j];
+                // cancel future when no response emitters yet
+                if (is_empty(r)) {
+                    (c as Done)();
+                    c = undefined;
+                }
+            };
+        }
+    };
+}
+
+export function channel_future<Type>(): [Emit<Type>, Future<Type>] {
+    let v: Option<Type> = none(); // value
+    let i: number = 0; // emitter enumerator
+    let r: Record<number, Emit<Type>> = {}; // reserved emitter
+    
+    return [(t: Type) => {
+        v = some(t);
+        for (const i in r) {
+            r[i](t);
+        }
+        r = {};
+    }, (emit: Emit<Type>) => {
+        // respond immediate when already resolved
+        if (v.$) {
+            return deferred(emit)(v._);
+            // store emitter to future resolve
+        } else {
+            const j = i++;
+            // add response emitter
+            r[j] = emit;
+            return () => {
+                // remove response emitter
+                delete r[j];
+            };
+        }
+    }];
 }
 
 export function timeout_future(msec: number): <Type>(val: Type) => FutureConv<Type, Type> {

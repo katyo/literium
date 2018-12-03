@@ -1,4 +1,4 @@
-import { some, none, then_some } from 'literium-base';
+import { some, none, then_some } from '@literium/base';
 import { ArgType, dir, arg, query, alt, seq, str, nat, opt, def, ins } from '../src/router';
 
 export const enum Order { Asc, Desc }

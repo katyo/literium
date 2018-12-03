@@ -1,7 +1,7 @@
 import {
     ok, err, map_ok, map_err, then_ok,
 
-    mk_seq, ok_try, err_to_str, Option, some, none, is_some, un_some, do_seq, un_some_or,
+    mk_seq, ok_try, err_to_str, Option, SomeFn, some, none, is_some, un_some, do_seq, un_some_or,
 } from '@literium/base';
 import { Type, TypeConv, Result } from './types';
 import {
@@ -295,7 +295,7 @@ export function chain<T, R>(t: Type<R>): TypeConv<T, R> {
 
 export function option<T>(t: Type<T>): Type<Option<T>> {
     return {
-        p: v => v != null ? and_defined(do_seq(t.p(v), map_ok(some))) : ok(none()),
+        p: v => v != null ? and_defined(do_seq(t.p(v), map_ok(some as SomeFn<T>))) : ok(none()),
         b: v => is_some(v) ? and_defined(t.b(un_some(v))) : ok(null),
     };
 }
