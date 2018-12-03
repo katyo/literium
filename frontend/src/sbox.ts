@@ -1,6 +1,6 @@
-import { Result, ok, err, constant, map_ok, ok_def_or, do_seq, mk_seq, then_ok } from '@literium/base';
+import { HasField, Result, ok, err, ok_def_or, mk_seq, then_ok } from '@literium/base';
 import { Type, utf8, base64, then, build, parse } from '@literium/json';
-import { BodyType, DataType } from '@literium/request';
+import { FromArg, mix_plugin, header_use, header_expect, body_from, body_into } from '@literium/request';
 import { ByteArray, sealedbox, SealedBoxLength, sealedbox_open, box_keyPair } from 'tweetnacl-ts';
 
 export interface Codec<T, V> {
@@ -19,61 +19,49 @@ export function keypair(): [ArrayBuffer, ArrayBuffer] {
     return [publicKey.buffer, secretKey.buffer];
 }
 
-export function sbox(public_key: () => ArrayBuffer, secret_key?: () => ArrayBuffer): Codec<ArrayBuffer, ArrayBuffer> {
-    return {
-        p: secret_key ? data => do_seq(
-            ok_def_or('unable to decrypt')
-                (sealedbox_open(ByteArray(data), ByteArray(public_key()), ByteArray(secret_key()))),
-            map_ok(b => b.buffer)
-        ) : constant(err('decryption unavailable')),
-        b: data => ok(sealedbox(ByteArray(data), ByteArray(public_key())).buffer),
-    };
+export interface XFromArg<K, T> {
+    <F extends keyof A, A extends HasField<F, K>>(field: F): FromArg<T, A>;
+    (key: K): FromArg<T>;
 }
 
-export function sboxjson<T>(t: Type<T>): (public_key: () => ArrayBuffer, secret_key?: () => ArrayBuffer) => Codec<T, ArrayBuffer> {
-    return (public_key, secret_key) => {
-        const s = sbox(public_key, secret_key);
-        return {
-            p: mk_seq(s.p, then_ok(utf8.b), then_ok(parse(t))),
-            b: mk_seq(build(t), then_ok(utf8.p), then_ok(s.b)),
-        };
-    };
+export interface XIntoRes<K, T> {
+    <F extends keyof A, A extends HasField<F, K>>(field: F): FromArg<T, A>;
+    (key: K): FromArg<T>;
 }
 
-export function sboxjsonb64<T>(t: Type<T>): (public_key: () => ArrayBuffer, secret_key?: () => ArrayBuffer) => Codec<T, string> {
-    const j = sboxjson(t);
-    return (public_key, secret_key) => {
-        const s = j(public_key, secret_key);
-        return {
-            p: mk_seq(base64.p, then_ok(s.p)),
-            b: mk_seq(s.b, then_ok(base64.b)),
-        };
-    };
+export function x_json_enc<T>(ty: Type<T>): (public_key: ArrayBuffer) => (value: T) => Result<string, string> {
+    const json_enc = build(ty);
+    return public_key => mk_seq(
+        json_enc,
+        then_ok(utf8.p),
+        then_ok(data => ok(sealedbox(ByteArray(data), ByteArray(public_key)).buffer)),
+        then_ok(base64.b)
+    );
 }
 
-export function SBoxBody(public_key: () => ArrayBuffer, secret_key?: () => ArrayBuffer): BodyType<ArrayBuffer, DataType.Binary> {
-    return {
-        ...sbox(public_key, secret_key),
-        t: DataType.Binary
-    };
+export function x_json_from<T>(ty: Type<T>, ct: string = 'application/x-base64-sealed-json'): XFromArg<ArrayBuffer, T> {
+    const x_json = x_json_enc(ty);
+    return (key_or_field: ArrayBuffer | string) => (field?: string) => mix_plugin(
+        header_use('content-type', ct),
+        body_from()((data: T, arg: any) => x_json(typeof key_or_field == 'string' ? arg[key_or_field] : key_or_field)(data))(field)
+    );
 }
 
-export function SBoxJsonBody<T>(t: Type<T>): (public_key: () => ArrayBuffer, secret_key?: () => ArrayBuffer) => BodyType<T, DataType.Binary> {
-    const j = sboxjson(t);
-    return (public_key, secret_key) => {
-        return {
-            ...j(public_key, secret_key),
-            t: DataType.Binary
-        };
-    };
+export function x_json_dec<T>(ty: Type<T>): (public_key: ArrayBuffer, secret_key: ArrayBuffer) => (value: string) => Result<T, string> {
+    const json_dec = parse(ty);
+    return (public_key, secret_key) => mk_seq(
+        base64.p,
+        then_ok(data => ok_def_or('unable to decrypt')
+                (sealedbox_open(ByteArray(data), ByteArray(public_key), ByteArray(secret_key)))),
+        then_ok(utf8.b),
+        then_ok(json_dec)
+    );
 }
 
-export function SBoxJsonB64Body<T>(t: Type<T>): (public_key: () => ArrayBuffer, secret_key?: () => ArrayBuffer) => BodyType<T, DataType.String> {
-    const j = sboxjsonb64(t);
-    return (public_key, secret_key) => {
-        return {
-            ...j(public_key, secret_key),
-            t: DataType.String
-        };
-    };
+export function x_json_into<T>(ty: Type<T>, ct: string | RegExp = 'x-base64-sealed-json'): XIntoRes<[ArrayBuffer, ArrayBuffer], T> {
+    const x_json = x_json_dec(ty);
+    return (keys_or_field: [ArrayBuffer, ArrayBuffer] | string) => (field?: string) => mix_plugin(
+        header_expect('content-type', ct),
+        body_into()((data: string, arg: any) => x_json(...(typeof keys_or_field == 'string' ? arg[keys_or_field] : keys_or_field) as [ArrayBuffer, ArrayBuffer])(data))(field)
+    );
 }

@@ -19,7 +19,6 @@
   },
   "files": [
     "src/sbox.ts",
-    "src/rest.ts",
     "src/index.ts"
   ]
 }
