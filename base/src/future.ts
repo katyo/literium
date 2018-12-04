@@ -146,7 +146,7 @@ export function once_future<Type>(f: Future<Type>): Future<Type> {
     };
 }
 
-export function channel_future<Type>(): [Emit<Type>, Future<Type>] {
+export function future_channel<Type>(): [Emit<Type>, Future<Type>] {
     let v: Option<Type> = none(); // value
     let i: number = 0; // emitter enumerator
     let r: Record<number, Emit<Type>> = {}; // reserved emitter
