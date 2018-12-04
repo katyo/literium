@@ -1,12 +1,7 @@
 import { HasField, Result, ok, err, ok_def_or, mk_seq, then_ok } from '@literium/base';
 import { Type, utf8, base64, then, build, parse } from '@literium/json';
-import { FromArg, mix_plugin, header_use, header_expect, body_from, body_into } from '@literium/request';
+import { FromArg, IntoRes, mix_plugin, header_use, header_expect, body_from, body_into } from '@literium/request';
 import { ByteArray, sealedbox, SealedBoxLength, sealedbox_open, box_keyPair } from 'tweetnacl-ts';
-
-export interface Codec<T, V> {
-    p: (v: V) => Result<T, string>;
-    b: (t: T) => Result<V, string>;
-}
 
 export const base64_key = /*@__PURE__*/then(key_check, key_check)(base64);
 
@@ -14,7 +9,11 @@ function key_check(_: ArrayBuffer): Result<ArrayBuffer, string> {
     return _.byteLength == SealedBoxLength.PublicKey ? ok(_) : err('invalid key');
 }
 
-export function keypair(): [ArrayBuffer, ArrayBuffer] {
+export type PubKey = ArrayBuffer;
+
+export type KeyPair = [PubKey, ArrayBuffer];
+
+export function keypair(): KeyPair {
     const { publicKey, secretKey } = box_keyPair();
     return [publicKey.buffer, secretKey.buffer];
 }
@@ -25,8 +24,8 @@ export interface XFromArg<K, T> {
 }
 
 export interface XIntoRes<K, T> {
-    <F extends keyof A, A extends HasField<F, K>>(field: F): FromArg<T, A>;
-    (key: K): FromArg<T>;
+    <F extends keyof A, A extends HasField<F, K>>(field: F): IntoRes<T, A>;
+    (keys: K): IntoRes<T>;
 }
 
 export function x_json_enc<T>(ty: Type<T>): (public_key: ArrayBuffer) => (value: T) => Result<string, string> {
@@ -58,10 +57,10 @@ export function x_json_dec<T>(ty: Type<T>): (public_key: ArrayBuffer, secret_key
     );
 }
 
-export function x_json_into<T>(ty: Type<T>, ct: string | RegExp = 'x-base64-sealed-json'): XIntoRes<[ArrayBuffer, ArrayBuffer], T> {
+export function x_json_into<T>(ty: Type<T>, ct: string | RegExp = 'x-base64-sealed-json'): XIntoRes<KeyPair, T> {
     const x_json = x_json_dec(ty);
-    return (keys_or_field: [ArrayBuffer, ArrayBuffer] | string) => (field?: string) => mix_plugin(
+    return (keys_or_field: KeyPair | string) => (field?: string) => mix_plugin(
         header_expect('content-type', ct),
-        body_into()((data: string, arg: any) => x_json(...(typeof keys_or_field == 'string' ? arg[keys_or_field] : keys_or_field) as [ArrayBuffer, ArrayBuffer])(data))(field)
+        body_into()((data: string, arg: any) => x_json(...(typeof keys_or_field == 'string' ? arg[keys_or_field] : keys_or_field) as KeyPair)(data))(field)
     );
 }
