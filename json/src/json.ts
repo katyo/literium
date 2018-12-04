@@ -167,7 +167,7 @@ export function rec<V, K extends keyof any = string>(t: Type<V>, i: Type<K> = st
                 if (!n.$) return err(`.${k} key ${n._}`);
                 const e = t.b(v[k]);
                 if (!e.$) return err(`.${k} value ${e._}`);
-                if (n._ != null && e._ != null) r[n._] = e._;
+                if (n._ != null && e._ != null) r[n._ as keyof typeof r] = e._;
             }
             return ok(r);
         }

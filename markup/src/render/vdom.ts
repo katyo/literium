@@ -2,7 +2,7 @@ import { flat_list } from '@literium/base';
 import { VNodeChildren } from '@literium/core';
 import {
     RenderRule, RenderHandle, makeRender,
-    ContextTag, ContextMap,
+    ContextTag, ContextMap, InitRender,
     UnknownToken, NoMeta
 } from 'marklit';
 
@@ -14,7 +14,7 @@ export type BlockRenderRuleVDom<BlockTokenMap, Meta> = RenderRule<VNodeChildren,
 
 export type BlockRenderHandleVDom<BlockTokenMap, Meta> = RenderHandle<VNodeChildren, ContextMap<BlockTokenMap, UnknownToken, any>, ContextTag.Block, Meta>;
 
-export const initRenderVDom = makeRender(joinVNode);
+export const initRenderVDom: InitRender<VNodeChildren> = makeRender(joinVNode);
 
 export function wrapVNode(_$: RenderHandle<VNodeChildren, ContextMap<UnknownToken, UnknownToken, NoMeta>, ContextTag, NoMeta>, chunk: string): VNodeChildren {
     return chunk;

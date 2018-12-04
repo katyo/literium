@@ -166,8 +166,14 @@ function renderTableCells($: BlockRenderHandleVDom<BlockTable<UnknownToken>, NoM
     return out;
 }
 
-export const BlockVDom = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, SpaceVDom];
+export type BlockVDomToken = BlockCode | BlockHeading<UnknownToken> | BlockHr | BlockQuote<UnknownToken> | BlockList<UnknownToken> | BlockOrdList<UnknownToken> | BlockParagraph<UnknownToken> | BlockText<UnknownToken> | BlockSpace;
 
-export const BlockTablesVDom = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, SpaceVDom, TableVDom];
+export const BlockVDom: BlockRenderRuleVDom<BlockVDomToken, MetaHeadings>[] = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, SpaceVDom];
 
-export const BlockLitVDom = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, TableVDom, SpaceVDom, FootnotesBlockVDom];
+export type BlockTablesVDomToken = BlockVDomToken | BlockTable<UnknownToken>;
+
+export const BlockTablesVDom: BlockRenderRuleVDom<BlockTablesVDomToken, MetaHeadings>[] = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, SpaceVDom, TableVDom];
+
+export type BlockLitVDomToken = BlockTablesVDomToken | BlockFootnotes<UnknownToken>;
+
+export const BlockLitVDom: BlockRenderRuleVDom<BlockLitVDomToken, MetaHeadings & MetaFootnotes>[] = [CodeBlockWithClassVDom, HeadingWithIdVDom, HrVDom, QuoteVDom, ListVDom, OrdListVDom, ParagraphVDom, TextBlockVDom, TableVDom, SpaceVDom, FootnotesBlockVDom];

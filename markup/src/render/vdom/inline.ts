@@ -128,8 +128,14 @@ export const BrVDom: InlineRenderRuleVDom<InlineBr, NoMeta> = [
     () => h('br')
 ];
 
-export const InlineVDom = [LinkVDom, ImageVDom, StrongVDom, EmVDom, CodeSpanVDom, TextVDom, BrVDom];
+export type InlineVDomToken = InlineLink<UnknownToken> | InlineImage | InlineStrong<UnknownToken> | InlineEm<UnknownToken> | InlineCode | InlineText | InlineBr;
 
-export const InlineGfmVDom = [LinkVDom, ImageVDom, StrongVDom, EmVDom, CodeSpanVDom, TextVDom, BrVDom, DelVDom];
+export const InlineVDom: InlineRenderRuleVDom<InlineVDomToken, MetaLinks>[] = [LinkVDom, ImageVDom, StrongVDom, EmVDom, CodeSpanVDom, TextVDom, BrVDom];
 
-export const InlineLitVDom = [LinkVDom, ImageVDom, StrongVDom, EmVDom, CodeSpanVDom, TextVDom, BrVDom, DelVDom, AbbrevVDom, FootnoteVDom];
+export type InlineGfmVDomToken = InlineVDomToken | InlineDel<UnknownToken>;
+
+export const InlineGfmVDom: InlineRenderRuleVDom<InlineGfmVDomToken, MetaLinks>[] = [LinkVDom, ImageVDom, StrongVDom, EmVDom, CodeSpanVDom, TextVDom, BrVDom, DelVDom];
+
+export type InlineLitVDomToken = InlineGfmVDomToken | InlineAbbrev | InlineFootnote;
+
+export const InlineLitVDom: InlineRenderRuleVDom<InlineLitVDomToken, MetaLinks | MetaAbbrevs | MetaFootnotes>[] = [LinkVDom, ImageVDom, StrongVDom, EmVDom, CodeSpanVDom, TextVDom, BrVDom, DelVDom, AbbrevVDom, FootnoteVDom];
