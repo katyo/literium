@@ -126,8 +126,16 @@ export function un_ok<Value, Error>(res: Result<Value, Error>): Value {
 }
 
 export function un_err<Value, Error>(res: Result<Value, Error>): Error {
-    if (!res.$) return res._ as Error;
+    if (!res.$) return res._;
     throw "result ok";
+}
+
+export function get_ok<Value, Error>(res: Result<Value, Error>): Value | undefined {
+    if (res.$) return res._;
+}
+
+export function get_err<Value, Error>(res: Result<Value, Error>): Error | undefined {
+    if (!res.$) return res._;
 }
 
 export function un_ok_or<Value>(def: Value): <Error>(res: Result<Value, Error>) => Value {

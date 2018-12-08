@@ -98,6 +98,10 @@ export function un_some<Value>(opt: Option<Value>): Value {
     throw "option none";
 }
 
+export function get_some<Value>(opt: Option<Value>): Value | undefined {
+    if (opt.$) return opt._;
+}
+
 export function un_some_or<Value>(def: Value): (_: Option<Value>) => Value {
     return (opt: Option<Value>) => opt.$ ? opt._ : def;
 }

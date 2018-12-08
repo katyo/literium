@@ -14,11 +14,10 @@ export function keyed<Key extends keyof any, Value>($: Key, _?: Value): Keyed<Ke
 
 export interface KeyedWithValue<Key extends keyof any> {
     <Value>(_: Value): Keyed<Key, Value>;
-    (): Keyed<Key, void>;
 }
 
 export function to_keyed<Key extends keyof any>($: Key): KeyedWithValue<Key> {
-    return <Value>(_?: Value) => ({ $, _ });
+    return <Value>(_: Value) => ({ $, _ });
 }
 
 export function map_key<Key extends keyof any, NewKey extends keyof any>(fn: ($: Key) => NewKey): <Value>(_: Keyed<Key, Value>) => Keyed<NewKey, Value> {
