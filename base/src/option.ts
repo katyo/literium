@@ -1,4 +1,4 @@
-import { JSTypeMap } from './helper';
+import { JSType, JSTypeMap, is_type } from './helper';
 import { Result } from './result';
 import { Either } from './either';
 
@@ -170,8 +170,12 @@ export function none_is<Value>(d: Value): (_: Value) => Option<Value> {
     return (_: Value) => _ === d ? _none as Option<Value> : some(_);
 }
 
-export function some_type<Type extends keyof JSTypeMap>(t: Type): <Value>(_: Value) => Option<JSTypeMap[Type]> {
-    return <Value>(_: Value) => typeof _ == t ? some(_ as JSTypeMap[Type]) : _none as Option<JSTypeMap[Type]>;
+export function some_type<Type extends JSType>(t: Type): <Value>(_: Value) => Option<JSTypeMap[Type]> {
+    return <Value>(_: Value) => is_type(_, t) ? some(_ as JSTypeMap[Type]) : _none as Option<JSTypeMap[Type]>;
+}
+
+export function none_type<Type extends JSType>(t: Type): <Value>(_: Value) => Option<Exclude<Value, JSTypeMap[Type]>> {
+    return <Value>(_: Value) => is_type(_, t) ? _none as Option<Exclude<Value, JSTypeMap[Type]>> : some(_ as Exclude<Value, JSTypeMap[Type]>);
 }
 
 export function some_def<Value>(v: Value | null | undefined | void): Option<Value> {

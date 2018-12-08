@@ -1,19 +1,36 @@
-export interface JSTypeMap {
-    'string': string;
-    'number': number;
-    'boolean': boolean;
-    'undefined': undefined;
-    'function': Function;
-    'object': object;
+export const enum JSType {
+    String,
+    Number,
+    Boolean,
+    Undefined,
+    Function,
+    Array,
+    Object,
 }
 
+export interface JSTypeMap {
+    [JSType.String]: string;
+    [JSType.Number]: number;
+    [JSType.Boolean]: boolean;
+    [JSType.Undefined]: undefined;
+    [JSType.Function]: Function;
+    [JSType.Object]: object;
+    [JSType.Array]: any[];
+}
+
+export type JSTypes = JSTypeMap[JSType];
+
 export type JSTypeName<Type> =
-    Type extends string ? 'string' :
-    Type extends number ? 'number' :
-    Type extends boolean ? 'boolean' :
-    Type extends undefined ? 'undefined' :
-    Type extends Function ? 'function' :
-    'object';
+    Type extends string ? JSType.String :
+    Type extends number ? JSType.Number :
+    Type extends boolean ? JSType.Boolean :
+    Type extends undefined ? JSType.Undefined :
+    Type extends void ? JSType.Undefined :
+    Type extends Function ? JSType.Function :
+    Type extends any[] ? JSType.Array :
+    Type extends object ? JSType.Object :
+    Type extends unknown ? JSType :
+    JSType.Undefined;
 
 export type IntersectUnion<U> = (U extends any ? (k: U)=>void : never) extends ((k: infer I)=>void) ? I : never;
 
@@ -22,6 +39,46 @@ export type HasExtra<X = {}> = {} extends X ? any : X;
 export type WithExtra<T, X = {}> = {} extends X ? T : T & X;
 
 export type HasField<K extends keyof any, V> = { [X in K]: V };
+
+export const nothing: any = undefined;
+
+const is_array: (v: any) => v is any[] = Array.isArray || ((v: any) => v instanceof Array);
+
+export function get_type<T>(v: T): JSTypeName<T>;
+export function get_type(v: any): JSType;
+export function get_type(v: any): JSType {
+    const n = (typeof v)[0];
+    return n == 's' ? JSType.String :
+        n == 'n' ? JSType.Number :
+        n == 'b' ? JSType.Boolean :
+        n == 'u' ? JSType.Undefined :
+        n == 'f' ? JSType.Function :
+        is_array(v) ? JSType.Array :
+        JSType.Object;
+}
+
+export function is_type<T>(v: T, t: JSType.Function): v is Extract<T, Function>;
+export function is_type<T>(v: T, t: JSType.Object): v is Extract<T, object>;
+export function is_type<T>(v: T, t: JSType.Array): v is Extract<T, any[]>;
+export function is_type(v: any, t: JSType.String): v is string;
+export function is_type(v: any, t: JSType.Number): v is number;
+export function is_type(v: any, t: JSType.Boolean): v is boolean;
+export function is_type(v: any, t: JSType.Undefined): v is undefined;
+//export function is_type<Value extends JSTypes, Type extends JSType>(v: Value, t: Type): v is JSTypeMap[Type];
+export function is_type(v: any, t: JSType): boolean;
+export function is_type(v: any, t: JSType) {
+    return get_type(v) == t;
+}
+
+export function type_name(t: JSType): string {
+    return t == JSType.String ? 'string' :
+        t == JSType.Number ? 'number' :
+        t == JSType.Boolean ? 'boolean' :
+        t == JSType.Function ? 'function' :
+        t == JSType.Array ? 'array' :
+        t == JSType.Object ? 'object' :
+        'undefined';
+}
 
 export function identity<V>(_: V): V { return _; }
 
@@ -80,7 +137,7 @@ export function do_seq<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(_: T1, f1: 
 export function do_seq<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(_: T1, f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6, f6: (_: T6) => T7, f7: (_: T7) => T8, f8: (_: T8) => T9, f9: (_: T9) => T10, f10: (_: T10) => T11, f11: (_: T11) => T12): T12;
 export function do_seq<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(_: T1, f1: (_: T1) => T2, f2: (_: T2) => T3, f3: (_: T3) => T4, f4: (_: T4) => T5, f5: (_: T5) => T6, f6: (_: T6) => T7, f7: (_: T7) => T8, f8: (_: T8) => T9, f9: (_: T9) => T10, f10: (_: T10) => T11, f11: (_: T11) => T12, f12: (_: T12) => T13): T13;
 export function do_seq(_: any, ...fs: ((_: any) => any)[]): any {
-    return mk_seq.apply(undefined, fs)(_);
+    return mk_seq.apply(nothing, fs)(_);
 }
 
 const defer = typeof setImmediate != 'undefined' ?
@@ -162,13 +219,6 @@ export function mix_obj<T1 extends object, T2 extends object, T3 extends object,
 export function mix_obj<T1 extends object, T2 extends object, T3 extends object, T4 extends object, T5 extends object, T6 extends object, T7 extends object, T8 extends object>(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8): T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8;
 export function mix_obj<T1 extends object, T2 extends object, T3 extends object, T4 extends object, T5 extends object, T6 extends object, T7 extends object, T8 extends object, T9 extends object>(t1: T1, t2: T2, t3: T3, t4: T4, t5: T5, t6: T6, t7: T7, t8: T8, t9: T9): T1 & T2 & T3 & T4 & T5 & T6 & T7 & T8 & T9;
 export function mix_obj(...ts: object[]): object {
-    /*
-    let r = {};
-    for (const t of ts) {
-        r = {...r, ...t};
-    }
-    return r;
-    */
     const r = {};
     (mix_to as any)(r, ...ts);
     return r;
@@ -192,9 +242,9 @@ export function mix_to<T>(to: T | T & object, ...ts: object[]) {
 }
 
 export function is_empty<T extends object | any[] | string>(v: T): boolean {
-    if (typeof v == 'string') {
+    if (is_type(v, JSType.String)) {
         return v == '';
-    } else if (Array.isArray(v)) {
+    } else if (is_type(v, JSType.Array)) {
         return v.length == 0;
     } else {
         let r = true;

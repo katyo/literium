@@ -1,5 +1,5 @@
 import {
-    Option,
+    Option, JSType, is_type,
     some, none,
     is_some, un_some,
     then_some, or_none,
@@ -116,7 +116,7 @@ export function query_build(args: QueryArgs): string {
     const strs: string[] = [];
     for (const name in args) {
         const value = args[name];
-        strs.push(`${encodeURIComponent(name)}${typeof value == 'string' ? `=${value}` : ''}`);
+        strs.push(`${encodeURIComponent(name)}${is_type(value, JSType.String) ? `=${value}` : ''}`);
     }
     return strs.join('&');
 }
@@ -283,10 +283,10 @@ export function build_keyed<State>(routes: Routes<State>): (state: PairedAsKeyed
 export const str: ArgType<string> = {
     r: /^[^\/\?]+/,
     p: /*@__PURE__*/map_some(decodeURIComponent),
-    b: /*@__PURE__*/mk_seq(some_type('string'), map_some(encodeURIComponent)),
+    b: /*@__PURE__*/mk_seq(some_type(JSType.String), map_some(encodeURIComponent)),
 };
 
-const some_if_num = /*@__PURE__*/some_type('number');
+const some_if_num = /*@__PURE__*/some_type(JSType.Number);
 const filter_if_fin = /*@__PURE__*/then_some(some_if(isFinite));
 const map_to_str = /*@__PURE__*/map_some(any_to_str);
 

@@ -1,5 +1,9 @@
 import { deepStrictEqual as dse } from 'assert';
 import {
+    JSType,
+    get_type,
+    is_type,
+    nothing,
     mk_seq,
     do_seq,
     flat_map,
@@ -9,6 +13,44 @@ import {
 } from '../src/index';
 
 describe('helper', () => {
+    it('get_type', () => {
+        dse(get_type("abc"), JSType.String);
+        dse(get_type(-0.1), JSType.Number);
+        dse(get_type(true), JSType.Boolean);
+        dse(get_type(nothing), JSType.Undefined);
+        dse(get_type(() => {}), JSType.Function);
+        dse(get_type([]), JSType.Array);
+        dse(get_type({}), JSType.Object);
+
+        dse(get_type([1]), JSType.Array);
+        dse(get_type([1][0]), JSType.Number);
+        dse(get_type({a:1}), JSType.Object);
+        dse(get_type({a:1}.a), JSType.Number);
+
+        dse(get_type([] as unknown), JSType.Array);
+        dse(get_type({} as unknown), JSType.Object);
+        dse(get_type(1 as unknown), JSType.Number);
+    });
+
+    it('is_type', () => {
+        dse(is_type("abc", JSType.String), true);
+        dse(is_type(-0.1, JSType.Number), true);
+        dse(is_type(true, JSType.Boolean), true);
+        dse(is_type(nothing, JSType.Undefined), true);
+        dse(is_type(() => {}, JSType.Function), true);
+        dse(is_type([], JSType.Array), true);
+        dse(is_type({}, JSType.Object), true);
+
+        dse(is_type([1], JSType.Array), true);
+        dse(is_type([1][0], JSType.Number), true);
+        dse(is_type({a:1}, JSType.Object), true);
+        dse(is_type({a:1}.a, JSType.Number), true);
+
+        dse(is_type([] as unknown, JSType.Array), true);
+        dse(is_type({} as unknown, JSType.Object), true);
+        dse(is_type(1 as unknown, JSType.Number), true);
+    });
+    
     it('mk_seq', () => {
         dse(mk_seq(
             (v: number) => v + 1,

@@ -1,5 +1,5 @@
 import { Keyed, KeyedValue, to_keyed } from './keyed';
-import { constant, deferred, dummy, do_seq, is_empty } from './helper';
+import { JSType, is_type, constant, deferred, dummy, do_seq, is_empty } from './helper';
 import { Option, some, none, is_some, un_some } from './option';
 import { Either, a, b } from './either';
 
@@ -14,7 +14,7 @@ export function map_emit<Signal, OtherSignal>(fn: (signal: OtherSignal) => Signa
 export function key_emit<Signal>(emit: Emit<Signal>): <Key extends keyof any, Signal extends Keyed<Key, KeyedValue<Signal, Key>>>(key: Key) => Emit<KeyedValue<Signal, Key>>;
 export function key_emit<Key extends keyof any>(key: Key): <Signal extends Keyed<Key, KeyedValue<Signal, Key>>>(emit: Emit<Signal>) => Emit<KeyedValue<Signal, Key>>;
 export function key_emit(arg: keyof any | Emit<any>): (arg2: keyof any | Emit<any>) => Emit<KeyedValue<any, keyof any>> {
-    return typeof arg == 'function' ?
+    return is_type(arg, JSType.Function) ?
         (key: keyof any) => map_emit(to_keyed(key))(arg)
         : map_emit(to_keyed(arg));
 }

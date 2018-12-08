@@ -1,3 +1,4 @@
+import { JSType, is_type } from '@literium/base';
 import {
     VNode as VNode_, Thunk, VNodeChild as VNodeChild_, VBaseData, VHooksData, VThunkData, VKey,
     H, h as h_, thunk as thunk_, VNodeChildren as VNodeChildren_, emptyVData,
@@ -16,7 +17,7 @@ export { VKey };
 export const empty: VData = emptyVData;
 
 export function with_key(key: VKey, vnode: VNodeChild): VNodeChild {
-    if (vnode != null && typeof vnode == 'object' && vnode.sel) {
+    if (vnode != null && is_type(vnode, JSType.Object) && vnode.sel) {
         vnode.key = key;
     }
     return vnode;

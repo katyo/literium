@@ -1,13 +1,17 @@
 import { Result } from './types';
-import { ok, err, ok_type, then_ok, mk_seq } from '@literium/base';
+import { JSType, type_name, ok, err, ok_type, then_ok, map_err, mk_seq } from '@literium/base';
 
 // Basic checks
 
-export const str_check = /*@__PURE__*/ok_type('string');
+function type_check<T extends JSType>(t: T) {
+    return mk_seq(ok_type(t), map_err((t: JSType) => '!' + type_name(t)));
+}
 
-export const num_check = /*@__PURE__*/ok_type('number');
+export const str_check = /*@__PURE__*/type_check(JSType.String);
 
-export const bin_check = /*@__PURE__*/ok_type('boolean');
+export const num_check = /*@__PURE__*/type_check(JSType.Number);
+
+export const bin_check = /*@__PURE__*/type_check(JSType.Boolean);
 
 // Extra numeric checks
 

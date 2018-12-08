@@ -1,6 +1,6 @@
 import {
+    JSType, is_type,
     ok, err, map_ok, map_err, then_ok,
-
     mk_seq, ok_try, err_to_str, Option, SomeFn, some, none, is_some, un_some, do_seq, un_some_or,
 } from '@literium/base';
 import { Type, TypeConv, Result } from './types';
@@ -82,7 +82,7 @@ export function regex(re: RegExp, cause?: string): TypeConv<string, string> {
 export function list<T>(t: Type<T>): Type<T[]> {
     return {
         p(v) {
-            if (!Array.isArray(v)) return err('!array');
+            if (!is_type(v, JSType.Array)) return err('!array');
             const r: T[] = new Array(v.length);
             for (let i = 0; i < v.length; i++) {
                 const e = t.p(v[i]);
@@ -92,7 +92,7 @@ export function list<T>(t: Type<T>): Type<T[]> {
             return ok(r);
         },
         b(v) {
-            if (!Array.isArray(v)) return err('!array');
+            if (!is_type(v, JSType.Array)) return err('!array');
             const r: any[] = new Array(v.length);
             for (let i = 0; i < v.length; i++) {
                 const e = t.b(v[i]);
@@ -119,8 +119,7 @@ export type Dict<T extends Object> = { [Tag in keyof T]: Type<T[Tag]> };
 export function dict<T extends Object>(t: Dict<T>): Type<T> {
     return {
         p(v) {
-            if (v == null || typeof v != 'object' ||
-                Array.isArray(v)) return err('!object');
+            if (v == null || !is_type(v, JSType.Object)) return err('!object');
             const r = {} as T;
             for (const k in t) {
                 const e = t[k].p(v[k]);
@@ -130,8 +129,7 @@ export function dict<T extends Object>(t: Dict<T>): Type<T> {
             return ok(r);
         },
         b(v) {
-            if (v == null || typeof v != 'object' ||
-                Array.isArray(v)) return err('!object');
+            if (v == null || !is_type(v, JSType.Object)) return err('!object');
             const r = {} as any;
             for (const k in t) {
                 const e = t[k].b(v[k]);
@@ -146,8 +144,7 @@ export function dict<T extends Object>(t: Dict<T>): Type<T> {
 export function rec<V, K extends keyof any = string>(t: Type<V>, i: Type<K> = str as Type<K>): Type<Record<K, V>> {
     return {
         p(v) {
-            if (v == null || typeof v != 'object' ||
-                Array.isArray(v)) return err('!object');
+            if (v == null || !is_type(v, JSType.Object)) return err('!object');
             const r = {} as Record<K, V>;
             for (const k in v) {
                 const n = i.p(k);
@@ -159,8 +156,7 @@ export function rec<V, K extends keyof any = string>(t: Type<V>, i: Type<K> = st
             return ok(r);
         },
         b(v) {
-            if (v == null || typeof v != 'object' ||
-                Array.isArray(v)) return err('!object');
+            if (v == null || !is_type(v, JSType.Object)) return err('!object');
             const r = {} as Record<K, V>;
             for (const k in v) {
                 const n = i.b(k);
@@ -219,7 +215,7 @@ export function tup<T1, T2, T3, T4, T5, T6, T7, T8, T9>(t1: Type<T1>, t2: Type<T
 export function tup(...ts: Type<any>[]): Type<any[]> {
     return {
         p(v) {
-            if (!Array.isArray(v)) return err('!tuple');
+            if (!is_type(v, JSType.Array)) return err('!tuple');
             if (v.length < ts.length) return err('insufficient');
             if (v.length > ts.length) return err('exceeded');
             const r: any[] = new Array(v.length);
@@ -231,7 +227,7 @@ export function tup(...ts: Type<any>[]): Type<any[]> {
             return ok(r);
         },
         b(v) {
-            if (!Array.isArray(v)) return err('!tuple');
+            if (!is_type(v, JSType.Array)) return err('!tuple');
             if (v.length < ts.length) return err('insufficient');
             if (v.length > ts.length) return err('exceeded');
             const r: any[] = new Array(v.length);

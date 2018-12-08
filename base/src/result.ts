@@ -1,4 +1,4 @@
-import { JSTypeMap } from './helper';
+import { JSType, JSTypeMap, is_type } from './helper';
 import { Option, none, ok_some_or, err_some_or } from './option';
 import { Either } from './either';
 
@@ -166,12 +166,12 @@ export function err_if<Value, Error>(fn: (_: Value) => Option<Error>): (_: Value
     return (_: Value) => err_some_or(_)(fn(_));
 }
 
-export function ok_type<Type extends keyof JSTypeMap>(t: Type): <Value>(_: Value) => Result<JSTypeMap[Type], string> {
-    return <Value>(_: Value) => typeof _ == t ? ok(_ as JSTypeMap[Type]) : err(`!${t}`);
+export function ok_type<Type extends JSType>(t: Type): <Value>(_: Value) => Result<JSTypeMap[Type], Type> {
+    return <Value>(_: Value) => is_type(_, t) ? ok(_ as JSTypeMap[Type]) : err(t);
 }
 
-export function err_type<Type extends keyof JSTypeMap>(t: Type): (_: any) => Result<any, string> {
-    return (_: any) => typeof _ != t ? ok(_) : err(`${t}`);
+export function err_type<Type extends JSType>(t: Type): <Value>(_: Value) => Result<Exclude<Value, JSTypeMap[Type]>, Type> {
+    return <Value>(_: Value) => is_type(_, t) ? err(t) : ok(_ as Exclude<Value, JSTypeMap[Type]>);
 }
 
 export function ok_def<Value>(v: Value | null | undefined | void): Result<Value, void> {
