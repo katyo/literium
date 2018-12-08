@@ -76,16 +76,16 @@ export default {
                 comments: false
             }
         }),
+        visualize({
+            filename: join(distdir, 'stats.html'),
+            //sourcemap: true
+        }),
         gzip({
             customCompression: content => compress(Buffer.from(content), 'deflate'),
             additionalFiles: [
                 join(distdir, `client_${version}.min.css`),
                 join(distdir, 'client.html')
             ],
-        }),
-        visualize({
-            filename: join(distdir, 'stats.html'),
-            //sourcemap: true
         }),
     ],
 }
